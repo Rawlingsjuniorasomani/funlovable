@@ -30,7 +30,7 @@ export function PaymentVerify() {
             }
         } catch (error) {
             console.error("Verification error:", error);
-            setStatus("dailed");
+            setStatus("failed");
         }
     };
 
@@ -65,7 +65,7 @@ export function PaymentVerify() {
                         </div>
                     )}
 
-                    {status === "dailed" && (
+                    {status === "failed" && (
                         <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
                             <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
                                 <XCircle className="w-10 h-10 text-red-600" />
