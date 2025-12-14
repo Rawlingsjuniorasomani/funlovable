@@ -148,24 +148,7 @@ const About = () => {
           </div>
         </section>
 
-        {/* Stats */}
-        <section className="py-20 bg-gradient-to-r from-primary via-tertiary to-secondary">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { number: "10,000+", label: "Active Students" },
-                { number: "500+", label: "Video Lessons" },
-                { number: "50+", label: "Expert Teachers" },
-                { number: "98%", label: "Parent Satisfaction" },
-              ].map((stat) => (
-                <div key={stat.label} className="text-center text-primary-foreground">
-                  <div className="text-4xl md:text-5xl font-bold mb-2">{stat.number}</div>
-                  <p className="text-primary-foreground/80">{stat.label}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
+
       </main>
       <Footer />
     </div>
