@@ -8,7 +8,7 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 export function PaymentVerify() {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
-    const [status, setStatus] = useState<"loading" | "success" | "dailed">("loading");
+    const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
 
     const reference = searchParams.get("reference"); // Paystack returns reference in query param
 
@@ -16,7 +16,7 @@ export function PaymentVerify() {
         if (reference) {
             verifyPayment(reference);
         } else {
-            setStatus("dailed");
+            setStatus("failed");
         }
     }, [reference]);
 
@@ -26,7 +26,7 @@ export function PaymentVerify() {
             if (response.status === 'success') {
                 setStatus("success");
             } else {
-                setStatus("dailed");
+                setStatus("failed");
             }
         } catch (error) {
             console.error("Verification error:", error);
