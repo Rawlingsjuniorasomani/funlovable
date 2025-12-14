@@ -405,14 +405,14 @@ export default function ParentRegistrationFlow() {
                                         <div className="space-y-3">
                                             <select
                                                 className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value=""
                                                 onChange={(e) => {
                                                     if (e.target.value) {
                                                         handleSubjectToggle(e.target.value);
-                                                        e.target.value = ""; // Reset
                                                     }
                                                 }}
                                             >
-                                                <option value="" disabled selected>Add a Subject...</option>
+                                                <option value="" disabled>Add a Subject...</option>
                                                 {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
                                                     <option key={s.id} value={s.id}>
                                                         {s.emoji} {s.name}
