@@ -45,6 +45,12 @@ export function Footer() {
             <p className="text-slate-400 leading-relaxed max-w-sm">
               Empowering the next generation of learners with interactive, personalized, and accessible digital education. Join our community today.
             </p>
+            <div className="flex items-center gap-2 text-orange-500 font-medium pb-2">
+              <Phone className="w-4 h-4" />
+              <a href={`tel:${BRANDING.contact.phone}`} className="hover:text-orange-400 transition-colors">
+                {BRANDING.contact.phone}
+              </a>
+            </div>
             <div className="flex gap-3">
               {socialLinks.map((social) => (
                 <a
