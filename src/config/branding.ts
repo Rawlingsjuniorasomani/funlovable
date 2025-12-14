@@ -6,7 +6,7 @@ export const BRANDING = {
   description: "Interactive learning platform with lessons, quizzes, live classes, and comprehensive parent monitoring.",
   contact: {
     email: "info@edulearn.edu",
-    phone: "+233 XX XXX XXXX",
+    phone: "+233 59 939 5735",
     address: "Accra, Ghana",
   },
   social: {

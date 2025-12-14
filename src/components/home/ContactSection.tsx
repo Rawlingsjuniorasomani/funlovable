@@ -170,7 +170,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-900">Phone</h4>
-                  <p className="text-slate-600">+233 XX XXX XXXX</p>
+                  <p className="text-slate-600">+233 59 939 5735</p>
                 </div>
               </div>
 
@@ -180,7 +180,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-900">Location</h4>
-                  <p className="text-slate-600">Accra, Ghana</p>
+                  <p className="text-slate-600">Kumasi, Ghana</p>
                 </div>
               </div>
             </div>
