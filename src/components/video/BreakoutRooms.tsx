@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { 
-  Plus, Users, ArrowRight, Shuffle, DoorOpen, 
-  DoorClosed, Clock, MessageSquare, Trash2 
+import {
+  Plus, Users, ArrowRight, Shuffle, DoorOpen,
+  DoorClosed, Clock, MessageSquare, Trash2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,19 +31,12 @@ interface BreakoutRoomsProps {
   onJoinRoom?: (roomId: string) => void;
 }
 
-const mockParticipants: Participant[] = [
-  { id: '1', name: 'Kwame Asante', avatar: 'KA' },
-  { id: '2', name: 'Ama Mensah', avatar: 'AM' },
-  { id: '3', name: 'Kofi Owusu', avatar: 'KO' },
-  { id: '4', name: 'Akua Boateng', avatar: 'AB' },
-  { id: '5', name: 'Yaw Darko', avatar: 'YD' },
-  { id: '6', name: 'Abena Sarpong', avatar: 'AS' },
-];
+const mockParticipants: Participant[] = [];
 
-export function BreakoutRooms({ 
-  isHost = true, 
+export function BreakoutRooms({
+  isHost = true,
   participants = mockParticipants,
-  onJoinRoom 
+  onJoinRoom
 }: BreakoutRoomsProps) {
   const [rooms, setRooms] = useState<BreakoutRoom[]>([]);
   const [unassigned, setUnassigned] = useState<Participant[]>(participants);
@@ -76,8 +69,8 @@ export function BreakoutRooms({
     if (!participant) return;
 
     setUnassigned(unassigned.filter(p => p.id !== participantId));
-    setRooms(rooms.map(r => 
-      r.id === roomId 
+    setRooms(rooms.map(r =>
+      r.id === roomId
         ? { ...r, participants: [...r.participants, participant] }
         : r
     ));
@@ -88,8 +81,8 @@ export function BreakoutRooms({
     const participant = room?.participants.find(p => p.id === participantId);
     if (!participant) return;
 
-    setRooms(rooms.map(r => 
-      r.id === roomId 
+    setRooms(rooms.map(r =>
+      r.id === roomId
         ? { ...r, participants: r.participants.filter(p => p.id !== participantId) }
         : r
     ));
@@ -98,10 +91,10 @@ export function BreakoutRooms({
 
   const autoAssign = () => {
     if (rooms.length === 0 || unassigned.length === 0) return;
-    
+
     const shuffled = [...unassigned].sort(() => Math.random() - 0.5);
     const updatedRooms = rooms.map(r => ({ ...r, participants: [...r.participants] }));
-    
+
     shuffled.forEach((participant, i) => {
       const roomIndex = i % updatedRooms.length;
       updatedRooms[roomIndex].participants.push(participant);
@@ -184,7 +177,7 @@ export function BreakoutRooms({
             <CardContent className="pt-0">
               <div className="flex flex-wrap gap-2">
                 {unassigned.map(p => (
-                  <div 
+                  <div
                     key={p.id}
                     className="flex items-center gap-2 p-2 bg-muted rounded-lg cursor-move"
                     draggable
@@ -221,7 +214,7 @@ export function BreakoutRooms({
         {/* Rooms */}
         <div className="space-y-3">
           {rooms.map(room => (
-            <Card 
+            <Card
               key={room.id}
               className={cn(
                 room.status === 'active' && "border-secondary",
@@ -265,12 +258,12 @@ export function BreakoutRooms({
                 ) : (
                   <div className="flex flex-wrap gap-2">
                     {room.participants.map(p => (
-                      <div 
+                      <div
                         key={p.id}
                         className={cn(
                           "flex items-center gap-2 p-2 rounded-lg",
-                          isHost && room.status !== 'active' 
-                            ? "bg-muted cursor-pointer hover:bg-muted/80" 
+                          isHost && room.status !== 'active'
+                            ? "bg-muted cursor-pointer hover:bg-muted/80"
                             : "bg-secondary/10"
                         )}
                         onClick={() => isHost && room.status !== 'active' && removeFromRoom(p.id, room.id)}

@@ -10,7 +10,27 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { mockRewards, mockLeaderboard } from "@/data/mockData";
+// Local types
+interface Reward {
+  id: string;
+  studentName: string;
+  name: string;
+  type: string;
+  reason: string;
+  awardedBy: string;
+  awardedAt: string;
+}
+
+interface Student {
+  id: string;
+  name: string;
+  avatar: string;
+  class: string;
+  xp: number;
+  level: number;
+  streak: number;
+  avgScore: number;
+}
 
 const rewardTypes = [
   { id: "badge", name: "Badge", icon: Award },
@@ -21,7 +41,7 @@ const rewardTypes = [
 
 export function AdminRewards() {
   const { toast } = useToast();
-  const [rewards, setRewards] = useState<typeof mockRewards>([]);
+  const [rewards, setRewards] = useState<Reward[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [newReward, setNewReward] = useState({ name: "", type: "badge", criteria: "", points: "100" });
 
@@ -150,7 +170,7 @@ export function AdminRewards() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {([] as typeof mockLeaderboard).map((student, index) => (
+                {([] as Student[]).map((student, index) => (
                   <TableRow key={student.id} className={index < 3 ? 'bg-accent/5' : ''}>
                     <TableCell>
                       <div className="flex items-center gap-2">

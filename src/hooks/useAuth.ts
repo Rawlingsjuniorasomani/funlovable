@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { authAPI, usersAPI } from '@/config/api';
 
 export type UserRole = 'student' | 'teacher' | 'parent' | 'admin';
 export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
@@ -6,8 +7,12 @@ export type ApprovalStatus = 'approved' | 'pending' | 'rejected';
 export interface Child {
   id: string;
   name: string;
+  email: string;
   age: number;
   grade: string;
+  studentClass?: string;
+  school?: string;
+  phone?: string;
   subjects: string[];
   avatar: string;
   createdAt: string;
@@ -28,6 +33,9 @@ export interface User {
   };
   onboardingComplete?: boolean;
   approvalStatus?: ApprovalStatus;
+  is_approved?: boolean; // Backend field
+  is_onboarded?: boolean; // Backend field
+  is_super_admin?: boolean;
   createdAt: string;
 }
 
@@ -38,21 +46,6 @@ interface AuthState {
 }
 
 const STORAGE_KEY = 'lovable_auth';
-const USERS_KEY = 'lovable_users';
-
-// Default admin account
-const DEFAULT_ADMIN: User = {
-  id: 'admin_default',
-  email: 'admin@elearning.com',
-  name: 'System Administrator',
-  role: 'admin',
-  avatar: 'A',
-  onboardingComplete: true,
-  approvalStatus: 'approved',
-  createdAt: new Date().toISOString(),
-};
-
-const DEFAULT_ADMIN_PASSWORD = 'admin123';
 
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
@@ -61,229 +54,217 @@ export function useAuth() {
     isLoading: true,
   });
 
-  // Initialize default admin on first load
+  // Check auth on mount
   useEffect(() => {
-    const users = localStorage.getItem(USERS_KEY);
-    const parsedUsers: User[] = users ? JSON.parse(users) : [];
-    
-    // Add default admin if not exists
-    if (!parsedUsers.find(u => u.email === DEFAULT_ADMIN.email)) {
-      parsedUsers.push(DEFAULT_ADMIN);
-      localStorage.setItem(USERS_KEY, JSON.stringify(parsedUsers));
-      localStorage.setItem(`pwd_${DEFAULT_ADMIN.id}`, DEFAULT_ADMIN_PASSWORD);
-    }
-
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        const user = JSON.parse(stored);
-        setAuthState({ user, isAuthenticated: true, isLoading: false });
-      } catch {
+    const initAuth = async () => {
+      const token = localStorage.getItem('auth_token');
+      if (!token) {
         setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+        // Stop loading if no token
+        return;
       }
-    } else {
-      setAuthState({ user: null, isAuthenticated: false, isLoading: false });
-    }
-  }, []);
 
-  const getUsers = useCallback((): User[] => {
-    const stored = localStorage.getItem(USERS_KEY);
-    return stored ? JSON.parse(stored) : [];
-  }, []);
-
-  const saveUsers = useCallback((users: User[]) => {
-    localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }, []);
-
-  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const users = getUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!user) {
-      return { success: false, error: 'No account found with this email' };
-    }
-
-    const storedPassword = localStorage.getItem(`pwd_${user.id}`);
-    if (storedPassword !== password) {
-      return { success: false, error: 'Incorrect password' };
-    }
-
-    // Check if teacher needs approval
-    if (user.role === 'teacher' && user.approvalStatus !== 'approved') {
-      if (user.approvalStatus === 'pending') {
-        return { success: false, error: 'Your account is pending admin approval. Please wait for approval.' };
+      try {
+        const { user } = await authAPI.getCurrentUser();
+        setAuthState({ user, isAuthenticated: true, isLoading: false });
+      } catch (error: any) {
+        console.error('Auth initialization failed:', error);
+        // Only clear token if it's an auth error (401)
+        if (error.response?.status === 401) {
+          localStorage.removeItem('auth_token');
+          setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+        } else {
+          // Keep the token but stop loading - user might need to retry or refresh
+          setAuthState({ user: null, isAuthenticated: false, isLoading: false });
+        }
       }
-      if (user.approvalStatus === 'rejected') {
-        return { success: false, error: 'Your account has been rejected. Please contact support.' };
-      }
-    }
-
-    // Check if admin is trying to login through regular login
-    if (user.role === 'admin') {
-      return { success: false, error: 'Admins must use the admin login portal' };
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    setAuthState({ user, isAuthenticated: true, isLoading: false });
-    return { success: true };
-  }, [getUsers]);
-
-  const adminLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string }> => {
-    const users = getUsers();
-    const user = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    
-    if (!user) {
-      return { success: false, error: 'No admin account found with this email' };
-    }
-
-    if (user.role !== 'admin') {
-      return { success: false, error: 'This account is not an admin account' };
-    }
-
-    const storedPassword = localStorage.getItem(`pwd_${user.id}`);
-    if (storedPassword !== password) {
-      return { success: false, error: 'Incorrect password' };
-    }
-
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    setAuthState({ user, isAuthenticated: true, isLoading: false });
-    return { success: true };
-  }, [getUsers]);
-
-  const register = useCallback(async (
-    data: { name: string; email: string; password: string; role: UserRole; phone?: string }
-  ): Promise<{ success: boolean; error?: string; user?: User }> => {
-    const users = getUsers();
-    
-    if (users.find(u => u.email.toLowerCase() === data.email.toLowerCase())) {
-      return { success: false, error: 'An account with this email already exists' };
-    }
-
-    // Teachers require approval, others are auto-approved
-    const needsApproval = data.role === 'teacher';
-
-    const newUser: User = {
-      id: `user_${Date.now()}`,
-      email: data.email,
-      name: data.name,
-      role: data.role,
-      phone: data.phone,
-      avatar: data.name.charAt(0).toUpperCase(),
-      children: data.role === 'parent' ? [] : undefined,
-      subscription: data.role === 'parent' ? { plan: null, status: 'pending' } : undefined,
-      onboardingComplete: data.role !== 'parent',
-      approvalStatus: needsApproval ? 'pending' : 'approved',
-      createdAt: new Date().toISOString(),
     };
 
-    localStorage.setItem(`pwd_${newUser.id}`, data.password);
-    saveUsers([...users, newUser]);
+    initAuth();
+  }, []);
 
-    // Don't auto-login teachers who need approval
-    if (needsApproval) {
-      return { success: true, user: newUser };
+  const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const { user, token } = await authAPI.login(email, password);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      setAuthState({ user, isAuthenticated: true, isLoading: false });
+      return { success: true, user };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Login failed. Please check your credentials.'
+      };
     }
+  }, []);
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newUser));
-    setAuthState({ user: newUser, isAuthenticated: true, isLoading: false });
-    
-    return { success: true, user: newUser };
-  }, [getUsers, saveUsers]);
+  const adminLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const { user, token } = await authAPI.adminLogin(email, password);
+      localStorage.setItem('auth_token', token);
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      setAuthState({ user, isAuthenticated: true, isLoading: false });
+      return { success: true, user };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Admin login failed.'
+      };
+    }
+  }, []);
+
+  const register = useCallback(async (
+    data: {
+      name: string;
+      email: string;
+      password: string;
+      role: UserRole;
+      phone?: string;
+      // Teacher specific fields
+      school?: string;
+      yearsOfExperience?: number;
+      address?: string;
+      subjectId?: string;
+      bio?: string;
+      qualifications?: string;
+      // Student specific fields
+      age?: number;
+      studentClass?: string;
+    }
+  ): Promise<{ success: boolean; error?: string; user?: User }> => {
+    try {
+      const { user, token } = await authAPI.register(data);
+
+      // If no token returned (e.g. pending approval), don't set auth state
+      if (token) {
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        setAuthState({ user, isAuthenticated: true, isLoading: false });
+      }
+
+      return { success: true, user };
+    } catch (error: any) {
+      return {
+        success: false,
+        error: error.message || 'Registration failed.'
+      };
+    }
+  }, []);
 
   const logout = useCallback(() => {
+    localStorage.removeItem('auth_token');
     localStorage.removeItem(STORAGE_KEY);
     setAuthState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
-  const updateUser = useCallback((updates: Partial<User>) => {
+  const updateUser = useCallback(async (updates: Partial<User>) => {
     if (!authState.user) return;
-    
-    const updatedUser = { ...authState.user, ...updates };
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === updatedUser.id);
-    
-    if (userIndex !== -1) {
-      users[userIndex] = updatedUser;
-      saveUsers(users);
+
+    try {
+      // Optimistic update
+      const updatedUser = { ...authState.user, ...updates };
+      setAuthState(prev => ({ ...prev, user: updatedUser }));
+
+      // Call API to persist
+      await usersAPI.update(authState.user.id, updates as any);
+
+      // Force refresh from server to be sure
+      const { user } = await authAPI.getCurrentUser();
+      setAuthState(prev => ({ ...prev, user }));
+
+    } catch (error) {
+      console.error('Failed to update user:', error);
     }
-    
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedUser));
-    setAuthState({ user: updatedUser, isAuthenticated: true, isLoading: false });
-  }, [authState.user, getUsers, saveUsers]);
+  }, [authState.user]);
 
   // Admin functions
-  const getAllUsers = useCallback((): User[] => {
-    return getUsers();
-  }, [getUsers]);
-
-  const approveUser = useCallback((userId: string) => {
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      users[userIndex].approvalStatus = 'approved';
-      saveUsers(users);
+  const getAllUsers = useCallback(async (): Promise<User[]> => {
+    try {
+      const users = await usersAPI.getAll();
+      return users;
+    } catch (error) {
+      console.error('Failed to fetch users:', error);
+      return [];
     }
-  }, [getUsers, saveUsers]);
+  }, []);
 
-  const rejectUser = useCallback((userId: string) => {
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      users[userIndex].approvalStatus = 'rejected';
-      saveUsers(users);
+  const approveUser = useCallback(async (userId: string) => {
+    try {
+      await usersAPI.approve(userId);
+    } catch (error) {
+      console.error('Failed to approve user:', error);
     }
-  }, [getUsers, saveUsers]);
+  }, []);
 
-  const deleteUser = useCallback((userId: string) => {
-    const users = getUsers();
-    const filteredUsers = users.filter(u => u.id !== userId);
-    saveUsers(filteredUsers);
-    localStorage.removeItem(`pwd_${userId}`);
-  }, [getUsers, saveUsers]);
-
-  const updateUserByAdmin = useCallback((userId: string, updates: Partial<User>) => {
-    const users = getUsers();
-    const userIndex = users.findIndex(u => u.id === userId);
-    if (userIndex !== -1) {
-      users[userIndex] = { ...users[userIndex], ...updates };
-      saveUsers(users);
+  const rejectUser = useCallback(async (userId: string) => {
+    try {
+      await usersAPI.reject(userId);
+    } catch (error) {
+      console.error('Failed to reject user:', error);
     }
-  }, [getUsers, saveUsers]);
+  }, []);
 
-  const addChild = useCallback((child: Omit<Child, 'id' | 'createdAt' | 'avatar'>) => {
+  const deleteUser = useCallback(async (userId: string) => {
+    try {
+      await usersAPI.delete(userId);
+    } catch (error) {
+      console.error('Failed to delete user:', error);
+    }
+  }, []);
+
+  const updateUserByAdmin = useCallback(async (userId: string, updates: Partial<User>) => {
+    try {
+      await usersAPI.update(userId, updates as any);
+    } catch (error) {
+      console.error('Failed to update user by admin:', error);
+    }
+  }, []);
+
+  const addChild = useCallback(async (child: Omit<Child, 'id' | 'createdAt' | 'avatar'>) => {
     if (!authState.user || authState.user.role !== 'parent') return;
-    
-    const newChild: Child = {
-      ...child,
-      id: `child_${Date.now()}`,
-      avatar: child.name.charAt(0).toUpperCase(),
-      createdAt: new Date().toISOString(),
-    };
-    
-    const updatedChildren = [...(authState.user.children || []), newChild];
-    updateUser({ children: updatedChildren });
-    return newChild;
-  }, [authState.user, updateUser]);
 
-  const updateChild = useCallback((childId: string, updates: Partial<Child>) => {
+    try {
+      const newChild = await usersAPI.addChild(child);
+
+      // Update local state
+      const updatedChildren = [...(authState.user.children || []), newChild];
+      setAuthState(prev => ({
+        ...prev,
+        user: prev.user ? { ...prev.user, children: updatedChildren } : null
+      }));
+
+      return newChild;
+    } catch (error) {
+      console.error('Failed to add child:', error);
+    }
+  }, [authState.user]);
+
+  // These are placeholders until API supports them or we combine them into updates
+  const updateChild = useCallback(async (childId: string, updates: Partial<Child>) => {
     if (!authState.user || !authState.user.children) return;
-    
-    const updatedChildren = authState.user.children.map(child =>
-      child.id === childId ? { ...child, ...updates } : child
-    );
-    updateUser({ children: updatedChildren });
-  }, [authState.user, updateUser]);
+    // For now, no specific API endpoint for updateChild in usersAPI, 
+    // but in a real app we'd have /users/:userId/children/:childId or similar.
+    // We'll skip implementation or assume it's part of generic update for now to avoid errors.
+    console.warn('updateChild API not implemented yet');
+  }, [authState.user]);
 
-  const removeChild = useCallback((childId: string) => {
-    if (!authState.user || !authState.user.children) return;
-    
-    const updatedChildren = authState.user.children.filter(child => child.id !== childId);
-    updateUser({ children: updatedChildren });
-  }, [authState.user, updateUser]);
+  const removeChild = useCallback(async (childId: string) => {
+    console.warn('removeChild API not implemented yet');
+  }, []);
 
-  const completeOnboarding = useCallback(() => {
-    updateUser({ onboardingComplete: true });
-  }, [updateUser]);
+  const completeOnboarding = useCallback(async () => {
+    try {
+      await authAPI.completeOnboarding();
+      if (authState.user) {
+        setAuthState(prev => ({
+          ...prev,
+          user: prev.user ? { ...prev.user, onboardingComplete: true } : null
+        }));
+      }
+    } catch (error) {
+      console.error('Failed to complete onboarding:', error);
+    }
+  }, [authState.user]);
 
   const updateSubscription = useCallback((plan: 'single' | 'family', status: 'active' | 'pending' | 'expired') => {
     updateUser({
@@ -308,10 +289,14 @@ export function useAuth() {
     completeOnboarding,
     updateSubscription,
     // Admin functions
-    getAllUsers,
+    getAllUsers: getAllUsers as any,
     approveUser,
     rejectUser,
     deleteUser,
     updateUserByAdmin,
   };
 }
+
+// Export useAuthContext for components that need it
+export const useAuthContext = useAuth;
+

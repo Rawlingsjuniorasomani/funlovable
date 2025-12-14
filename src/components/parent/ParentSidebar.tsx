@@ -41,7 +41,7 @@ const communicationItems = [
 ];
 
 const accountItems = [
-  { title: "Payments", url: "/parent/payments", icon: CreditCard },
+  { title: "Subscription", url: "/parent/subscription", icon: CreditCard },
   { title: "Settings", url: "/parent/settings", icon: Settings },
 ];
 

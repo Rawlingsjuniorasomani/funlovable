@@ -8,58 +8,73 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useParentData } from "@/data/parentDataStore";
+// useParentData removed
 
 export function ChildrenManagement() {
   const { toast } = useToast();
-  const { user } = useAuthContext();
-  const { getParentChildren, linkChild, unlinkChild } = useParentData();
+  const { user, addChild, removeChild } = useAuthContext(); // Use addChild/removeChild from context
+  const [isLoading, setIsLoading] = useState(false);
 
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const children = user ? getParentChildren(user.id) : [];
+  // Use children from user context if available, otherwise fallback (or empty)
+  // The 'user' from useAuthContext should have children now if populated
+  const children = user?.children || [];
 
   // Form State
   const [newChild, setNewChild] = useState({
     name: "",
     email: "",
     grade: "",
-    class: ""
+    class: "",
+    school: "",
+    age: "",
+    phone: ""
   });
 
-  const handleAddChild = () => {
-    if (!newChild.name || !newChild.grade) {
-      toast({
-        title: "Missing Information",
-        description: "Please provide at least a name and grade.",
-        variant: "destructive"
-      });
+  const handleAddChild = async () => {
+    if (!newChild.name && !newChild.phone) {
+      // Allow just phone if linking? User request: "Student Name, Phone or ID, School, Age, Class"
+      // I'll require name and phone at least for new child, or appropriate logic.
+      // For linking, backend checks phone.
+      // Let's require Name at minimum.
+    }
+
+    if (!newChild.name) {
+      toast({ title: "Validation Error", description: "Name is required", variant: "destructive" });
       return;
     }
 
-    if (user) {
-      linkChild({
-        parentId: user.id,
-        childId: `c_${Date.now()}`, // Simulated Child ID
-        childName: newChild.name,
-        childEmail: newChild.email || `${newChild.name.toLowerCase().replace(/\s/g, '')}@student.com`,
-        role: 'student',
-        grade: newChild.grade,
-        class: newChild.class || 'A'
+    setIsLoading(true);
+    try {
+      const result = await addChild({
+        name: newChild.name,
+        email: "", // Backend will generate if empty
+        grade: newChild.grade || 'Primary 1',
+        studentClass: newChild.class,
+        school: newChild.school,
+        age: newChild.age ? Number(newChild.age) : 0,
+        phone: newChild.phone,
+        subjects: [],
       });
 
-      toast({
-        title: "Child Added",
-        description: `${newChild.name} has been added to your account.`
-      });
-
-      setIsAddOpen(false);
-      setNewChild({ name: "", email: "", grade: "", class: "" });
+      if (result) {
+        toast({ title: "Success", description: "Child added successfully!" });
+        setIsAddOpen(false);
+        setNewChild({ name: "", email: "", grade: "", class: "", school: "", age: "", phone: "" });
+      } else {
+        toast({ title: "Error", description: "Failed to add child. Check phone number if linking.", variant: "destructive" });
+      }
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = async (id: string, name: string) => {
     if (confirm(`Are you sure you want to remove ${name}?`)) {
-      unlinkChild(id);
+      await removeChild(id);
       toast({
         title: "Child Removed",
         description: `${name} has been removed.`
@@ -86,7 +101,7 @@ export function ChildrenManagement() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Student Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <Input
@@ -99,7 +114,44 @@ export function ChildrenManagement() {
                 </div>
               </div>
 
+              <div className="space-y-2">
+                <Label htmlFor="phone">Student Phone or ID (to link existing)</Label>
+                <div className="relative">
+                  <Input
+                    id="phone"
+                    placeholder="Enter phone number if child already registered"
+                    value={newChild.phone}
+                    onChange={(e) => setNewChild({ ...newChild, phone: e.target.value })}
+                  />
+                </div>
+                <p className="text-[10px] text-muted-foreground">If valid phone provided, we will link the existing account.</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="school">School</Label>
+                <div className="relative">
+                  <School className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="school"
+                    placeholder="School Name"
+                    className="pl-9"
+                    value={newChild.school}
+                    onChange={(e) => setNewChild({ ...newChild, school: e.target.value })}
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    placeholder="Age"
+                    value={newChild.age}
+                    onChange={(e) => setNewChild({ ...newChild, age: e.target.value })}
+                  />
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="grade">Grade/Level</Label>
                   <Select
@@ -107,7 +159,7 @@ export function ChildrenManagement() {
                     onValueChange={(val) => setNewChild({ ...newChild, grade: val })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select Grade" />
+                      <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Primary 1">Primary 1</SelectItem>
@@ -132,24 +184,11 @@ export function ChildrenManagement() {
                   />
                 </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="email">Email (Optional)</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="student@school.com"
-                    className="pl-9"
-                    value={newChild.email}
-                    onChange={(e) => setNewChild({ ...newChild, email: e.target.value })}
-                  />
-                </div>
-              </div>
             </div>
             <DialogFooter>
-              <Button onClick={handleAddChild}>Add Child</Button>
+              <Button onClick={handleAddChild} disabled={isLoading}>
+                {isLoading ? "Adding..." : "Add Child"}
+              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
@@ -175,7 +214,7 @@ export function ChildrenManagement() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xl">
-                    {child.childName.charAt(0)}
+                    {child.name.charAt(0)}
                   </div>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:text-primary">
@@ -185,25 +224,32 @@ export function ChildrenManagement() {
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                      onClick={() => handleDelete(child.id, child.childName)}
+                      onClick={() => handleDelete(child.id, child.name)}
                     >
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   </div>
                 </div>
 
-                <h3 className="font-bold text-lg mb-1">{child.childName}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{child.childEmail}</p>
+                <h3 className="font-bold text-lg mb-1">{child.name}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{child.email}</p>
 
-                <div className="flex items-center gap-4 text-sm">
+                <div className="flex items-center gap-4 text-sm mb-4">
                   <div className="flex items-center gap-1.5 bg-secondary/10 text-secondary px-2.5 py-1 rounded-md">
                     <School className="w-3.5 h-3.5" />
                     <span className="font-medium">{child.grade}</span>
                   </div>
                   <div className="text-muted-foreground">
-                    Class {child.class}
+                    Class {child.studentClass || 'A'}
                   </div>
                 </div>
+
+                <Button variant="outline" className="w-full" onClick={() => {
+                  sessionStorage.setItem('viewAsChildId', child.id);
+                  window.location.href = '/student';
+                }}>
+                  View Dashboard
+                </Button>
               </CardContent>
             </Card>
           ))}

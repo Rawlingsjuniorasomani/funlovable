@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Eye, Search, Filter, Clock, CheckCircle, XCircle, BarChart2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,11 +22,14 @@ import {
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { quizzesAPI, subjectsAPI, modulesAPI } from "@/config/api";
+import { useToast } from "@/hooks/use-toast";
 
 interface Quiz {
   id: string;
   title: string;
   subject: string;
+  subjectId?: string;
   module: string;
   questions: number;
   duration: number;
@@ -37,34 +40,134 @@ interface Quiz {
   createdAt: string;
 }
 
-const mockQuizzes: Quiz[] = [
-  { id: "1", title: "Fractions & Decimals", subject: "Mathematics", module: "Numbers", questions: 10, duration: 15, type: "mixed", status: "published", attempts: 45, avgScore: 78, createdAt: "Dec 10, 2024" },
-  { id: "2", title: "Parts of Speech", subject: "English", module: "Grammar", questions: 15, duration: 20, type: "multiple-choice", status: "published", attempts: 38, avgScore: 82, createdAt: "Dec 9, 2024" },
-  { id: "3", title: "Solar System", subject: "Science", module: "Space", questions: 12, duration: 18, type: "matching", status: "published", attempts: 42, avgScore: 75, createdAt: "Dec 8, 2024" },
-  { id: "4", title: "Basic French Verbs", subject: "French", module: "Verbs", questions: 10, duration: 15, type: "fill-blank", status: "draft", attempts: 0, avgScore: 0, createdAt: "Dec 7, 2024" },
-  { id: "5", title: "Ghana Independence", subject: "Social Studies", module: "History", questions: 8, duration: 12, type: "multiple-choice", status: "archived", attempts: 52, avgScore: 88, createdAt: "Nov 28, 2024" },
-];
-
-const typeColors: Record<Quiz["type"], string> = {
+const typeColors: Record<string, string> = {
   "multiple-choice": "bg-primary/10 text-primary",
   "fill-blank": "bg-secondary/10 text-secondary",
   "matching": "bg-tertiary/10 text-tertiary",
   "mixed": "bg-quaternary/10 text-quaternary",
 };
 
-const statusColors: Record<Quiz["status"], string> = {
+const statusColors: Record<string, string> = {
   draft: "bg-muted text-muted-foreground",
   published: "bg-secondary/10 text-secondary",
   archived: "bg-destructive/10 text-destructive",
 };
 
 export function TeacherQuizzes() {
+  const { toast } = useToast();
+  const [quizzes, setQuizzes] = useState<Quiz[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterSubject, setFilterSubject] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [formData, setFormData] = useState({
+    title: "",
+    subjectId: "",
+    moduleId: "",
+    type: "multiple-choice",
+    duration: "",
+    questions: "",
+    description: ""
+  });
 
-  const filteredQuizzes = mockQuizzes.filter(quiz => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  useEffect(() => {
+    if (formData.subjectId) {
+      loadModules(formData.subjectId);
+    } else {
+      setModules([]);
+    }
+  }, [formData.subjectId]);
+
+  const loadModules = async (subjectId: string) => {
+    try {
+      const data = await modulesAPI.getAll(subjectId);
+      setModules(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load modules:", error);
+      toast({ title: "Error", description: "Failed to load modules", variant: "destructive" });
+    }
+  };
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [quizzesData, subjectsData] = await Promise.all([
+        quizzesAPI.getAll(),
+        subjectsAPI.getTeacher()
+      ]);
+
+      const loadedSubjects = Array.isArray(subjectsData) ? subjectsData : [];
+      setSubjects(loadedSubjects);
+
+      setQuizzes((Array.isArray(quizzesData) ? quizzesData : []).map((q: any) => ({
+        id: q.id,
+        title: q.title,
+        subject: loadedSubjects.find((s: any) => s.id === (q.subject_id || q.subjectId))?.name || "Unknown",
+        subjectId: q.subject_id || q.subjectId,
+        module: "General", // Placeholder as API might not return module name directly yet
+        questions: q.total_questions || q.questions || 10,
+        duration: q.duration_minutes || q.duration || 15,
+        type: q.type || "multiple-choice",
+        status: q.is_active ? "published" : "draft",
+        attempts: q.attempts_count || 0,
+        avgScore: q.avg_score || 0,
+        createdAt: new Date(q.created_at || Date.now()).toLocaleDateString()
+      })));
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast({ title: "Error loading data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!formData.title || !formData.subjectId || !formData.moduleId) {
+      toast({ title: "Missing fields", description: "Please fill in all required fields", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await quizzesAPI.create({
+        title: formData.title,
+        module_id: formData.moduleId,
+        quiz_type: formData.type,
+        duration_minutes: parseInt(formData.duration) || 15,
+        total_questions: parseInt(formData.questions) || 10,
+        description: formData.description,
+        is_active: false // Draft by default
+      } as any);
+
+      await loadData();
+      setIsCreateOpen(false);
+      setFormData({ title: "", subjectId: "", moduleId: "", type: "multiple-choice", duration: "", questions: "", description: "" });
+      toast({ title: "Quiz created", description: "New quiz has been added successfully." });
+    } catch (error) {
+      console.error('Failed to create quiz:', error);
+      toast({ title: "Failed to create quiz", variant: "destructive" });
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this quiz?")) return;
+    try {
+      await quizzesAPI.delete(id);
+      await loadData();
+      toast({ title: "Quiz deleted", description: "Quiz has been removed." });
+    } catch (error) {
+      console.error('Failed to delete quiz:', error);
+      toast({ title: "Failed to delete quiz", variant: "destructive" });
+    }
+  };
+
+  const filteredQuizzes = quizzes.filter(quiz => {
     const matchesSearch = quiz.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       quiz.subject.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesSubject = filterSubject === "all" || quiz.subject === filterSubject;
@@ -72,7 +175,7 @@ export function TeacherQuizzes() {
     return matchesSearch && matchesSubject && matchesStatus;
   });
 
-  const subjects = [...new Set(mockQuizzes.map(q => q.subject))];
+  const uniqueSubjects = [...new Set(quizzes.map(q => q.subject))];
 
   return (
     <div className="space-y-6">
@@ -97,25 +200,54 @@ export function TeacherQuizzes() {
             <div className="grid gap-4 py-4">
               <div className="grid gap-2">
                 <Label>Quiz Title</Label>
-                <Input placeholder="e.g., Chapter 5 Review Quiz" />
+                <Input
+                  value={formData.title}
+                  onChange={e => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="e.g., Chapter 5 Review Quiz"
+                />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Subject</Label>
-                  <Select>
+                  <Select
+                    value={formData.subjectId}
+                    onValueChange={val => setFormData({ ...formData, subjectId: val, moduleId: "" })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select subject" />
                     </SelectTrigger>
                     <SelectContent>
                       {subjects.map(s => (
-                        <SelectItem key={s} value={s}>{s}</SelectItem>
+                        <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-2">
+                  <Label>Module</Label>
+                  <Select
+                    value={formData.moduleId}
+                    onValueChange={val => setFormData({ ...formData, moduleId: val })}
+                    disabled={!formData.subjectId}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select module" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {modules.map(m => (
+                        <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="grid gap-2">
                   <Label>Quiz Type</Label>
-                  <Select>
+                  <Select
+                    value={formData.type}
+                    onValueChange={val => setFormData({ ...formData, type: val })}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder="Select type" />
                     </SelectTrigger>
@@ -127,25 +259,28 @@ export function TeacherQuizzes() {
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Duration (minutes)</Label>
-                  <Input type="number" placeholder="15" />
-                </div>
-                <div className="grid gap-2">
-                  <Label>Number of Questions</Label>
-                  <Input type="number" placeholder="10" />
+                  <Input
+                    type="number"
+                    value={formData.duration}
+                    onChange={e => setFormData({ ...formData, duration: e.target.value })}
+                    placeholder="15"
+                  />
                 </div>
               </div>
               <div className="grid gap-2">
                 <Label>Description (Optional)</Label>
-                <Textarea placeholder="Brief description of the quiz..." />
+                <Textarea
+                  value={formData.description}
+                  onChange={e => setFormData({ ...formData, description: e.target.value })}
+                  placeholder="Brief description of the quiz..."
+                />
               </div>
             </div>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsCreateOpen(false)}>Cancel</Button>
-              <Button onClick={() => setIsCreateOpen(false)}>Create Quiz</Button>
+              <Button onClick={handleCreate}>Create Quiz</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -155,20 +290,21 @@ export function TeacherQuizzes() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Total Quizzes</p>
-          <p className="text-2xl font-bold text-foreground">{mockQuizzes.length}</p>
+          <p className="text-2xl font-bold text-foreground">{quizzes.length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Published</p>
-          <p className="text-2xl font-bold text-secondary">{mockQuizzes.filter(q => q.status === "published").length}</p>
+          <p className="text-2xl font-bold text-secondary">{quizzes.filter(q => q.status === "published").length}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Total Attempts</p>
-          <p className="text-2xl font-bold text-primary">{mockQuizzes.reduce((acc, q) => acc + q.attempts, 0)}</p>
+          <p className="text-2xl font-bold text-primary">{quizzes.reduce((acc, q) => acc + q.attempts, 0)}</p>
         </div>
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Avg Score</p>
           <p className="text-2xl font-bold text-tertiary">
-            {Math.round(mockQuizzes.filter(q => q.attempts > 0).reduce((acc, q) => acc + q.avgScore, 0) / mockQuizzes.filter(q => q.attempts > 0).length)}%
+            {quizzes.length > 0 && quizzes.some(q => q.attempts > 0) ?
+              Math.round(quizzes.filter(q => q.attempts > 0).reduce((acc, q) => acc + q.avgScore, 0) / quizzes.filter(q => q.attempts > 0).length) : 0}%
           </p>
         </div>
       </div>
@@ -190,7 +326,7 @@ export function TeacherQuizzes() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
-            {subjects.map(s => (
+            {uniqueSubjects.map(s => (
               <SelectItem key={s} value={s}>{s}</SelectItem>
             ))}
           </SelectContent>
@@ -210,7 +346,11 @@ export function TeacherQuizzes() {
 
       {/* Quiz List */}
       <div className="grid gap-4">
-        {filteredQuizzes.map((quiz, index) => (
+        {filteredQuizzes.length === 0 ? (
+          <div className="text-center py-10 bg-card/50 rounded-xl border border-dashed">
+            <p className="text-muted-foreground">No quizzes found.</p>
+          </div>
+        ) : filteredQuizzes.map((quiz, index) => (
           <div
             key={quiz.id}
             className="bg-card rounded-xl border border-border p-6 hover:shadow-md transition-all animate-fade-in"
@@ -234,7 +374,7 @@ export function TeacherQuizzes() {
                     {quiz.questions} questions
                   </span>
                 </div>
-                
+
                 {quiz.status === "published" && (
                   <div className="flex items-center gap-6 text-sm">
                     <div className="flex items-center gap-2">
@@ -246,7 +386,7 @@ export function TeacherQuizzes() {
                       <span className={cn(
                         "font-medium",
                         quiz.avgScore >= 80 ? "text-secondary" :
-                        quiz.avgScore >= 60 ? "text-primary" : "text-destructive"
+                          quiz.avgScore >= 60 ? "text-primary" : "text-destructive"
                       )}>
                         {quiz.avgScore}%
                       </span>
@@ -268,7 +408,13 @@ export function TeacherQuizzes() {
                 <Button variant="ghost" size="icon" title="Edit">
                   <Edit className="w-4 h-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="text-destructive" title="Delete">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="text-destructive"
+                  title="Delete"
+                  onClick={() => handleDelete(quiz.id)}
+                >
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>

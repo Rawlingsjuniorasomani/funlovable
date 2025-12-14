@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layers, Plus, Edit, Trash2, MoreVertical, BookOpen, Clock, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,36 +10,78 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { mockSubjects, mockModules, Module } from "@/data/mockData";
+
+import { subjectsAPI, modulesAPI } from "@/config/api";
 
 export function AdminModules() {
   const { toast } = useToast();
-  const [modules, setModules] = useState<Module[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [subjectFilter, setSubjectFilter] = useState("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [formData, setFormData] = useState({ title: "", description: "", subjectId: "", duration: "" });
 
-  const handleAdd = () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [subjectsData, modulesData] = await Promise.all([
+        subjectsAPI.getAll(),
+        modulesAPI.getAll()
+      ]);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+      // Map modules to ensure camelCase properties if backend returns snake_case
+      const mappedModules = (Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
+        ...m,
+        subjectId: m.subject_id || m.subjectId,
+        lessonCount: m.lesson_count || m.lessonCount || 0,
+        duration: m.duration_minutes ? `${m.duration_minutes} mins` : (m.duration || "N/A"),
+      }));
+      setModules(mappedModules);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast({ title: "Error loading data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async () => {
     if (!formData.title || !formData.subjectId) {
       toast({ title: "Missing Fields", variant: "destructive" });
       return;
     }
-    const newModule: Module = {
-      id: `m${Date.now()}`,
-      ...formData,
-      order: modules.filter(m => m.subjectId === formData.subjectId).length + 1,
-      lessonCount: 0,
-    };
-    setModules([...modules, newModule]);
-    setIsAddOpen(false);
-    setFormData({ title: "", description: "", subjectId: "", duration: "" });
-    toast({ title: "Module Created" });
+
+    try {
+      await modulesAPI.create({
+        title: formData.title,
+        description: formData.description,
+        subject_id: formData.subjectId,
+      });
+      await loadData();
+      setIsAddOpen(false);
+      setFormData({ title: "", description: "", subjectId: "", duration: "" });
+      toast({ title: "Module Created" });
+    } catch (error) {
+      console.error('Failed to create module:', error);
+      toast({ title: "Failed to create module", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setModules(modules.filter(m => m.id !== id));
-    toast({ title: "Module Deleted", variant: "destructive" });
+  const handleDelete = async (id: string) => {
+    try {
+      await modulesAPI.delete(id);
+      await loadData();
+      toast({ title: "Module Deleted", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete module:', error);
+      toast({ title: "Failed to delete module", variant: "destructive" });
+    }
   };
 
   const filtered = modules.filter(m => {
@@ -67,7 +109,7 @@ export function AdminModules() {
                 <Select value={formData.subjectId} onValueChange={v => setFormData({ ...formData, subjectId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    {mockSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
+                    {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -78,10 +120,6 @@ export function AdminModules() {
               <div className="space-y-2">
                 <Label>Description</Label>
                 <Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <Input value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="e.g., 2 hours" />
               </div>
             </div>
             <DialogFooter>
@@ -98,7 +136,7 @@ export function AdminModules() {
           <SelectTrigger className="w-48"><SelectValue placeholder="Filter by subject" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Subjects</SelectItem>
-            {mockSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+            {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
@@ -123,7 +161,7 @@ export function AdminModules() {
             </TableHeader>
             <TableBody>
               {filtered.map(module => {
-                const subject = mockSubjects.find(s => s.id === module.subjectId);
+                const subject = subjects.find(s => s.id === module.subjectId);
                 return (
                   <TableRow key={module.id}>
                     <TableCell>

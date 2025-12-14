@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Video, Plus, Calendar, Users, Clock, Play, CheckCircle, MoreVertical, Edit, Trash2, UserCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,13 +10,26 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { mockSubjects, mockLiveClasses, LiveClass } from "@/data/mockData";
+import { subjectsAPI } from "@/config/api";
+
+interface LiveClass {
+  id: string;
+  title: string;
+  subjectId: string;
+  teacherId?: string; // Optional if not assigned
+  scheduledAt: string;
+  duration: number;
+  status: "scheduled" | "live" | "completed" | "cancelled";
+  attendees: number;
+  totalStudents: number;
+}
 import { useAuthContext } from "@/contexts/AuthContext";
 
 export function AdminLiveClasses() {
   const { toast } = useToast();
   const { getAllUsers } = useAuthContext();
   const [classes, setClasses] = useState<LiveClass[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -24,7 +37,22 @@ export function AdminLiveClasses() {
     title: "", subjectId: "", teacherId: "", scheduledAt: "", duration: "45"
   });
 
-  const teachers = getAllUsers().filter(u => u.role === 'teacher' && u.approvalStatus === 'approved');
+  useEffect(() => {
+    const fetchSubjects = async () => {
+      try {
+        const data = await subjectsAPI.getAll();
+        setSubjects(Array.isArray(data) ? data : []);
+      } catch (error) {
+        console.error("Failed to fetch subjects", error);
+        toast({ title: "Error", description: "Failed to load subjects", variant: "destructive" });
+      }
+    };
+    fetchSubjects();
+  }, []);
+
+  const allUsers = getAllUsers();
+  const userArray = Array.isArray(allUsers) ? allUsers : [];
+  const teachers = userArray.filter(u => u.role === 'teacher' && u.approvalStatus === 'approved');
 
   const handleAdd = () => {
     if (!formData.title || !formData.subjectId || !formData.scheduledAt) {
@@ -98,7 +126,7 @@ export function AdminLiveClasses() {
                 <Select value={formData.subjectId} onValueChange={v => setFormData({ ...formData, subjectId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    {mockSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
+                    {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -209,7 +237,7 @@ export function AdminLiveClasses() {
             </TableHeader>
             <TableBody>
               {filtered.map(liveClass => {
-                const subject = mockSubjects.find(s => s.id === liveClass.subjectId);
+                const subject = subjects.find(s => s.id === liveClass.subjectId);
                 return (
                   <TableRow key={liveClass.id} className={liveClass.status === 'live' ? 'bg-destructive/5' : ''}>
                     <TableCell className="font-medium">{liveClass.title}</TableCell>

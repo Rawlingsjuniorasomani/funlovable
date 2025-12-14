@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { FileText, Plus, Edit, Trash2, MoreVertical, Video, BookOpen, Play } from "lucide-react";
+import { useState, useEffect } from "react";
+import { BookOpen, Plus, Edit, Trash2, MoreVertical, PlayCircle, FileText, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,42 +10,88 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { mockSubjects, mockModules, mockLessons, Lesson } from "@/data/mockData";
+
+import { subjectsAPI, modulesAPI, lessonsAPI } from "@/config/api";
 
 export function AdminLessons() {
   const { toast } = useToast();
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
-  const [formData, setFormData] = useState({ title: "", description: "", moduleId: "", type: "video" as const, duration: "" });
+  const [formData, setFormData] = useState({
+    title: "",
+    content: "",
+    moduleId: "",
+    videoUrl: "",
+    duration: ""
+  });
 
-  const handleAdd = () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [subjectsData, modulesData, lessonsData] = await Promise.all([
+        subjectsAPI.getAll(),
+        modulesAPI.getAll(),
+        lessonsAPI.getAll()
+      ]);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+      setModules(Array.isArray(modulesData) ? modulesData : []);
+
+      const mappedLessons = (Array.isArray(lessonsData) ? lessonsData : []).map((l: any) => ({
+        ...l,
+        moduleId: l.module_id || l.moduleId,
+        videoUrl: l.video_url || l.videoUrl,
+        duration: l.duration_minutes ? `${l.duration_minutes} mins` : (l.duration || "N/A"),
+      }));
+      setLessons(mappedLessons);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast({ title: "Error loading data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async () => {
     if (!formData.title || !formData.moduleId) {
       toast({ title: "Missing Fields", variant: "destructive" });
       return;
     }
-    const newLesson: Lesson = {
-      id: `l${Date.now()}`,
-      ...formData,
-      order: lessons.filter(l => l.moduleId === formData.moduleId).length + 1,
-    };
-    setLessons([...lessons, newLesson]);
-    setIsAddOpen(false);
-    setFormData({ title: "", description: "", moduleId: "", type: "video", duration: "" });
-    toast({ title: "Lesson Created" });
+
+    try {
+      await lessonsAPI.create({
+        module_id: formData.moduleId,
+        title: formData.title,
+        content: formData.content,
+        video_url: formData.videoUrl,
+        duration_minutes: parseInt(formData.duration) || 30,
+      });
+      await loadData();
+      setIsAddOpen(false);
+      setFormData({ title: "", content: "", moduleId: "", videoUrl: "", duration: "" });
+      toast({ title: "Lesson Created" });
+    } catch (error) {
+      console.error('Failed to create lesson:', error);
+      toast({ title: "Failed to create lesson", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setLessons(lessons.filter(l => l.id !== id));
-    toast({ title: "Lesson Deleted", variant: "destructive" });
-  };
-
-  const getTypeIcon = (type: string) => {
-    switch (type) {
-      case 'video': return <Video className="w-4 h-4 text-primary" />;
-      case 'interactive': return <Play className="w-4 h-4 text-secondary" />;
-      default: return <BookOpen className="w-4 h-4 text-tertiary" />;
+  const handleDelete = async (id: string) => {
+    try {
+      await lessonsAPI.delete(id);
+      await loadData();
+      toast({ title: "Lesson Deleted", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete lesson:', error);
+      toast({ title: "Failed to delete lesson", variant: "destructive" });
     }
   };
 
@@ -60,46 +106,41 @@ export function AdminLessons() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-display font-bold">Lessons Management</h1>
-          <p className="text-muted-foreground">Create and manage lesson content</p>
+          <p className="text-muted-foreground">Create and manage individual lessons</p>
         </div>
         <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
           <DialogTrigger asChild>
             <Button><Plus className="w-4 h-4 mr-2" /> Add Lesson</Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-2xl">
             <DialogHeader><DialogTitle>Create New Lesson</DialogTitle></DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Module *</Label>
-                <Select value={formData.moduleId} onValueChange={v => setFormData({ ...formData, moduleId: v })}>
-                  <SelectTrigger><SelectValue placeholder="Select module" /></SelectTrigger>
-                  <SelectContent>
-                    {mockModules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
-                  </SelectContent>
-                </Select>
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Module *</Label>
+                  <Select value={formData.moduleId} onValueChange={v => setFormData({ ...formData, moduleId: v })}>
+                    <SelectTrigger><SelectValue placeholder="Select module" /></SelectTrigger>
+                    <SelectContent>
+                      {modules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Duration (mins)</Label>
+                  <Input type="number" value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="e.g., 45" />
+                </div>
               </div>
               <div className="space-y-2">
                 <Label>Title *</Label>
                 <Input value={formData.title} onChange={e => setFormData({ ...formData, title: e.target.value })} />
               </div>
               <div className="space-y-2">
-                <Label>Type</Label>
-                <Select value={formData.type} onValueChange={v => setFormData({ ...formData, type: v as any })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="video">Video</SelectItem>
-                    <SelectItem value="text">Text</SelectItem>
-                    <SelectItem value="interactive">Interactive</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Label>Video URL</Label>
+                <Input value={formData.videoUrl} onChange={e => setFormData({ ...formData, videoUrl: e.target.value })} placeholder="https://..." />
               </div>
               <div className="space-y-2">
-                <Label>Description</Label>
-                <Textarea value={formData.description} onChange={e => setFormData({ ...formData, description: e.target.value })} />
-              </div>
-              <div className="space-y-2">
-                <Label>Duration</Label>
-                <Input value={formData.duration} onChange={e => setFormData({ ...formData, duration: e.target.value })} placeholder="e.g., 15 min" />
+                <Label>Content</Label>
+                <Textarea value={formData.content} onChange={e => setFormData({ ...formData, content: e.target.value })} className="h-32" />
               </div>
             </div>
             <DialogFooter>
@@ -113,17 +154,17 @@ export function AdminLessons() {
       <div className="flex gap-4">
         <Input placeholder="Search lessons..." value={search} onChange={e => setSearch(e.target.value)} className="max-w-sm" />
         <Select value={moduleFilter} onValueChange={setModuleFilter}>
-          <SelectTrigger className="w-56"><SelectValue placeholder="Filter by module" /></SelectTrigger>
+          <SelectTrigger className="w-48"><SelectValue placeholder="Filter by module" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Modules</SelectItem>
-            {mockModules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
+            {modules.map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
           </SelectContent>
         </Select>
       </div>
 
       {filtered.length === 0 ? (
         <div className="bg-card rounded-xl border p-12 text-center">
-          <FileText className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
+          <BookOpen className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
           <h3 className="font-semibold mb-2">No Lessons Found</h3>
           <Button onClick={() => setIsAddOpen(true)}><Plus className="w-4 h-4 mr-2" /> Create First Lesson</Button>
         </div>
@@ -141,17 +182,23 @@ export function AdminLessons() {
             </TableHeader>
             <TableBody>
               {filtered.map(lesson => {
-                const module = mockModules.find(m => m.id === lesson.moduleId);
+                const module = modules.find(m => m.id === lesson.moduleId);
                 return (
                   <TableRow key={lesson.id}>
                     <TableCell>
                       <div>
                         <p className="font-medium">{lesson.title}</p>
-                        <p className="text-xs text-muted-foreground">{lesson.description}</p>
+                        <p className="text-xs text-muted-foreground truncate max-w-[200px]">{lesson.content}</p>
                       </div>
                     </TableCell>
                     <TableCell><Badge variant="outline">{module?.title}</Badge></TableCell>
-                    <TableCell><div className="flex items-center gap-2">{getTypeIcon(lesson.type)} {lesson.type}</div></TableCell>
+                    <TableCell>
+                      {lesson.videoUrl ? (
+                        <Badge variant="secondary"><PlayCircle className="w-3 h-3 mr-1" /> Video</Badge>
+                      ) : (
+                        <Badge variant="outline"><FileText className="w-3 h-3 mr-1" /> Text</Badge>
+                      )}
+                    </TableCell>
                     <TableCell>{lesson.duration}</TableCell>
                     <TableCell>
                       <DropdownMenu>

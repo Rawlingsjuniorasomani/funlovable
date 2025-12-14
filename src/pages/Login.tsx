@@ -41,29 +41,28 @@ const Login = () => {
 
     try {
       loginSchema.parse(formData);
-      
+
       const result = await login(formData.email, formData.password);
-      
-      if (result.success) {
+
+      if (result.success && result.user) {
         toast({
           title: "Login Successful!",
           description: "Welcome back to Lovable Learning Platform.",
         });
         // Navigate based on user role
-        const storedUser = localStorage.getItem('lovable_auth');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
-          if (user.role === 'parent' && !user.onboardingComplete) {
-            navigate('/onboarding');
-          } else if (user.role === 'student') {
-            navigate('/student');
-          } else if (user.role === 'teacher') {
-            navigate('/teacher');
-          } else if (user.role === 'parent') {
-            navigate('/parent');
-          } else {
-            navigate('/');
-          }
+        const user = result.user;
+        if (user.role === 'parent' && !user.is_onboarded && !user.onboardingComplete) {
+          navigate('/onboarding');
+        } else if (user.role === 'student') {
+          navigate('/student');
+        } else if (user.role === 'teacher') {
+          navigate('/teacher');
+        } else if (user.role === 'admin') {
+          navigate('/admin');
+        } else if (user.role === 'parent') {
+          navigate('/parent/dashboard');
+        } else {
+          navigate('/');
         }
       } else {
         setErrors({ email: result.error || "Login failed" });

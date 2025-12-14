@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
-import { 
-  Plus, Save, Eye, Trash2, Upload, Video, Image, FileText, 
-  Bold, Italic, Underline, List, ListOrdered, Link, AlignLeft, 
+import { useState, useRef, useEffect } from "react";
+import { subjectsAPI } from "@/config/api";
+import {
+  Plus, Save, Eye, Trash2, Upload, Video, Image, FileText,
+  Bold, Italic, Underline, List, ListOrdered, Link, AlignLeft,
   AlignCenter, AlignRight, Heading1, Heading2, Code, Quote, Undo, Redo
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -107,7 +108,7 @@ export function LessonContentCreator() {
   const updateContent = (index: number, updates: Partial<LessonContent>) => {
     setLesson(prev => ({
       ...prev,
-      contents: prev.contents?.map((c, i) => 
+      contents: prev.contents?.map((c, i) =>
         i === index ? { ...c, ...updates } : c
       ),
     }));
@@ -193,9 +194,26 @@ export function LessonContentCreator() {
   };
 
   const formatToolbarAction = (action: string) => {
-    document.execCommand(action === "h1" ? "formatBlock" : action === "h2" ? "formatBlock" : action, false, 
+    document.execCommand(action === "h1" ? "formatBlock" : action === "h2" ? "formatBlock" : action, false,
       action === "h1" ? "H1" : action === "h2" ? "H2" : undefined);
   };
+
+  const [subjects, setSubjects] = useState<{ id: string, name: string }[]>([]);
+
+  useEffect(() => {
+    const loadSubjects = async () => {
+      try {
+        const data = await subjectsAPI.getTeacher();
+        if (Array.isArray(data)) {
+          setSubjects(data);
+        }
+      } catch (error) {
+        console.error("Failed to load subjects", error);
+        toast.error("Failed to load subjects");
+      }
+    };
+    loadSubjects();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -290,7 +308,7 @@ export function LessonContentCreator() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Subject *</Label>
-                  <Select 
+                  <Select
                     value={lesson.subject}
                     onValueChange={(value) => setLesson({ ...lesson, subject: value })}
                   >
@@ -298,12 +316,9 @@ export function LessonContentCreator() {
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="mathematics">Mathematics</SelectItem>
-                      <SelectItem value="science">Science</SelectItem>
-                      <SelectItem value="english">English</SelectItem>
-                      <SelectItem value="social-studies">Social Studies</SelectItem>
-                      <SelectItem value="ict">ICT</SelectItem>
-                      <SelectItem value="french">French</SelectItem>
+                      {subjects.map((subject) => (
+                        <SelectItem key={subject.id} value={subject.id}>{subject.name}</SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -352,32 +367,32 @@ export function LessonContentCreator() {
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Add Content</h3>
             <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-auto py-4 flex flex-col gap-2"
                 onClick={() => addContent("text")}
               >
                 <FileText className="w-6 h-6" />
                 <span className="text-xs">Text Block</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-auto py-4 flex flex-col gap-2"
                 onClick={() => videoInputRef.current?.click()}
               >
                 <Video className="w-6 h-6" />
                 <span className="text-xs">Video</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-auto py-4 flex flex-col gap-2"
                 onClick={() => fileInputRef.current?.click()}
               >
                 <Image className="w-6 h-6" />
                 <span className="text-xs">Image</span>
               </Button>
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 className="h-auto py-4 flex flex-col gap-2"
                 onClick={() => addContent("quiz")}
               >
@@ -445,7 +460,7 @@ export function LessonContentCreator() {
                       <div>
                         {/* Rich Text Toolbar */}
                         <div className="flex items-center gap-1 p-2 border border-border rounded-t-lg bg-muted/30 flex-wrap">
-                          {toolbarButtons.map((btn, i) => 
+                          {toolbarButtons.map((btn, i) =>
                             btn.divider ? (
                               <div key={i} className="w-px h-6 bg-border mx-1" />
                             ) : (
@@ -474,9 +489,9 @@ export function LessonContentCreator() {
                     {content.type === "video" && (
                       <div className="space-y-3">
                         {content.metadata?.url ? (
-                          <video 
-                            src={content.metadata.url} 
-                            controls 
+                          <video
+                            src={content.metadata.url}
+                            controls
                             className="w-full rounded-lg"
                           />
                         ) : (
@@ -498,8 +513,8 @@ export function LessonContentCreator() {
                     {content.type === "image" && (
                       <div className="space-y-3">
                         {content.metadata?.url ? (
-                          <img 
-                            src={content.metadata.url} 
+                          <img
+                            src={content.metadata.url}
                             alt={content.content}
                             className="w-full rounded-lg"
                           />

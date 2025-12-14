@@ -17,6 +17,9 @@ import { ParentChatPage } from "@/components/parent/ParentChatPage";
 import { EnhancedParentChildProgress } from "@/components/parent/EnhancedParentChildProgress";
 import { EnhancedParentPayments } from "@/components/parent/EnhancedParentPayments";
 import { ParentAnalytics } from "@/components/parent/ParentAnalytics";
+import { ParentLessonsPage } from "@/components/parent/ParentLessonsPage";
+
+import { ParentSubscription } from "@/components/parent/ParentSubscription";
 
 export default function ParentDashboard() {
   return (
@@ -30,7 +33,9 @@ export default function ParentDashboard() {
           <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
             <Routes>
               <Route index element={<ParentOverview />} />
+              <Route path="dashboard" element={<ParentOverview />} />
               <Route path="children" element={<ChildrenManagement />} />
+              <Route path="lessons" element={<ParentLessonsPage />} />
               <Route path="child/:childId" element={<EnhancedParentChildProgress />} />
               <Route path="subjects" element={<ParentSubjects />} />
               <Route path="assignments" element={<ParentAssignments />} />
@@ -43,6 +48,7 @@ export default function ParentDashboard() {
               <Route path="chat" element={<ParentChatPage />} />
               <Route path="notifications" element={<ParentNotifications />} />
               <Route path="payments" element={<EnhancedParentPayments />} />
+              <Route path="subscription" element={<ParentSubscription />} />
               <Route path="analytics" element={<ParentAnalytics />} />
               <Route path="settings" element={<ParentSettings />} />
             </Routes>

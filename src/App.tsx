@@ -29,7 +29,9 @@ import AdminLogin from "./pages/AdminLogin";
 import TeacherAuth from "./pages/TeacherAuth";
 import ParentAuth from "./pages/ParentAuth";
 import StudentAuth from "./pages/StudentAuth";
+import { PaymentVerify } from "./pages/PaymentVerify";
 import AuthSelector from "./pages/AuthSelector";
+import LiveClassSession from "./pages/LiveClassSession";
 
 const queryClient = new QueryClient();
 
@@ -55,9 +57,22 @@ const App = () => (
             <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/parent/register-flow" element={<ParentRegistrationFlow />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/student/*" element={<StudentDashboard />} />
-            <Route path="/parent/*" element={<ParentDashboard />} />
-            <Route path="/teacher/*" element={<TeacherDashboard />} />
+            <Route path="/payment/verify" element={<PaymentVerify />} />
+            <Route path="/student/*" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <StudentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/parent/*" element={
+              <ProtectedRoute allowedRoles={['parent']}>
+                <ParentDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/teacher/*" element={
+              <ProtectedRoute allowedRoles={['teacher']}>
+                <TeacherDashboard />
+              </ProtectedRoute>
+            } />
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false}>
@@ -70,6 +85,11 @@ const App = () => (
             <Route path="/lesson" element={<LessonPage />} />
             <Route path="/achievements" element={<AchievementsPage />} />
             <Route path="/leaderboard" element={<LeaderboardPage />} />
+            <Route path="/live/:classId" element={
+              <ProtectedRoute allowedRoles={['student', 'teacher', 'admin', 'parent']}>
+                <LiveClassSession />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

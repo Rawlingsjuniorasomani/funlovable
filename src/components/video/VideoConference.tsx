@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { 
-  Video, VideoOff, Mic, MicOff, Phone, PhoneOff, 
+import {
+  Video, VideoOff, Mic, MicOff, Phone, PhoneOff,
   Users, MessageSquare, Settings, Maximize, Minimize,
   MonitorUp, Hand, MoreVertical, Copy, Share2,
   PenTool, BarChart3, Users2, Circle, Edit3
@@ -25,6 +25,7 @@ import { BreakoutRooms } from "./BreakoutRooms";
 import { RecordingControls } from "./RecordingControls";
 import { ScreenAnnotation } from "./ScreenAnnotation";
 import { HandRaiseQueue } from "./HandRaiseQueue";
+import { socket, connectSocket, disconnectSocket } from "@/services/socket";
 
 interface Participant {
   id: string;
@@ -52,14 +53,9 @@ interface VideoConferenceProps {
   onLeave?: () => void;
 }
 
-const mockParticipants: Participant[] = [
-  { id: "1", name: "Mr. Adjei", role: "teacher", avatar: "A", isMuted: false, isVideoOff: false, isHandRaised: false },
-  { id: "2", name: "Kwame Asante", role: "student", avatar: "K", isMuted: true, isVideoOff: false, isHandRaised: false },
-  { id: "3", name: "Ama Mensah", role: "student", avatar: "A", isMuted: true, isVideoOff: true, isHandRaised: true },
-  { id: "4", name: "Kofi Owusu", role: "student", avatar: "K", isMuted: true, isVideoOff: false, isHandRaised: false },
-];
+const mockParticipants: Participant[] = [];
 
-export function VideoConference({ 
+export function VideoConference({
   classId = "class-123",
   className = "Primary 5 Mathematics",
   isHost = true,
@@ -73,13 +69,10 @@ export function VideoConference({
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
   const [participants, setParticipants] = useState<Participant[]>(mockParticipants);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
-    { id: "1", sender: "Kwame Asante", content: "Good morning, sir!", timestamp: new Date(Date.now() - 60000) },
-    { id: "2", sender: "Mr. Adjei", content: "Good morning class! Today we'll be learning about fractions.", timestamp: new Date(Date.now() - 30000) },
-  ]);
+  const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);
-  
+
   // Enhanced features state
   const [showWhiteboard, setShowWhiteboard] = useState(false);
   const [showPolls, setShowPolls] = useState(false);
@@ -88,12 +81,20 @@ export function VideoConference({
   const [showHandRaise, setShowHandRaise] = useState(false);
   const [showAnnotation, setShowAnnotation] = useState(false);
   const [activePanel, setActivePanel] = useState<'chat' | 'participants' | 'tools'>('chat');
-  
+
+  // Socket & WebRTC State
+  const [isWaiting, setIsWaiting] = useState(false);
+  const [waitingStudents, setWaitingStudents] = useState<{ socketId: string, user: any }[]>([]);
+  const peersRef = useRef<{ [key: string]: RTCPeerConnection }>({});
+  const audioRefs = useRef<{ [key: string]: HTMLAudioElement }>({});
+
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Initialize local video stream
+  // Initialize local stream & Socket
   useEffect(() => {
+    connectSocket();
+
     const initStream = async () => {
       try {
         const stream = await navigator.mediaDevices.getUserMedia({
@@ -104,28 +105,224 @@ export function VideoConference({
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
+        return stream;
       } catch (error) {
         console.log("Camera/mic access denied or unavailable");
         toast.error("Could not access camera/microphone. Please check permissions.");
+        return null;
       }
     };
-    
-    initStream();
-    
-    return () => {
-      if (localStream) {
-        localStream.getTracks().forEach(track => track.stop());
-      }
-    };
-  }, []);
 
-  const toggleVideo = useCallback(() => {
-    if (localStream) {
-      localStream.getVideoTracks().forEach(track => {
-        track.enabled = !track.enabled;
+    let currentStream: MediaStream | null = null;
+    initStream().then(stream => {
+        currentStream = stream;
+        
+        // Join logic after stream is potentially ready (or not)
+        socket.emit('join-class', {
+            classId,
+            user: { id: socket.id, name: userName, role: isHost ? 'teacher' : 'student' }
+        });
+    });
+
+    socket.on('waiting', () => {
+      setIsWaiting(true);
+      toast.info("Waiting for teacher to admit you...");
+    });
+
+    socket.on('joined', ({ isHost: hostStatus }) => {
+      setIsWaiting(false);
+      toast.success("Joined the class!");
+    });
+
+    socket.on('student-waiting', (student) => {
+      if (isHost) {
+        setWaitingStudents(prev => {
+            if (prev.find(s => s.socketId === student.socketId)) return prev;
+            return [...prev, student];
+        });
+        toast("New student waiting: " + student.user.name);
+      }
+    });
+
+    socket.on('user-connected', async ({ socketId, user }) => {
+      const peer = createPeer(socketId, socket.id, currentStream);
+      peersRef.current[socketId] = peer;
+
+      setParticipants(prev => {
+        if (!prev.find(p => p.id === socketId)) {
+          return [...prev, {
+            id: socketId,
+            name: user.name,
+            role: user.role,
+            isMuted: false,
+            isVideoOff: false,
+            isHandRaised: false,
+            avatar: user.name[0]?.toUpperCase() || '?'
+          }];
+        }
+        return prev;
       });
+    });
+
+    socket.on('offer', async (payload) => {
+      const peer = addPeer(payload.caller, socket.id, payload.sdp, currentStream);
+      peersRef.current[payload.caller] = peer;
+    });
+
+    socket.on('answer', (payload) => {
+      const peer = peersRef.current[payload.caller];
+      if (peer) {
+        peer.setRemoteDescription(new RTCSessionDescription(payload.sdp));
+      }
+    });
+
+    socket.on('ice-candidate', (payload) => {
+      const peer = peersRef.current[payload.caller];
+      if (peer && payload.candidate) {
+        peer.addIceCandidate(new RTCIceCandidate(payload.candidate));
+      }
+    });
+
+    return () => {
+      disconnectSocket();
+      Object.values(peersRef.current).forEach(p => p.close());
+      if (currentStream) {
+        currentStream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [classId, isHost, userName]);
+
+
+  // WebRTC Helpers
+  const createPeer = (targetSocketId: string, callerSocketId: string, stream: MediaStream | null) => {
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    if (stream) {
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
     }
-    setIsVideoOn(!isVideoOn);
+
+    peer.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit('ice-candidate', { target: targetSocketId, candidate: e.candidate, caller: callerSocketId });
+      }
+    };
+
+    peer.ontrack = (e) => {
+      const remoteStream = e.streams[0];
+      // Create or update audio element for this user
+      let audio = audioRefs.current[targetSocketId];
+      if (!audio) {
+          audio = new Audio();
+          audio.autoplay = true;
+          audioRefs.current[targetSocketId] = audio;
+      }
+      audio.srcObject = remoteStream;
+    };
+
+    peer.createOffer().then(offer => {
+      peer.setLocalDescription(offer);
+      socket.emit('offer', { target: targetSocketId, caller: callerSocketId, sdp: offer });
+    });
+
+    return peer;
+  };
+
+  const addPeer = (callerSocketId: string, receiverSocketId: string, offer: any, stream: MediaStream | null) => {
+    const peer = new RTCPeerConnection({ iceServers: [{ urls: 'stun:stun.l.google.com:19302' }] });
+    if (stream) {
+      stream.getTracks().forEach(track => peer.addTrack(track, stream));
+    }
+
+    peer.onicecandidate = (e) => {
+      if (e.candidate) {
+        socket.emit('ice-candidate', { target: callerSocketId, candidate: e.candidate, caller: receiverSocketId });
+      }
+    };
+
+    peer.ontrack = (e) => {
+      const remoteStream = e.streams[0];
+      let audio = audioRefs.current[callerSocketId];
+      if (!audio) {
+        audio = new Audio();
+        audio.autoplay = true;
+        audioRefs.current[callerSocketId] = audio;
+      }
+      audio.srcObject = remoteStream;
+    };
+
+    peer.setRemoteDescription(new RTCSessionDescription(offer));
+    peer.createAnswer().then(answer => {
+      peer.setLocalDescription(answer);
+      socket.emit('answer', { target: callerSocketId, caller: receiverSocketId, sdp: answer });
+    });
+
+    return peer;
+  };
+
+  const handleAdmit = (socketId: string) => {
+    socket.emit('admit-student', { classId, socketId });
+    setWaitingStudents(prev => prev.filter(s => s.socketId !== socketId));
+    toast.success("Student admitted");
+  };
+
+  // UI Methods
+  const toggleVideo = useCallback(async () => {
+    if (!isVideoOn) {
+      // Turning video ON
+      if (localStream && localStream.getVideoTracks().length > 0) {
+        const track = localStream.getVideoTracks()[0];
+        if (track.readyState === 'ended') {
+          try {
+            const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+            const newTrack = newStream.getVideoTracks()[0];
+            localStream.getVideoTracks().forEach(t => t.stop());
+            localStream.removeTrack(track);
+            localStream.addTrack(newTrack);
+            if (localVideoRef.current) localVideoRef.current.srcObject = localStream;
+            
+            // Replace track in all peers
+            Object.values(peersRef.current).forEach(peer => {
+                const senders = peer.getSenders();
+                const sender = senders.find(s => s.track?.kind === 'video');
+                if (sender) sender.replaceTrack(newTrack);
+            });
+
+          } catch (e) {
+            toast.error("Could not restart camera");
+            return;
+          }
+        } else {
+          track.enabled = true;
+        }
+      } else {
+        try {
+          const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+          if (localStream) {
+            const videoTrack = stream.getVideoTracks()[0];
+            localStream.addTrack(videoTrack);
+             // Add to peers
+             Object.values(peersRef.current).forEach(peer => {
+                peer.addTrack(videoTrack, localStream);
+            });
+          } else {
+            setLocalStream(stream);
+            if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+          }
+        } catch (e) {
+          toast.error("Could not access camera");
+          return;
+        }
+      }
+      setIsVideoOn(true);
+    } else {
+      // Turning video OFF
+      if (localStream) {
+        localStream.getVideoTracks().forEach(track => {
+          track.enabled = false;
+          track.stop();
+        });
+      }
+      setIsVideoOn(false);
+    }
   }, [localStream, isVideoOn]);
 
   const toggleMute = useCallback(() => {
@@ -148,7 +345,7 @@ export function VideoConference({
         });
         setIsScreenSharing(true);
         toast.success("Screen sharing started");
-        
+
         screenStream.getVideoTracks()[0].onended = () => {
           setIsScreenSharing(false);
           toast.info("Screen sharing stopped");
@@ -173,13 +370,13 @@ export function VideoConference({
     if (localStream) {
       localStream.getTracks().forEach(track => track.stop());
     }
+    disconnectSocket();
     toast.info("You left the meeting");
     onLeave?.();
   }, [localStream, onLeave]);
 
   const sendMessage = () => {
     if (!newMessage.trim()) return;
-    
     const message: ChatMessage = {
       id: Date.now().toString(),
       sender: userName,
@@ -214,14 +411,38 @@ export function VideoConference({
     }
   };
 
+  if (isWaiting) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[calc(100vh-12rem)] bg-background border border-border rounded-xl">
+        <div className="w-16 h-16 rounded-full bg-primary/20 flex items-center justify-center mb-4 animate-pulse">
+          <Users className="w-8 h-8 text-primary" />
+        </div>
+        <h2 className="text-xl font-bold mb-2">Waiting for Host</h2>
+        <p className="text-muted-foreground">The teacher will let you in shortly.</p>
+      </div>
+    );
+  }
+
   return (
-    <div 
+    <div
       ref={containerRef}
       className={cn(
         "flex flex-col bg-background rounded-xl overflow-hidden border border-border",
         isFullscreen ? "fixed inset-0 z-50 rounded-none" : "h-[calc(100vh-12rem)]"
       )}
     >
+      {/* Waiting List Alert for Host */}
+      {isHost && waitingStudents.length > 0 && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-50 bg-card border border-border shadow-lg rounded-lg p-3 flex items-center gap-4 animate-in slide-in-from-top-2">
+          <div>
+            <p className="font-bold text-sm">{waitingStudents.length} student(s) waiting</p>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => handleAdmit(waitingStudents[0].socketId)}>Admit All</Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-border bg-card">
         <div className="flex items-center gap-3">
@@ -238,9 +459,9 @@ export function VideoConference({
             <Share2 className="w-4 h-4" />
             Share
           </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={toggleFullscreen}
           >
             {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
@@ -290,7 +511,7 @@ export function VideoConference({
 
               {/* Participant Videos */}
               {participants.slice(1, 4).map((participant) => (
-                <div 
+                <div
                   key={participant.id}
                   className="relative bg-card rounded-xl overflow-hidden border border-border aspect-video"
                 >
@@ -399,24 +620,24 @@ export function VideoConference({
 
               <TabsContent value="tools" className="flex-1 m-0 p-4">
                 <div className="space-y-2">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full justify-start gap-3"
                     onClick={() => { setShowWhiteboard(!showWhiteboard); closePanels(); }}
                   >
                     <PenTool className="w-4 h-4" />
                     {showWhiteboard ? 'Close Whiteboard' : 'Open Whiteboard'}
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full justify-start gap-3"
                     onClick={() => setShowPolls(true)}
                   >
                     <BarChart3 className="w-4 h-4" />
                     Live Polls
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="w-full justify-start gap-3"
                     onClick={() => setShowHandRaise(true)}
                   >
@@ -425,16 +646,16 @@ export function VideoConference({
                   </Button>
                   {isHost && (
                     <>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start gap-3"
                         onClick={() => setShowBreakoutRooms(true)}
                       >
                         <Users2 className="w-4 h-4" />
                         Breakout Rooms
                       </Button>
-                      <Button 
-                        variant="outline" 
+                      <Button
+                        variant="outline"
                         className="w-full justify-start gap-3"
                         onClick={() => setShowRecording(true)}
                       >
@@ -442,8 +663,8 @@ export function VideoConference({
                         Recording
                       </Button>
                       {isScreenSharing && (
-                        <Button 
-                          variant="outline" 
+                        <Button
+                          variant="outline"
                           className="w-full justify-start gap-3"
                           onClick={() => setShowAnnotation(true)}
                         >
@@ -471,7 +692,7 @@ export function VideoConference({
           >
             {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </Button>
-          
+
           <Button
             variant={!isVideoOn ? "destructive" : "secondary"}
             size="icon"

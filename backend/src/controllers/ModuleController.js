@@ -1,0 +1,76 @@
+const ModuleService = require('../services/ModuleService');
+
+class ModuleController {
+    static async getAll(req, res) {
+        try {
+            const { subjectId } = req.query;
+            if (subjectId) {
+                const modules = await ModuleService.getModulesBySubject(subjectId);
+                return res.json(modules);
+            }
+            // Return all modules for admin
+            const pool = require('../db/pool');
+            const result = await pool.query(`
+                SELECT m.*, 
+                       COUNT(DISTINCT l.id) as lesson_count,
+                       SUM(l.duration_minutes) as duration_minutes
+                FROM modules m
+                LEFT JOIN lessons l ON m.id = l.module_id
+                GROUP BY m.id
+                ORDER BY m.created_at DESC
+            `);
+            return res.json(result.rows);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Failed to fetch modules' });
+        }
+    }
+
+    static async getBySubject(req, res) {
+        try {
+            const { subjectId } = req.params;
+            const modules = await ModuleService.getModulesBySubject(subjectId);
+            res.json(modules);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Failed to fetch modules' });
+        }
+    }
+
+    static async create(req, res) {
+        try {
+            const { subject_id, title } = req.body;
+            if (!title) return res.status(400).json({ error: 'Title is required' });
+            if (!subject_id) return res.status(400).json({ error: 'Subject is required' });
+
+            const module = await ModuleService.createModule(req.body);
+            res.status(201).json(module);
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Failed to create module' });
+        }
+    }
+    static async update(req, res) {
+        try {
+            const module = await ModuleService.updateModule(req.params.id, req.body);
+            res.json(module);
+        } catch (error) {
+            if (error.message === 'Module not found') return res.status(404).json({ error: error.message });
+            console.error(error);
+            res.status(500).json({ error: 'Failed to update module' });
+        }
+    }
+
+    static async delete(req, res) {
+        try {
+            const result = await ModuleService.deleteModule(req.params.id);
+            res.json(result);
+        } catch (error) {
+            if (error.message === 'Module not found') return res.status(404).json({ error: error.message });
+            console.error(error);
+            res.status(500).json({ error: 'Failed to delete module' });
+        }
+    }
+}
+
+module.exports = ModuleController;

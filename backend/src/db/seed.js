@@ -9,13 +9,16 @@ async function seed() {
 
     // Create admin user
     const adminPassword = await bcrypt.hash('admin123', 10);
-    const adminId = uuidv4();
-    
-    await pool.query(`
+    const adminEmail = 'admin@edulearn.com';
+
+    const adminResult = await pool.query(`
       INSERT INTO users (id, name, email, password_hash, role, is_approved, is_onboarded)
       VALUES ($1, $2, $3, $4, $5, true, true)
-      ON CONFLICT (email) DO NOTHING
-    `, [adminId, 'Admin User', 'admin@edulearn.com', adminPassword, 'admin']);
+      ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+      RETURNING id
+    `, [uuidv4(), 'Admin User', adminEmail, adminPassword, 'admin']);
+
+    const adminId = adminResult.rows[0].id;
 
     // Add admin role
     await pool.query(`
@@ -26,13 +29,16 @@ async function seed() {
 
     // Create sample teacher
     const teacherPassword = await bcrypt.hash('teacher123', 10);
-    const teacherId = uuidv4();
-    
-    await pool.query(`
+    const teacherEmail = 'teacher@edulearn.com';
+
+    const teacherResult = await pool.query(`
       INSERT INTO users (id, name, email, password_hash, role, is_approved, is_onboarded)
       VALUES ($1, $2, $3, $4, $5, true, true)
-      ON CONFLICT (email) DO NOTHING
-    `, [teacherId, 'John Teacher', 'teacher@edulearn.com', teacherPassword, 'teacher']);
+      ON CONFLICT (email) DO UPDATE SET email = EXCLUDED.email
+      RETURNING id
+    `, [uuidv4(), 'John Teacher', teacherEmail, teacherPassword, 'teacher']);
+
+    const teacherId = teacherResult.rows[0].id;
 
     // Create sample subjects
     const subjects = [
@@ -55,6 +61,7 @@ async function seed() {
       await pool.query(`
         INSERT INTO modules (id, subject_id, title, description, order_index)
         VALUES ($1, $2, $3, $4, $5)
+        ON CONFLICT DO NOTHING
       `, [moduleId, subjectId, `Introduction to ${subject.name}`, `Start your ${subject.name} journey`, 1]);
 
       // Create sample lesson
@@ -62,6 +69,7 @@ async function seed() {
       await pool.query(`
         INSERT INTO lessons (id, module_id, title, content, duration_minutes, xp_reward)
         VALUES ($1, $2, $3, $4, $5, $6)
+        ON CONFLICT DO NOTHING
       `, [lessonId, moduleId, `Welcome to ${subject.name}`, `This is your first lesson in ${subject.name}. Let's get started!`, 15, 20]);
 
       // Create sample quiz
@@ -69,15 +77,17 @@ async function seed() {
       await pool.query(`
         INSERT INTO quizzes (id, lesson_id, module_id, title, description, time_limit_minutes, passing_score, xp_reward)
         VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        ON CONFLICT DO NOTHING
       `, [quizId, lessonId, moduleId, `${subject.name} Quiz 1`, 'Test your knowledge', 15, 70, 50]);
 
       // Add sample question
       await pool.query(`
         INSERT INTO quiz_questions (quiz_id, question_text, question_type, options, correct_answer, points)
         VALUES ($1, $2, $3, $4, $5, $6)
-      `, [quizId, `What is ${subject.name} about?`, 'multiple_choice', 
-          JSON.stringify(['Learning new things', 'Playing games', 'Watching TV', 'Sleeping']), 
-          'Learning new things', 10]);
+        ON CONFLICT DO NOTHING
+      `, [quizId, `What is ${subject.name} about?`, 'multiple_choice',
+        JSON.stringify(['Learning new things', 'Playing games', 'Watching TV', 'Sleeping']),
+        'Learning new things', 10]);
     }
 
     // Create sample achievements

@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { parentsAPI } from "@/config/api";
 import { useParentData } from "@/data/parentDataStore";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { PaystackCheckout } from "@/components/payments/PaystackCheckout";
@@ -53,7 +54,7 @@ export default function ParentRegistrationFlow() {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
-    const { user, register, addChild, updateSubscription, completeOnboarding } = useAuthContext();
+    const { user, register, addChild, updateSubscription, completeOnboarding, logout } = useAuthContext();
     const { registerParent, createSubscription, addPayment, linkChild } = useParentData();
     const { addNotification } = useAdminNotifications();
 
@@ -167,19 +168,24 @@ export default function ParentRegistrationFlow() {
             if (regData.phone) await sendWelcomeSMS(regData.phone, regData.name);
 
             // 3. Add Child
-            const newChild = addChild({
+            const childPayload = {
                 name: childData.name,
+                email: `${childData.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
                 age: parseInt(childData.age),
                 grade: childData.grade,
-                subjects: childData.subjects,
-            });
+                subjects: childData.subjects
+            };
+
+            // @ts-ignore - API types might be partial but backend accepts full payload
+            const response = await parentsAPI.addChild(childPayload);
+            const newChild = response.child;
 
             if (newChild) {
                 linkChild({
                     parentId: newUser.id,
                     childId: newChild.id,
                     childName: newChild.name,
-                    childEmail: `${newChild.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
+                    childEmail: response.studentCredentials?.email || `${newChild.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
                     role: 'student',
                     grade: childData.grade,
                     class: 'A',
@@ -197,7 +203,8 @@ export default function ParentRegistrationFlow() {
 
             // 4. Create Subscription & Payment
             const planName = preSelectedPlan?.name || "Single Child";
-            const planPrice = preSelectedPlan?.priceVal || 400;
+            const planId = preSelectedPlan?.id || "single";
+            const planPrice = preSelectedPlan?.priceVal || 300;
 
             const now = new Date();
             const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
@@ -206,7 +213,7 @@ export default function ParentRegistrationFlow() {
                 parentId: newUser.id,
                 parentName: newUser.name,
                 parentEmail: newUser.email,
-                plan: 'single', // Simplified logic
+                plan: planId,
                 planName: planName,
                 amount: planPrice,
                 status: 'active',
@@ -227,7 +234,7 @@ export default function ParentRegistrationFlow() {
                 paymentMethod: 'Paystack',
             });
 
-            updateSubscription('single', 'active');
+            updateSubscription(planId, 'active');
 
             addNotification({
                 type: 'new_payment',
@@ -252,7 +259,9 @@ export default function ParentRegistrationFlow() {
 
     const handleComplete = () => {
         completeOnboarding();
-        navigate('/parent');
+        logout();
+        toast({ title: "Registration Complete", description: "Please log in to continue." });
+        navigate('/parent/auth');
     };
 
     return (
@@ -376,26 +385,54 @@ export default function ParentRegistrationFlow() {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label>Grade/Class</Label>
-                                        <div className="grid grid-cols-3 gap-2">
-                                            {grades.map(g => (
-                                                <button key={g} type="button" onClick={() => setChildData({ ...childData, grade: g })}
-                                                    className={cn("text-xs p-2 rounded border transition-colors", childData.grade === g ? "bg-primary text-primary-foreground border-primary" : "hover:bg-muted")}>
-                                                    {g}
-                                                </button>
-                                            ))}
+                                        <Label>Class</Label>
+                                        <div className="relative">
+                                            <select
+                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                value={childData.grade}
+                                                onChange={(e) => setChildData({ ...childData, grade: e.target.value })}
+                                            >
+                                                <option value="" disabled>Select class</option>
+                                                {grades.map((g) => (
+                                                    <option key={g} value={g}>{g}</option>
+                                                ))}
+                                            </select>
                                         </div>
                                     </div>
 
                                     <div className="space-y-2">
                                         <Label>Select Subjects</Label>
-                                        <div className="grid grid-cols-2 gap-2">
-                                            {allSubjects.map(s => (
-                                                <button key={s.id} type="button" onClick={() => handleSubjectToggle(s.id)}
-                                                    className={cn("flex items-center gap-2 p-2 rounded border text-sm", childData.subjects.includes(s.id) ? "bg-secondary/20 border-secondary" : "hover:bg-muted")}>
-                                                    <span>{s.emoji}</span> {s.name}
-                                                </button>
-                                            ))}
+                                        <div className="space-y-3">
+                                            <select
+                                                className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                                onChange={(e) => {
+                                                    if (e.target.value) {
+                                                        handleSubjectToggle(e.target.value);
+                                                        e.target.value = ""; // Reset
+                                                    }
+                                                }}
+                                            >
+                                                <option value="" disabled selected>Add a Subject...</option>
+                                                {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
+                                                    <option key={s.id} value={s.id}>
+                                                        {s.emoji} {s.name}
+                                                    </option>
+                                                ))}
+                                            </select>
+
+                                            <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-dashed border-border bg-muted/30">
+                                                {childData.subjects.length === 0 && <span className="text-sm text-muted-foreground p-1">No subjects selected</span>}
+                                                {childData.subjects.map(sid => {
+                                                    const s = allSubjects.find(sub => sub.id === sid);
+                                                    if (!s) return null;
+                                                    return (
+                                                        <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
+                                                            {s.emoji} {s.name}
+                                                            <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
+                                                        </span>
+                                                    );
+                                                })}
+                                            </div>
                                         </div>
                                     </div>
 
@@ -450,7 +487,7 @@ export default function ParentRegistrationFlow() {
                         )}
                     </div>
                 </div>
-            </main>
-        </div>
+            </main >
+        </div >
     );
 }

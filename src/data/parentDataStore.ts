@@ -227,20 +227,7 @@ export const useParentData = create<ParentDataState>((set, get) => ({
   },
 }));
 
-// Helper to record a new payment (simulated) - Updated export
+// Helper to record a new payment - usage should be replaced by API calls in components
 export const recordPayment = (payment: ParentPayment) => {
-  // Logic to update local storage mock data
-  const parentId = payment.parentId;
-
-  // Update payments
-  const payments = JSON.parse(localStorage.getItem('mock_payments') || '[]');
-  payments.push(payment);
-  localStorage.setItem('mock_payments', JSON.stringify(payments));
-
-  // Update subscription status if needed
-  const subscriptions = JSON.parse(localStorage.getItem('mock_subscriptions') || '[]');
-  const updatedSubs = subscriptions.map((sub: any) =>
-    sub.parentId === parentId ? { ...sub, status: 'active', plan: payment.plan } : sub
-  );
-  localStorage.setItem('mock_subscriptions', JSON.stringify(updatedSubs));
+  console.warn("recordPayment is deprecated. Use paymentsAPI instead.");
 };

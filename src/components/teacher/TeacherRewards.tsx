@@ -1,9 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Award, Star, Trophy, Zap, Plus, Gift, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { mockRewards, mockStudents, Reward } from "@/data/mockData";
+interface Reward {
+  id: string;
+  studentId: string;
+  studentName: string;
+  type: "badge" | "star" | "trophy" | "points";
+  name: string;
+  reason: string;
+  awardedAt: string;
+  awardedBy: string;
+}
+import { usersAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -33,6 +43,7 @@ export function TeacherRewards() {
   const { toast } = useToast();
   const { user } = useAuthContext();
   const [rewards, setRewards] = useState<Reward[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [formData, setFormData] = useState({
@@ -42,6 +53,19 @@ export function TeacherRewards() {
     reason: "",
   });
 
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  const loadStudents = async () => {
+    try {
+      const data = await usersAPI.getAll({ role: 'student' });
+      setStudents(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load students:', error);
+    }
+  };
+
   const filteredRewards = rewards.filter(r =>
     r.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.name.toLowerCase().includes(searchTerm.toLowerCase())
@@ -50,7 +74,7 @@ export function TeacherRewards() {
   const handleAward = () => {
     if (!formData.studentId || !formData.name || !formData.reason) return;
 
-    const student = mockStudents.find(s => s.id === formData.studentId);
+    const student = students.find(s => s.id === formData.studentId);
     if (!student) return;
 
     const newReward: Reward = {
@@ -107,11 +131,11 @@ export function TeacherRewards() {
                     <SelectValue placeholder="Select student" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockStudents.map(s => (
+                    {students.map(s => (
                       <SelectItem key={s.id} value={s.id}>
                         <span className="flex items-center gap-2">
                           <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
-                            {s.avatar}
+                            {s.avatar || s.name?.charAt(0)}
                           </span>
                           {s.name}
                         </span>

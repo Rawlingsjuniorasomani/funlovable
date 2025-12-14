@@ -1,11 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Video, Calendar, Clock, Users, Play, Pause, Square, MoreVertical, Edit, Trash2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { mockLiveClasses, mockSubjects, LiveClass } from "@/data/mockData";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { liveClassesAPI, subjectsAPI } from "@/config/api";
 import { VideoConference } from "@/components/video/VideoConference";
 import { useAuthContext } from "@/contexts/AuthContext";
 import {
@@ -29,6 +29,19 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+export interface LiveClass {
+  id: string;
+  title: string;
+  subject_id: string;
+  scheduled_at: string;
+  duration_minutes: number;
+  status: 'scheduled' | 'live' | 'completed';
+  attendees?: number; // Not in DB yet
+  totalStudents?: number; // Not in DB yet
+  teacher_id?: string;
+  meeting_url?: string;
+}
+
 const statusColors = {
   scheduled: "bg-accent/10 text-accent border-accent/30",
   live: "bg-destructive/10 text-destructive border-destructive/30 animate-pulse",
@@ -39,6 +52,7 @@ export function TeacherLiveClasses() {
   const { toast } = useToast();
   const { user } = useAuthContext();
   const [classes, setClasses] = useState<LiveClass[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [activeClass, setActiveClass] = useState<LiveClass | null>(null);
   const [formData, setFormData] = useState({
@@ -48,47 +62,82 @@ export function TeacherLiveClasses() {
     duration: 45,
   });
 
-  const handleCreate = () => {
+  useEffect(() => {
+    if (user?.id) {
+      fetchData();
+    }
+  }, [user?.id]);
+
+  const fetchData = async () => {
+    try {
+      const [subjectsData, classesData] = await Promise.all([
+        subjectsAPI.getAll(),
+        liveClassesAPI.getAll({ teacher_id: user?.id })
+      ]);
+      setSubjects(subjectsData);
+      setClasses(classesData);
+    } catch (error) {
+      console.error("Failed to fetch data", error);
+    }
+  };
+
+  const handleCreate = async () => {
     if (!formData.title || !formData.subjectId || !formData.scheduledAt) return;
-
-    const newClass: LiveClass = {
-      id: `lc${Date.now()}`,
-      title: formData.title,
-      subjectId: formData.subjectId,
-      scheduledAt: formData.scheduledAt,
-      duration: formData.duration,
-      status: "scheduled",
-      attendees: 0,
-      totalStudents: 35,
-    };
-
-    setClasses(prev => [...prev, newClass]);
-    toast({ title: "Class scheduled", description: `${formData.title} has been scheduled.` });
-    setIsDialogOpen(false);
-    setFormData({ title: "", subjectId: "", scheduledAt: "", duration: 45 });
+    try {
+      const newClass = await liveClassesAPI.create({
+        title: formData.title,
+        subject_id: formData.subjectId,
+        scheduled_at: formData.scheduledAt,
+        duration_minutes: formData.duration,
+        meeting_url: `/live/${Date.now()}`
+      });
+      setClasses(prev => [...prev, newClass as LiveClass]);
+      toast({ title: "Class scheduled", description: `${formData.title} has been scheduled.` });
+      setIsDialogOpen(false);
+      setFormData({ title: "", subjectId: "", scheduledAt: "", duration: 45 });
+    } catch (error) {
+      toast({ title: "Failed to create", variant: "destructive" });
+    }
   };
 
-  const handleStartClass = (liveClass: LiveClass) => {
-    setClasses(prev => prev.map(c => c.id === liveClass.id ? { ...c, status: "live" as const } : c));
-    setActiveClass(liveClass);
-    toast({ title: "Class started", description: "Your live class has begun!" });
+  const handleStartClass = async (liveClass: LiveClass) => {
+    try {
+      const updated = await liveClassesAPI.updateStatus(liveClass.id, 'live');
+      setClasses(prev => prev.map(c => c.id === liveClass.id ? { ...c, status: "live" as const } : c)); // Optimistic or use response
+      setActiveClass({ ...liveClass, status: 'live' });
+      toast({ title: "Class started", description: "Your live class has begun!" });
+    } catch (err) {
+      toast({ title: "Failed to start class", variant: "destructive" });
+    }
   };
 
-  const handleEndClass = (id: string) => {
-    setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "completed" as const } : c));
-    setActiveClass(null);
-    toast({ title: "Class ended", description: "Your live class has ended." });
+  const handleEndClass = async (id: string) => {
+    try {
+      await liveClassesAPI.updateStatus(id, 'completed');
+      setClasses(prev => prev.map(c => c.id === id ? { ...c, status: "completed" as const } : c));
+      setActiveClass(null);
+      toast({ title: "Class ended", description: "Your live class has ended." });
+    } catch (err) {
+      toast({ title: "Failed to end class", variant: "destructive" });
+    }
   };
 
   const handleLeaveClass = () => {
     if (activeClass) {
-      handleEndClass(activeClass.id);
+      // Just leave local view if actively hosting? Or actually end it?
+      // Assuming just leaving the video view.
+      setActiveClass(null);
     }
   };
 
-  const handleDelete = (id: string) => {
-    setClasses(prev => prev.filter(c => c.id !== id));
-    toast({ title: "Class deleted", variant: "destructive" });
+  const handleDelete = async (id: string) => {
+    try {
+      await liveClassesAPI.delete(id);
+      setClasses(prev => prev.filter(c => c.id !== id));
+      toast({ title: "Class deleted", variant: "destructive" });
+    } catch (err) {
+      toast({ title: "Failed to delete", variant: "destructive" });
+    }
   };
 
   const formatDate = (dateStr: string) => {
@@ -98,7 +147,7 @@ export function TeacherLiveClasses() {
 
   // If in active class, show video conference
   if (activeClass) {
-    const subject = mockSubjects.find(s => s.id === activeClass.subjectId);
+    const subject = subjects.find(s => s.id === activeClass.subject_id);
     return (
       <div className="space-y-4">
         <Button variant="ghost" onClick={handleLeaveClass} className="gap-2">
@@ -151,7 +200,7 @@ export function TeacherLiveClasses() {
                     <SelectValue placeholder="Select subject" />
                   </SelectTrigger>
                   <SelectContent>
-                    {mockSubjects.map(s => (
+                    {subjects.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>
                     ))}
                   </SelectContent>
@@ -197,7 +246,7 @@ export function TeacherLiveClasses() {
               className="bg-white text-destructive hover:bg-white/90 w-full sm:w-auto"
               onClick={() => {
                 const liveClass = classes.find(c => c.status === "live");
-                if (liveClass) setActiveClass(liveClass);
+                if (liveClass) setActiveClass({ ...liveClass, status: 'live' });
               }}
             >
               <Play className="w-4 h-4 mr-2" />
@@ -210,7 +259,7 @@ export function TeacherLiveClasses() {
       {/* Class Grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {classes.map((liveClass, index) => {
-          const subject = mockSubjects.find(s => s.id === liveClass.subjectId);
+          const subject = subjects.find(s => s.id === liveClass.subject_id);
 
           return (
             <div
@@ -249,18 +298,18 @@ export function TeacherLiveClasses() {
               <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mb-4">
                 <div className="flex items-center gap-1">
                   <Calendar className="w-4 h-4" />
-                  <span className="text-xs">{formatDate(liveClass.scheduledAt)}</span>
+                  <span className="text-xs">{formatDate(liveClass.scheduled_at)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Clock className="w-4 h-4" />
-                  <span className="text-xs">{liveClass.duration} min</span>
+                  <span className="text-xs">{liveClass.duration_minutes} min</span>
                 </div>
               </div>
 
               <div className="flex items-center gap-2 mb-4">
                 <Users className="w-4 h-4 text-muted-foreground" />
                 <span className="text-sm text-muted-foreground">
-                  {liveClass.attendees}/{liveClass.totalStudents} students
+                  {liveClass.attendees || 0}/{liveClass.totalStudents || 35} students
                 </span>
               </div>
 

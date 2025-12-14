@@ -1,9 +1,24 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Search, Filter, Mail, Trophy, Flame, Star, TrendingUp, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
-import { mockStudents, Student } from "@/data/mockData";
+import { usersAPI, teachersAPI } from "@/config/api";
+interface Student {
+  id: string;
+  name: string;
+  email?: string;
+  avatar: string;
+  class: string;
+  grade: string;
+  xp: number;
+  level: number;
+  streak: number;
+  quizzesCompleted: number;
+  lessonsCompleted: number;
+  avgScore: number;
+  joinedAt: string;
+}
 import { cn } from "@/lib/utils";
 import {
   Select,
@@ -18,6 +33,36 @@ export function TeacherStudents() {
   const [filterGrade, setFilterGrade] = useState<string>("all");
   const [sortBy, setSortBy] = useState<string>("name");
   const [students, setStudents] = useState<Student[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadStudents();
+  }, []);
+
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      const data = await teachersAPI.getMyStudents(); // Use specific API
+      const studentData = (Array.isArray(data) ? data : []).map((s: any) => ({
+        ...s,
+        class: s.student_class || 'Unassigned',
+        grade: s.student_class || 'Unassigned',
+        avatar: s.avatar || s.name?.charAt(0) || 'S',
+        xp: 0, // Backend might not resolve XP yet or returns different shape
+        level: 1,
+        streak: 0,
+        quizzesCompleted: parseInt(s.completed_lessons) || 0, // Adjust based on actual backend query
+        lessonsCompleted: s.completed_lessons || 0,
+        avgScore: Math.round(s.avg_score || 0),
+        joinedAt: s.created_at || new Date().toISOString(),
+      }));
+      setStudents(studentData);
+    } catch (error) {
+      console.error('Failed to load students:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredStudents = students
     .filter(s =>

@@ -1,9 +1,29 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, GripVertical, BookOpen, Clock, Video, FileText, MoreVertical, ChevronRight, ChevronDown } from "lucide-react";
+import { IconRenderer } from "@/components/shared/IconRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { mockModules, mockLessons, mockSubjects, Module, Lesson } from "@/data/mockData";
+interface Module {
+  id: string;
+  title: string;
+  description: string;
+  subjectId: string;
+  lessonCount: number;
+  duration: string;
+  order?: number;
+}
+
+interface Lesson {
+  id: string;
+  moduleId: string;
+  title: string;
+  description: string;
+  type: "video" | "text" | "interactive";
+  duration: string;
+  completed?: boolean;
+}
+import { subjectsAPI, modulesAPI, lessonsAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -46,8 +66,10 @@ const lessonTypeColors = {
 
 export function TeacherModules() {
   const { toast } = useToast();
-  const [modules, setModules] = useState<Module[]>([]);
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [lessons, setLessons] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedSubject, setSelectedSubject] = useState<string>("");
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(["m1"]));
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
@@ -57,8 +79,52 @@ export function TeacherModules() {
   const [moduleForm, setModuleForm] = useState({ title: "", description: "" });
   const [lessonForm, setLessonForm] = useState({ title: "", description: "", type: "video" as Lesson["type"], duration: "" });
 
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [subjectsData, modulesData, lessonsData] = await Promise.all([
+        subjectsAPI.getTeacher(),
+        modulesAPI.getAll(),
+        lessonsAPI.getAll()
+      ]);
+      const loadedSubjects = Array.isArray(subjectsData) ? subjectsData : [];
+      setSubjects(loadedSubjects);
+
+      // Select first subject if none selected
+      if (!selectedSubject && loadedSubjects.length > 0) {
+        setSelectedSubject(loadedSubjects[0].id);
+      }
+
+      setModules((Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
+        ...m,
+        subjectId: m.subject_id || m.subjectId,
+        lessonCount: m.lesson_count || m.lessonCount || 0,
+        duration: m.duration_minutes ? `${m.duration_minutes} mins` : (m.duration || "N/A"),
+      })));
+
+      setLessons((Array.isArray(lessonsData) ? lessonsData : []).map((l: any) => ({
+        ...l,
+        moduleId: l.module_id || l.moduleId,
+        videoUrl: l.video_url || l.videoUrl,
+        duration: l.duration_minutes ? `${l.duration_minutes} mins` : (l.duration || "N/A"),
+        // Derive type if not present (simplified logic)
+        type: (l.video_url || l.videoUrl) ? 'video' : 'text',
+      })));
+
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast({ title: "Error loading data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filteredModules = modules.filter(m => m.subjectId === selectedSubject);
-  const currentSubject = mockSubjects.find(s => s.id === selectedSubject);
+  const currentSubject = subjects.find(s => s.id === selectedSubject);
 
   const toggleModule = (id: string) => {
     setExpandedModules(prev => {
@@ -69,52 +135,68 @@ export function TeacherModules() {
     });
   };
 
-  const handleCreateModule = () => {
+  const handleCreateModule = async () => {
     if (!moduleForm.title) return;
-    const newModule: Module = {
-      id: `m${Date.now()}`,
-      subjectId: selectedSubject,
-      title: moduleForm.title,
-      description: moduleForm.description,
-      order: filteredModules.length + 1,
-      lessonCount: 0,
-      duration: "0 hours",
-    };
-    setModules(prev => [...prev, newModule]);
-    toast({ title: "Module created", description: `${moduleForm.title} has been added.` });
-    setIsModuleDialogOpen(false);
-    setModuleForm({ title: "", description: "" });
+    if (!selectedSubject) {
+      toast({ title: "Please select a subject first", variant: "destructive" });
+      return;
+    }
+    try {
+      await modulesAPI.create({
+        title: moduleForm.title,
+        description: moduleForm.description,
+        subject_id: selectedSubject,
+      });
+      await loadData();
+      toast({ title: "Module created", description: `${moduleForm.title} has been added.` });
+      setIsModuleDialogOpen(false);
+      setModuleForm({ title: "", description: "" });
+    } catch (error) {
+      console.error('Failed to create module:', error);
+      toast({ title: "Failed to create module", variant: "destructive" });
+    }
   };
 
-  const handleCreateLesson = () => {
+  const handleCreateLesson = async () => {
     if (!lessonForm.title || !selectedModule) return;
-    const moduleLessons = lessons.filter(l => l.moduleId === selectedModule);
-    const newLesson: Lesson = {
-      id: `l${Date.now()}`,
-      moduleId: selectedModule,
-      title: lessonForm.title,
-      description: lessonForm.description,
-      type: lessonForm.type,
-      duration: lessonForm.duration || "10 min",
-      order: moduleLessons.length + 1,
-    };
-    setLessons(prev => [...prev, newLesson]);
-    setModules(prev => prev.map(m => m.id === selectedModule ? { ...m, lessonCount: m.lessonCount + 1 } : m));
-    toast({ title: "Lesson created", description: `${lessonForm.title} has been added.` });
-    setIsLessonDialogOpen(false);
-    setLessonForm({ title: "", description: "", type: "video", duration: "" });
+    try {
+      await lessonsAPI.create({
+        module_id: selectedModule,
+        title: lessonForm.title,
+        content: lessonForm.type === 'text' ? lessonForm.description : undefined,
+        video_url: lessonForm.type === 'video' ? 'https://example.com' : undefined, // Placeholder URL for now
+        duration_minutes: parseInt(lessonForm.duration) || 10,
+      });
+      await loadData();
+      toast({ title: "Lesson created", description: `${lessonForm.title} has been added.` });
+      setIsLessonDialogOpen(false);
+      setLessonForm({ title: "", description: "", type: "video", duration: "" });
+    } catch (error) {
+      console.error('Failed to create lesson:', error);
+      toast({ title: "Failed to create lesson", variant: "destructive" });
+    }
   };
 
-  const handleDeleteModule = (id: string) => {
-    setModules(prev => prev.filter(m => m.id !== id));
-    setLessons(prev => prev.filter(l => l.moduleId !== id));
-    toast({ title: "Module deleted", variant: "destructive" });
+  const handleDeleteModule = async (id: string) => {
+    try {
+      await modulesAPI.delete(id);
+      await loadData();
+      toast({ title: "Module deleted", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete module:', error);
+      toast({ title: "Failed to delete module", variant: "destructive" });
+    }
   };
 
-  const handleDeleteLesson = (id: string, moduleId: string) => {
-    setLessons(prev => prev.filter(l => l.id !== id));
-    setModules(prev => prev.map(m => m.id === moduleId ? { ...m, lessonCount: m.lessonCount - 1 } : m));
-    toast({ title: "Lesson deleted", variant: "destructive" });
+  const handleDeleteLesson = async (id: string, moduleId: string) => {
+    try {
+      await lessonsAPI.delete(id);
+      await loadData();
+      toast({ title: "Lesson deleted", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete lesson:', error);
+      toast({ title: "Failed to delete lesson", variant: "destructive" });
+    }
   };
 
   return (
@@ -127,17 +209,22 @@ export function TeacherModules() {
         <div className="flex gap-2">
           <Select value={selectedSubject} onValueChange={setSelectedSubject}>
             <SelectTrigger className="w-[200px]">
-              <SelectValue />
+              <SelectValue placeholder="Select a subject" />
             </SelectTrigger>
             <SelectContent>
-              {mockSubjects.map(s => (
-                <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>
+              {subjects.map(s => (
+                <SelectItem key={s.id} value={s.id}>
+                  <div className="flex items-center gap-2">
+                    <IconRenderer iconName={s.icon} className="w-4 h-4" />
+                    <span>{s.name}</span>
+                  </div>
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
           <Dialog open={isModuleDialogOpen} onOpenChange={setIsModuleDialogOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button disabled={!selectedSubject}>
                 <Plus className="w-4 h-4 mr-2" />
                 Add Module
               </Button>
@@ -176,11 +263,11 @@ export function TeacherModules() {
       <div className="bg-gradient-to-r from-primary/10 to-tertiary/10 rounded-xl p-6 border border-border">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-xl bg-card flex items-center justify-center text-3xl shadow-sm">
-            {currentSubject?.icon}
+            <IconRenderer iconName={currentSubject?.icon || "BookOpen"} />
           </div>
           <div>
             <h3 className="text-xl font-bold text-foreground">{currentSubject?.name}</h3>
-            <p className="text-sm text-muted-foreground">{filteredModules.length} modules • {currentSubject?.studentCount} students</p>
+            <p className="text-sm text-muted-foreground">{filteredModules.length} modules</p>
           </div>
         </div>
       </div>
@@ -197,12 +284,12 @@ export function TeacherModules() {
               open={isExpanded}
               onOpenChange={() => toggleModule(module.id)}
               className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
+              style={{ animationDelay: `${index * 50} ms` }}
             >
               <div className="p-4 flex items-center gap-4">
                 <GripVertical className="w-5 h-5 text-muted-foreground cursor-grab" />
                 <span className="w-8 h-8 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold text-sm">
-                  {module.order}
+                  {module.order || index + 1}
                 </span>
                 <CollapsibleTrigger className="flex-1 flex items-center gap-4 text-left">
                   <div className="flex-1">
@@ -255,12 +342,12 @@ export function TeacherModules() {
                     </div>
                   ) : (
                     <div className="divide-y divide-border">
-                      {moduleLessons.map((lesson, lessonIndex) => {
-                        const TypeIcon = lessonTypeIcons[lesson.type];
+                      {moduleLessons.map((lesson: any, lessonIndex: number) => {
+                        const TypeIcon = lessonTypeIcons[lesson.type as keyof typeof lessonTypeIcons] || FileText;
                         return (
                           <div key={lesson.id} className="p-4 pl-16 flex items-center gap-4 hover:bg-muted/30 transition-colors">
                             <span className="text-sm text-muted-foreground w-6">{lessonIndex + 1}.</span>
-                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", lessonTypeColors[lesson.type])}>
+                            <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center", lessonTypeColors[lesson.type as keyof typeof lessonTypeColors] || lessonTypeColors.text)}>
                               <TypeIcon className="w-4 h-4" />
                             </div>
                             <div className="flex-1">
@@ -340,7 +427,6 @@ export function TeacherModules() {
                   <SelectContent>
                     <SelectItem value="video">📹 Video</SelectItem>
                     <SelectItem value="text">📄 Text</SelectItem>
-                    <SelectItem value="interactive">🎮 Interactive</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

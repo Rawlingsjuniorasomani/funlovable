@@ -5,7 +5,7 @@ import { Check, Star, ArrowRight } from "lucide-react";
 const plans = [
   {
     name: "Single Child",
-    price: "GH₵400",
+    price: "GH₵300",
     period: "/child",
     description: "Perfect for families with one child",
     features: [
@@ -21,7 +21,7 @@ const plans = [
   },
   {
     name: "Family Plan",
-    price: "GH₵1,500",
+    price: "GH₵1,300",
     period: "/4 children",
     description: "Best value for larger families",
     features: [
@@ -100,8 +100,8 @@ export function PricingPreview() {
               <Link to="/pricing">
                 <Button
                   className={`w-full btn-bounce ${plan.popular
-                      ? "bg-orange-600 hover:bg-orange-700 text-white"
-                      : "bg-slate-900 hover:bg-slate-800 text-white"
+                    ? "bg-orange-600 hover:bg-orange-700 text-white"
+                    : "bg-slate-900 hover:bg-slate-800 text-white"
                     }`}
                 >
                   Subscribe Now

@@ -5,62 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
-const mockNotifications = [
-  {
-    id: '1',
-    type: 'alert',
-    title: 'Assignment Due Tomorrow',
-    message: 'Kwame has a Mathematics assignment due tomorrow at 5:00 PM.',
-    time: '2 hours ago',
-    read: false,
-    child: 'Kwame',
-  },
-  {
-    id: '2',
-    type: 'success',
-    title: 'Quiz Completed',
-    message: 'Ama scored 95% on the English Grammar Quiz. Great job!',
-    time: '5 hours ago',
-    read: false,
-    child: 'Ama',
-  },
-  {
-    id: '3',
-    type: 'info',
-    title: 'Live Class Reminder',
-    message: 'Science class with Dr. Owusu starts in 30 minutes.',
-    time: '1 day ago',
-    read: true,
-    child: 'Kwame',
-  },
-  {
-    id: '4',
-    type: 'warning',
-    title: 'Missed Class',
-    message: 'Ama missed the Social Studies live class yesterday.',
-    time: '2 days ago',
-    read: true,
-    child: 'Ama',
-  },
-  {
-    id: '5',
-    type: 'success',
-    title: 'Badge Earned',
-    message: 'Kwame earned the "Math Whiz" badge for scoring 90%+ on 5 quizzes!',
-    time: '3 days ago',
-    read: true,
-    child: 'Kwame',
-  },
-  {
-    id: '6',
-    type: 'info',
-    title: 'New Module Available',
-    message: 'A new module "Advanced Fractions" is now available in Mathematics.',
-    time: '4 days ago',
-    read: true,
-    child: 'All',
-  },
-];
+import { useNotifications } from "@/hooks/useNotifications";
 
 const notificationSettings = [
   { id: 'quiz_reminders', label: 'Quiz Reminders', description: 'Get notified about upcoming quizzes', enabled: true },
@@ -72,6 +17,12 @@ const notificationSettings = [
 ];
 
 const typeConfig = {
+  message: { icon: Info, color: 'text-tertiary bg-tertiary/10' },
+  quiz: { icon: Clock, color: 'text-primary bg-primary/10' },
+  class: { icon: AlertTriangle, color: 'text-destructive bg-destructive/10' },
+  achievement: { icon: CheckCircle, color: 'text-secondary bg-secondary/10' },
+  reminder: { icon: Bell, color: 'text-primary bg-primary/10' },
+  // Fallbacks for compatibility if needed
   alert: { icon: Clock, color: 'text-primary bg-primary/10' },
   success: { icon: CheckCircle, color: 'text-secondary bg-secondary/10' },
   warning: { icon: AlertTriangle, color: 'text-destructive bg-destructive/10' },
@@ -79,23 +30,9 @@ const typeConfig = {
 };
 
 export function ParentNotifications() {
-  const [notifications, setNotifications] = useState(mockNotifications);
+  const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification } = useNotifications();
   const [settings, setSettings] = useState(notificationSettings);
   const [activeTab, setActiveTab] = useState<'all' | 'settings'>('all');
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-
-  const markAsRead = (id: string) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
-  };
-
-  const deleteNotification = (id: string) => {
-    setNotifications(prev => prev.filter(n => n.id !== id));
-  };
 
   const toggleSetting = (id: string) => {
     setSettings(prev => prev.map(s => s.id === id ? { ...s, enabled: !s.enabled } : s));
@@ -166,7 +103,7 @@ export function ParentNotifications() {
                           <h3 className={cn("font-semibold", !notification.read && "text-primary")}>
                             {notification.title}
                           </h3>
-                          <p className="text-sm text-muted-foreground mt-1">{notification.message}</p>
+                          <p className="text-sm text-muted-foreground mt-1">{notification.description}</p>
                         </div>
                         <div className="flex items-center gap-2">
                           {!notification.read && (
@@ -180,7 +117,7 @@ export function ParentNotifications() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2 mt-2">
-                        <Badge variant="outline" className="text-xs">{notification.child}</Badge>
+                        {/* <Badge variant="outline" className="text-xs">{notification.child}</Badge> */}
                         <span className="text-xs text-muted-foreground">{notification.time}</span>
                       </div>
                     </div>

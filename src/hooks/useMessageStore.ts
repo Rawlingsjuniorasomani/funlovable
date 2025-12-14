@@ -1,6 +1,17 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { Message, mockMessages } from '@/data/mockData';
+
+export interface Message {
+    id: string;
+    from: string;
+    fromName: string;
+    to: string;
+    subject: string;
+    content: string;
+    type: "message" | "announcement" | "alert";
+    sentAt: string;
+    read: boolean;
+}
 
 interface MessageStore {
     messages: Message[];
@@ -12,8 +23,8 @@ interface MessageStore {
 
 export const useMessageStore = create<MessageStore>()(
     persist(
-        (set, get) => ({
-            messages: mockMessages, // Initialize with mock data
+        (set, get: () => MessageStore) => ({
+            messages: [], // Initialize with empty array
 
             sendMessage: (messageData) => {
                 const newMessage: Message = {
@@ -51,5 +62,5 @@ export const useMessageStore = create<MessageStore>()(
         {
             name: 'education-platform-messages',
         }
-    )
+    ) as any
 );

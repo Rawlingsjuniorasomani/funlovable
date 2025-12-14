@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Check, CreditCard, Shield, ArrowLeft, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,29 +7,12 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useToast } from "@/hooks/use-toast";
 import { cn } from "@/lib/utils";
-
-const plans = [
-  {
-    id: "single",
-    name: "Single Child",
-    price: 400,
-    period: "month",
-    description: "Perfect for individual learners",
-    features: ["1 Student Account", "All Subjects Access", "Progress Tracking", "Parent Dashboard"],
-  },
-  {
-    id: "family",
-    name: "Family Plan",
-    price: 1500,
-    period: "month",
-    description: "Best value for families",
-    features: ["Up to 4 Student Accounts", "All Subjects Access", "Advanced Analytics", "Priority Support", "Offline Access"],
-    popular: true,
-  },
-];
+import { plansAPI } from "@/config/api";
 
 export default function Checkout() {
-  const [selectedPlan, setSelectedPlan] = useState("family");
+  const [plans, setPlans] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedPlan, setSelectedPlan] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
@@ -38,6 +21,26 @@ export default function Checkout() {
     phone: "",
   });
   const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const data = await plansAPI.getAll();
+        const plansArray = Array.isArray(data) ? data : [];
+        setPlans(plansArray);
+        if (plansArray.length > 0) {
+          const recommended = plansArray.find((p: any) => p.recommended || p.name.includes("Family"));
+          setSelectedPlan(recommended ? recommended.id : plansArray[0].id);
+        }
+      } catch (error) {
+        console.error("Failed to load plans", error);
+        toast({ title: "Error loading plans", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPlans();
+  }, [toast]);
 
   const selectedPlanData = plans.find((p) => p.id === selectedPlan);
 
@@ -205,7 +208,7 @@ export default function Checkout() {
                 <h2 className="text-xl font-display font-semibold text-foreground mb-6">
                   Order Summary
                 </h2>
-                
+
                 {selectedPlanData && (
                   <div className="space-y-4 mb-6">
                     <div className="flex justify-between text-foreground">

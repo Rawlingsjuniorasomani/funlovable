@@ -1,17 +1,88 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Brain, Clock, Trophy, Play, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { quizzes, Quiz } from "@/data/quizData";
+import { Quiz } from "@/data/quizData"; // Keep Type
 import { useQuizResults } from "@/hooks/useQuizResults";
 import { MultiFormatQuizPlayer } from "@/components/quiz/MultiFormatQuizPlayer";
 import { cn } from "@/lib/utils";
+import { quizzesAPI } from "@/config/api";
+import { useToast } from "@/hooks/use-toast";
 
 export function StudentQuizzes() {
+  const [loading, setLoading] = useState(true);
+  const [quizzesList, setQuizzesList] = useState<Quiz[]>([]);
   const [selectedQuiz, setSelectedQuiz] = useState<Quiz | null>(null);
   const { getBestResult, getStats, saveResult } = useQuizResults();
   const stats = getStats();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    loadQuizzes();
+  }, []);
+
+  const loadQuizzes = async () => {
+    try {
+      setLoading(true);
+      const data = await quizzesAPI.getAll();
+      // Map backend data to Quiz interface
+      // Note: Backend might not return full questions in list view, but we need to match structure or use partial
+      // For now, we assume basic fields map, and we might need to fetch questions separately or map defaults
+      const mappedQuizzes = (Array.isArray(data) ? data : []).map((q: any) => ({
+        id: q.id,
+        title: q.title,
+        subject: q.subject_id || "General", // Placeholder if subject name not populated
+        description: q.description || "",
+        difficulty: q.difficulty || "medium",
+        duration: q.time_limit_minutes || q.duration || 10,
+        questions: [], // Questions loaded on start or if provided
+        xpReward: q.xp_reward || 100,
+        // Helper to determine if it has questions if backend differs
+      }));
+      setQuizzesList(mappedQuizzes);
+    } catch (error) {
+      console.error("Failed to load quizzes", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStartQuiz = async (quiz: Quiz) => {
+    // IF questions are missing, we might need to fetch details
+    if (!quiz.questions || quiz.questions.length === 0) {
+      try {
+        const fullQuiz = await quizzesAPI.getById(quiz.id);
+        // Map full details including questions
+        // This part heavily depends on backend response structure for questions
+        // We'll perform a basic mapping assuming backend has a 'questions' array
+        const mappedQuestions = (fullQuiz.questions || []).map((q: any) => ({
+          id: q.id,
+          type: q.type || 'multiple-choice',
+          question: q.text || q.question,
+          options: q.options || [],
+          correctAnswer: q.correct_answer || 0, // number or index?
+          explanation: q.explanation
+          // Handle other types if necessary
+        }));
+
+        const readyQuiz = {
+          ...quiz,
+          ...fullQuiz,
+          title: fullQuiz.title || quiz.title,
+          questions: mappedQuestions
+        };
+        setSelectedQuiz(readyQuiz as Quiz);
+      } catch (e) {
+        console.error("Failed to fetch quiz details", e);
+        toast({ title: "Failed to load quiz content", variant: "destructive" });
+        // If failed, maybe try to open what we have or do nothing
+        return;
+      }
+    } else {
+      setSelectedQuiz(quiz);
+    }
+  };
 
   const handleQuizComplete = (score: number, total: number, xpEarned: number) => {
     if (selectedQuiz) {
@@ -47,6 +118,8 @@ export function StudentQuizzes() {
     }
   };
 
+  if (loading) return <div className="p-8 text-center">Loading quizzes...</div>;
+
   return (
     <div className="space-y-6">
       <div>
@@ -57,7 +130,7 @@ export function StudentQuizzes() {
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
-          <p className="text-2xl font-bold text-foreground">{quizzes.length}</p>
+          <p className="text-2xl font-bold text-foreground">{quizzesList.length}</p>
           <p className="text-sm text-muted-foreground">Available</p>
         </div>
         <div className="bg-card p-4 rounded-xl border border-border text-center">
@@ -76,86 +149,90 @@ export function StudentQuizzes() {
 
       {/* Quiz List */}
       <div className="grid gap-4">
-        {quizzes.map((quiz) => {
-          const bestResult = getBestResult(quiz.id);
-          const isCompleted = !!bestResult;
+        {quizzesList.length === 0 ? (
+          <div className="text-center p-8 text-muted-foreground">No quizzes available at the moment.</div>
+        ) : (
+          quizzesList.map((quiz) => {
+            const bestResult = getBestResult(quiz.id);
+            const isCompleted = !!bestResult;
 
-          return (
-            <div
-              key={quiz.id}
-              className={cn(
-                "bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300",
-                isCompleted && "border-secondary/30"
-              )}
-            >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Brain className="w-5 h-5 text-primary" />
-                    <h3 className="font-display font-semibold text-lg text-foreground">
-                      {quiz.title}
-                    </h3>
-                    {isCompleted && (
-                      <CheckCircle className="w-5 h-5 text-secondary" />
-                    )}
-                  </div>
-                  <p className="text-muted-foreground text-sm mb-3">{quiz.description}</p>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Badge variant="outline">{quiz.subject}</Badge>
-                    <Badge className={getDifficultyColor(quiz.difficulty)}>
-                      {quiz.difficulty}
-                    </Badge>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {quiz.duration} min
+            return (
+              <div
+                key={quiz.id}
+                className={cn(
+                  "bg-card rounded-xl border border-border p-6 hover:shadow-lg transition-all duration-300",
+                  isCompleted && "border-secondary/30"
+                )}
+              >
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Brain className="w-5 h-5 text-primary" />
+                      <h3 className="font-display font-semibold text-lg text-foreground">
+                        {quiz.title}
+                      </h3>
+                      {isCompleted && (
+                        <CheckCircle className="w-5 h-5 text-secondary" />
+                      )}
                     </div>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Star className="w-4 h-4 text-star" />
-                      {quiz.xpReward} XP
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-col items-end gap-2">
-                  {bestResult && (
-                    <div className="text-right mb-2">
-                      <div className="flex items-center gap-2">
-                        <Trophy className={cn(
-                          "w-5 h-5",
-                          bestResult.percentage >= 80 ? "text-star" : "text-muted-foreground"
-                        )} />
-                        <span className="font-bold text-lg text-foreground">
-                          {bestResult.percentage}%
-                        </span>
+                    <p className="text-muted-foreground text-sm mb-3">{quiz.description}</p>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge variant="outline">{quiz.subject}</Badge>
+                      <Badge className={getDifficultyColor(quiz.difficulty)}>
+                        {quiz.difficulty}
+                      </Badge>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        {quiz.duration} min
                       </div>
-                      <p className="text-xs text-muted-foreground">Best Score</p>
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Star className="w-4 h-4 text-star" />
+                        {quiz.xpReward} XP
+                      </div>
                     </div>
-                  )}
-                  <Button 
-                    onClick={() => setSelectedQuiz(quiz)}
-                    variant={isCompleted ? "outline" : "default"}
-                    className="w-full md:w-auto"
-                  >
-                    <Play className="w-4 h-4 mr-2" />
-                    {isCompleted ? "Retake" : "Start Quiz"}
-                  </Button>
-                </div>
-              </div>
-
-              {bestResult && (
-                <div className="mt-4 pt-4 border-t border-border">
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span className="text-muted-foreground">Your Progress</span>
-                    <span className="font-medium text-foreground">
-                      {bestResult.score}/{bestResult.totalQuestions} correct
-                    </span>
                   </div>
-                  <Progress value={bestResult.percentage} className="h-2" />
+
+                  <div className="flex flex-col items-end gap-2">
+                    {bestResult && (
+                      <div className="text-right mb-2">
+                        <div className="flex items-center gap-2">
+                          <Trophy className={cn(
+                            "w-5 h-5",
+                            bestResult.percentage >= 80 ? "text-star" : "text-muted-foreground"
+                          )} />
+                          <span className="font-bold text-lg text-foreground">
+                            {bestResult.percentage}%
+                          </span>
+                        </div>
+                        <p className="text-xs text-muted-foreground">Best Score</p>
+                      </div>
+                    )}
+                    <Button
+                      onClick={() => handleStartQuiz(quiz)}
+                      variant={isCompleted ? "outline" : "default"}
+                      className="w-full md:w-auto"
+                    >
+                      <Play className="w-4 h-4 mr-2" />
+                      {isCompleted ? "Retake" : "Start Quiz"}
+                    </Button>
+                  </div>
                 </div>
-              )}
-            </div>
-          );
-        })}
+
+                {bestResult && (
+                  <div className="mt-4 pt-4 border-t border-border">
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span className="text-muted-foreground">Your Progress</span>
+                      <span className="font-medium text-foreground">
+                        {bestResult.score}/{bestResult.totalQuestions} correct
+                      </span>
+                    </div>
+                    <Progress value={bestResult.percentage} className="h-2" />
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );

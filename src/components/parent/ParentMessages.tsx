@@ -24,42 +24,22 @@ interface Teacher {
   unread: number;
 }
 
-const mockTeachers: Teacher[] = [
-  { id: "t1", name: "Mr. Adjei", subject: "Mathematics", avatar: "A", lastMessage: "Kwame is doing great in class!", lastMessageTime: "2h ago", unread: 1 },
-  { id: "t2", name: "Mrs. Osei", subject: "English", avatar: "O", lastMessage: "Please review the homework assignment", lastMessageTime: "1d ago", unread: 0 },
-  { id: "t3", name: "Mr. Mensah", subject: "Science", avatar: "M", lastMessage: "Quiz results are ready", lastMessageTime: "2d ago", unread: 0 },
-];
-
-const mockConversations: Record<string, Message[]> = {
-  t1: [
-    { id: "1", from: "teacher", content: "Good afternoon Mrs. Asante! I wanted to update you on Kwame's progress in Mathematics.", timestamp: "10:30 AM", read: true },
-    { id: "2", from: "parent", content: "Thank you for reaching out. How is he doing?", timestamp: "10:35 AM", read: true },
-    { id: "3", from: "teacher", content: "He's doing great! His quiz scores have improved significantly. He scored 9/10 on the last fractions quiz.", timestamp: "10:40 AM", read: true },
-    { id: "4", from: "parent", content: "That's wonderful news! We've been practicing at home.", timestamp: "10:45 AM", read: true },
-    { id: "5", from: "teacher", content: "Keep up the good work! I'll be sending home some extra practice worksheets this week.", timestamp: "10:50 AM", read: false },
-  ],
-  t2: [
-    { id: "1", from: "teacher", content: "Hello Mrs. Asante, please remind Kwame to complete his reading comprehension homework by Friday.", timestamp: "Yesterday", read: true },
-    { id: "2", from: "parent", content: "I'll make sure he completes it. Thank you for the reminder.", timestamp: "Yesterday", read: true },
-  ],
-  t3: [
-    { id: "1", from: "teacher", content: "The Science quiz results are now available. Kwame scored 8/10.", timestamp: "2 days ago", read: true },
-  ],
-};
+// Mocks removed
 
 export function ParentMessages() {
   const { toast } = useToast();
-  const [selectedTeacher, setSelectedTeacher] = useState<string | null>("t1");
+  const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
-  const [conversations, setConversations] = useState(mockConversations);
+  const [conversations, setConversations] = useState<Record<string, Message[]>>({});
+  const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredTeachers = mockTeachers.filter(t => 
+  const filteredTeachers = teachers.filter(t =>
     t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     t.subject.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const currentTeacher = mockTeachers.find(t => t.id === selectedTeacher);
+  const currentTeacher = teachers.find(t => t.id === selectedTeacher);
   const currentMessages = selectedTeacher ? conversations[selectedTeacher] || [] : [];
 
   const handleSend = () => {
@@ -164,8 +144,8 @@ export function ParentMessages() {
                   >
                     <div className={cn(
                       "max-w-[70%] rounded-2xl px-4 py-2",
-                      message.from === "parent" 
-                        ? "bg-primary text-primary-foreground rounded-br-sm" 
+                      message.from === "parent"
+                        ? "bg-primary text-primary-foreground rounded-br-sm"
                         : "bg-muted text-foreground rounded-bl-sm"
                     )}>
                       <p className="text-sm">{message.content}</p>

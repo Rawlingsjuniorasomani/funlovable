@@ -24,16 +24,16 @@ const plans = [
   {
     id: 'single',
     name: 'Single Child',
-    price: 80,
-    displayPrice: 'GH₵80',
+    price: 300,
+    displayPrice: 'GH₵300',
     period: 'per year',
     features: ['1 child account', 'All subjects', 'Live classes', 'Progress tracking'],
   },
   {
     id: 'family',
     name: 'Family Plan',
-    price: 150,
-    displayPrice: 'GH₵150',
+    price: 1300,
+    displayPrice: 'GH₵1300',
     period: 'per year',
     features: ['Up to 4 children', 'All subjects', 'Live classes', 'Priority support'],
     popular: true,
@@ -63,11 +63,11 @@ export default function OnboardingPage() {
   const { user, addChild, updateSubscription, completeOnboarding } = useAuthContext();
   const { createSubscription, addPayment, linkChild } = useParentData();
   const { addNotification } = useAdminNotifications();
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0]>(plans[0]);
   const [showPaystack, setShowPaystack] = useState(false);
-  
+
   const [childData, setChildData] = useState({
     name: '',
     age: '',
@@ -90,11 +90,12 @@ export default function OnboardingPage() {
       return;
     }
 
-    const newChild = addChild({
+    const newChild = await addChild({
       name: childData.name,
       age: parseInt(childData.age),
       grade: childData.grade,
       subjects: childData.subjects,
+      email: `${childData.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
     });
 
     if (newChild && user) {
@@ -123,8 +124,12 @@ export default function OnboardingPage() {
       }
     }
 
-    toast({ title: "Child added!", description: `${childData.name} has been added to your account.` });
-    setCurrentStep(3);
+    if (newChild) {
+      toast({ title: "Child added!", description: `${childData.name} has been added to your account.` });
+      setCurrentStep(3);
+    } else {
+      toast({ title: "Error", description: "Could not add child. Please try again.", variant: "destructive" });
+    }
   };
 
   const handlePaymentSuccess = async (reference: string) => {
@@ -203,15 +208,15 @@ export default function OnboardingPage() {
                 const Icon = step.icon;
                 const isCompleted = currentStep > step.id;
                 const isCurrent = currentStep === step.id;
-                
+
                 return (
                   <div key={step.id} className="flex items-center">
                     <div className="flex flex-col items-center">
                       <div className={cn(
                         "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors",
                         isCompleted ? "bg-secondary border-secondary text-secondary-foreground" :
-                        isCurrent ? "bg-primary border-primary text-primary-foreground" :
-                        "bg-muted border-border text-muted-foreground"
+                          isCurrent ? "bg-primary border-primary text-primary-foreground" :
+                            "bg-muted border-border text-muted-foreground"
                       )}>
                         {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
                       </div>
@@ -241,7 +246,7 @@ export default function OnboardingPage() {
               <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose Your Plan</h2>
                 <p className="text-muted-foreground text-center mb-8">Select the best plan for your family</p>
-                
+
                 <div className="grid md:grid-cols-2 gap-4 mb-8">
                   {plans.map((plan) => (
                     <button
@@ -275,7 +280,7 @@ export default function OnboardingPage() {
                     </button>
                   ))}
                 </div>
-                
+
                 <Button
                   onClick={() => setCurrentStep(2)}
                   className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 text-lg"
@@ -290,7 +295,7 @@ export default function OnboardingPage() {
               <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your Child</h2>
                 <p className="text-muted-foreground text-center mb-8">Enter your child's details to get started</p>
-                
+
                 <div className="space-y-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -315,49 +320,58 @@ export default function OnboardingPage() {
                       />
                     </div>
                   </div>
-                  
+
                   <div className="space-y-2">
-                    <Label>Class/Grade</Label>
-                    <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
+                    <Label>Class</Label>
+                    <select
+                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={childData.grade}
+                      onChange={(e) => setChildData(prev => ({ ...prev, grade: e.target.value }))}
+                    >
+                      <option value="" disabled>Select Grade</option>
                       {grades.map((grade) => (
-                        <button
-                          key={grade}
-                          onClick={() => setChildData(prev => ({ ...prev, grade }))}
-                          className={cn(
-                            "px-3 py-2 rounded-lg border text-sm font-medium transition-colors",
-                            childData.grade === grade
-                              ? "border-primary bg-primary/10 text-primary"
-                              : "border-border hover:bg-muted"
-                          )}
-                        >
-                          {grade}
-                        </button>
+                        <option key={grade} value={grade}>{grade}</option>
                       ))}
-                    </div>
+                    </select>
                   </div>
-                  
+
                   <div className="space-y-2">
                     <Label>Select Subjects</Label>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                      {allSubjects.map((subject) => (
-                        <button
-                          key={subject.id}
-                          onClick={() => handleSubjectToggle(subject.id)}
-                          className={cn(
-                            "flex items-center gap-2 p-3 rounded-lg border transition-colors",
-                            childData.subjects.includes(subject.id)
-                              ? "border-secondary bg-secondary/10"
-                              : "border-border hover:bg-muted"
-                          )}
-                        >
-                          <span>{subject.emoji}</span>
-                          <span className="text-sm font-medium">{subject.name}</span>
-                        </button>
-                      ))}
+                    <div className="space-y-3">
+                      <select
+                        className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                        onChange={(e) => {
+                          if (e.target.value) {
+                            handleSubjectToggle(e.target.value);
+                            e.target.value = ""; // Reset
+                          }
+                        }}
+                      >
+                        <option value="" disabled selected>Add a Subject...</option>
+                        {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.emoji} {s.name}
+                          </option>
+                        ))}
+                      </select>
+
+                      <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-dashed border-border bg-muted/30">
+                        {childData.subjects.length === 0 && <span className="text-sm text-muted-foreground p-1">No subjects selected</span>}
+                        {childData.subjects.map(sid => {
+                          const s = allSubjects.find(sub => sub.id === sid);
+                          if (!s) return null;
+                          return (
+                            <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
+                              {s.emoji} {s.name}
+                              <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
+                            </span>
+                          );
+                        })}
+                      </div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4 mt-8">
                   <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
                     Back
@@ -377,7 +391,7 @@ export default function OnboardingPage() {
               <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Complete Payment</h2>
                 <p className="text-muted-foreground text-center mb-8">Secure payment via Paystack</p>
-                
+
                 <div className="bg-muted/50 rounded-xl p-6 mb-6">
                   <div className="flex justify-between items-center mb-4">
                     <span className="font-medium">Selected Plan</span>
@@ -396,7 +410,7 @@ export default function OnboardingPage() {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4">
                   <Button variant="outline" onClick={() => setCurrentStep(2)} className="flex-1">
                     Back
@@ -432,7 +446,7 @@ export default function OnboardingPage() {
                 <p className="text-muted-foreground mb-8">
                   Your account is ready. Start exploring your child's learning journey now!
                 </p>
-                
+
                 <Button
                   onClick={handleComplete}
                   className="btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 px-12 text-lg"

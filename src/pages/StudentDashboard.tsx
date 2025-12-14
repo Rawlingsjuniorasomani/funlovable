@@ -15,6 +15,7 @@ import { StudentMessages } from "@/components/student/StudentMessages";
 import { StudentNotifications } from "@/components/student/StudentNotifications";
 import { StudentSettings } from "@/components/student/StudentSettings";
 import { StudentAnalytics } from "@/components/student/StudentAnalytics";
+import { StudentLessonsPage } from "@/components/student/StudentLessonsPage";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 
 export default function StudentDashboard() {
@@ -27,16 +28,17 @@ export default function StudentDashboard() {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <StudentSidebar />
 
-        <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
           <DashboardTopbar title="Student Dashboard" dashboardType="student" />
 
-          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
             <Routes>
               <Route index element={<StudentOverview />} />
               <Route path="subjects" element={<StudentSubjects />} />
+              <Route path="lessons" element={<StudentLessonsPage />} />
               <Route path="quizzes" element={<StudentQuizzes />} />
               <Route path="assignments" element={<StudentAssignments />} />
               <Route path="live-classes" element={<StudentLiveClasses />} />

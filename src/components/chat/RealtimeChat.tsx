@@ -120,11 +120,11 @@ interface RealtimeChatProps {
   currentUserRole?: "teacher" | "student" | "parent";
 }
 
-export function RealtimeChat({ 
-  currentUserId = "t1", 
-  currentUserRole = "teacher" 
+export function RealtimeChat({
+  currentUserId = "t1",
+  currentUserRole = "teacher"
 }: RealtimeChatProps) {
-  const [conversations, setConversations] = useState<Conversation[]>(mockConversations);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
@@ -133,7 +133,7 @@ export function RealtimeChat({
 
   useEffect(() => {
     if (selectedConversation) {
-      setMessages(mockMessages[selectedConversation.id] || []);
+      setMessages([]);
     }
   }, [selectedConversation]);
 
@@ -158,9 +158,9 @@ export function RealtimeChat({
     setNewMessage("");
 
     // Update last message in conversation
-    setConversations(prev => 
-      prev.map(c => 
-        c.id === selectedConversation.id 
+    setConversations(prev =>
+      prev.map(c =>
+        c.id === selectedConversation.id
           ? { ...c, lastMessage: message }
           : c
       )
@@ -302,8 +302,8 @@ export function RealtimeChat({
               )}
               <div>
                 <h3 className="font-semibold text-foreground">
-                  {selectedConversation.type === "group" 
-                    ? selectedConversation.name 
+                  {selectedConversation.type === "group"
+                    ? selectedConversation.name
                     : getOtherParticipant(selectedConversation)?.name}
                 </h3>
                 <p className="text-xs text-muted-foreground">

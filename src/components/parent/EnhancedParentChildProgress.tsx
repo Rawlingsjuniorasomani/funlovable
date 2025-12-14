@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { 
+import { useState, useEffect } from "react";
+import {
   TrendingUp, BookOpen, Trophy, Target, Calendar, Clock,
   Award, Star, CheckCircle, ArrowLeft, MessageSquare, Download
 } from "lucide-react";
@@ -10,6 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useNavigate, useParams } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { parentsAPI } from "@/config/api";
+import { format } from "date-fns";
+import { toast } from "sonner";
 
 interface SubjectGrade {
   subject: string;
@@ -19,6 +22,7 @@ interface SubjectGrade {
   trend: "up" | "down" | "stable";
   lessonsCompleted: number;
   totalLessons: number;
+  quizzesTaken: number;
 }
 
 interface RecentActivity {
@@ -30,28 +34,64 @@ interface RecentActivity {
   score?: number;
 }
 
-const mockGrades: SubjectGrade[] = [
-  { subject: "Mathematics", icon: "📐", grade: "A", score: 92, trend: "up", lessonsCompleted: 18, totalLessons: 20 },
-  { subject: "Science", icon: "🔬", grade: "B+", score: 85, trend: "up", lessonsCompleted: 12, totalLessons: 15 },
-  { subject: "English", icon: "📚", grade: "A-", score: 88, trend: "stable", lessonsCompleted: 15, totalLessons: 18 },
-  { subject: "Social Studies", icon: "🌍", grade: "B", score: 82, trend: "down", lessonsCompleted: 8, totalLessons: 12 },
-];
-
-const mockActivities: RecentActivity[] = [
-  { id: "1", type: "quiz", title: "Fractions Quiz", subject: "Mathematics", date: "2024-12-10", score: 95 },
-  { id: "2", type: "lesson", title: "Photosynthesis", subject: "Science", date: "2024-12-10" },
-  { id: "3", type: "achievement", title: "Quiz Master Badge", subject: "General", date: "2024-12-09" },
-  { id: "4", type: "assignment", title: "Grammar Worksheet", subject: "English", date: "2024-12-08", score: 88 },
-  { id: "5", type: "lesson", title: "Ancient Civilizations", subject: "Social Studies", date: "2024-12-08" },
-];
-
 export function EnhancedParentChildProgress() {
   const navigate = useNavigate();
   const { childId } = useParams();
   const { user } = useAuthContext();
   const [activeTab, setActiveTab] = useState("overview");
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<{
+    overview: { total_xp: number; level: number; average_score: number };
+    subjects: SubjectGrade[];
+    recent_activity: RecentActivity[];
+  } | null>(null);
 
   const child = user?.children?.find(c => c.id === childId);
+
+  useEffect(() => {
+    if (childId) {
+      loadChildData();
+    }
+  }, [childId]);
+
+  const loadChildData = async () => {
+    try {
+      setLoading(true);
+      const result = await parentsAPI.getChildProgress(childId!);
+      // Transform backend data to match interface if needed
+      // Currently backend returns: { overview, subjects, recent_activity }
+
+      // Map icons to subjects (simple mapping for now)
+      const subjectsWithIcons = result.subjects.map((sub: any) => ({
+        ...sub,
+        icon: getSubjectIcon(sub.subject),
+        trend: "stable", // Default for now
+        lessonsCompleted: 0, // Not yet in backend
+        totalLessons: 0 // Not yet in backend
+      }));
+
+      setData({
+        overview: result.overview,
+        subjects: subjectsWithIcons,
+        recent_activity: result.recent_activity || []
+      });
+    } catch (error) {
+      console.error("Failed to load child progress:", error);
+      toast.error("Failed to load progress data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getSubjectIcon = (name: string) => {
+    const n = name.toLowerCase();
+    if (n.includes("math")) return "📐";
+    if (n.includes("science")) return "🔬";
+    if (n.includes("english")) return "📚";
+    if (n.includes("social")) return "🌍";
+    if (n.includes("art")) return "🎨";
+    return "📘";
+  };
 
   if (!child) {
     return (
@@ -65,13 +105,15 @@ export function EnhancedParentChildProgress() {
     );
   }
 
-  const overallProgress = Math.round(
-    mockGrades.reduce((acc, g) => acc + (g.lessonsCompleted / g.totalLessons), 0) / mockGrades.length * 100
-  );
-  const overallAverage = Math.round(mockGrades.reduce((acc, g) => acc + g.score, 0) / mockGrades.length);
+  if (loading) {
+    return <div className="p-8 text-center text-muted-foreground">Loading progress...</div>;
+  }
+
+  const { overview, subjects, recent_activity } = data || { overview: { average_score: 0, level: 1, total_xp: 0 }, subjects: [] as SubjectGrade[], recent_activity: [] };
+  const overallAverage = overview?.average_score || 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade-in pb-10">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
@@ -84,7 +126,11 @@ export function EnhancedParentChildProgress() {
             </div>
             <div>
               <h2 className="text-2xl font-display font-bold text-foreground">{child.name}</h2>
-              <p className="text-muted-foreground">{child.grade} • Age {child.age}</p>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <span>{child.grade}</span>
+                <span>•</span>
+                <span>Level {overview?.level || 1}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -106,21 +152,7 @@ export function EnhancedParentChildProgress() {
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold">{overallProgress}%</p>
-                <p className="text-xs text-muted-foreground">Overall Progress</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
-                <Target className="w-5 h-5 text-secondary" />
+                <Target className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{overallAverage}%</p>
@@ -133,12 +165,12 @@ export function EnhancedParentChildProgress() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-tertiary/20 flex items-center justify-center">
-                <Clock className="w-5 h-5 text-tertiary" />
+              <div className="w-10 h-10 rounded-lg bg-secondary/20 flex items-center justify-center">
+                <Trophy className="w-5 h-5 text-secondary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">12h</p>
-                <p className="text-xs text-muted-foreground">This Week</p>
+                <p className="text-2xl font-bold">{overview?.total_xp || 0}</p>
+                <p className="text-xs text-muted-foreground">Total XP</p>
               </div>
             </div>
           </CardContent>
@@ -147,12 +179,12 @@ export function EnhancedParentChildProgress() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg bg-quaternary/20 flex items-center justify-center">
-                <Award className="w-5 h-5 text-quaternary" />
+              <div className="w-10 h-10 rounded-lg bg-tertiary/20 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-tertiary" />
               </div>
               <div>
-                <p className="text-2xl font-bold">8</p>
-                <p className="text-xs text-muted-foreground">Badges Earned</p>
+                <p className="text-2xl font-bold">{subjects.reduce((acc, s) => acc + (s.quizzesTaken || 0), 0)}</p>
+                <p className="text-xs text-muted-foreground">Quizzes Taken</p>
               </div>
             </div>
           </CardContent>
@@ -165,7 +197,6 @@ export function EnhancedParentChildProgress() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="subjects">Subjects</TabsTrigger>
           <TabsTrigger value="activity">Activity</TabsTrigger>
-          <TabsTrigger value="achievements">Achievements</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -176,33 +207,39 @@ export function EnhancedParentChildProgress() {
                 <BookOpen className="w-5 h-5 text-primary" />
                 Subject Performance
               </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {mockGrades.map((subject) => (
-                  <Card key={subject.subject}>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-2">
-                          <span className="text-2xl">{subject.icon}</span>
-                          <div>
-                            <h4 className="font-semibold">{subject.subject}</h4>
-                            <p className="text-sm text-muted-foreground">
-                              {subject.lessonsCompleted}/{subject.totalLessons} lessons
-                            </p>
+
+              {subjects.length === 0 ? (
+                <div className="text-center p-8 border border-dashed rounded-xl text-muted-foreground">
+                  No subject data available yet.
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {subjects.map((subject) => (
+                    <Card key={subject.subject}>
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-2">
+                            <span className="text-2xl">{subject.icon}</span>
+                            <div>
+                              <h4 className="font-semibold">{subject.subject}</h4>
+                              <p className="text-sm text-muted-foreground">
+                                {subject.quizzesTaken} quizzes taken
+                              </p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <Badge variant={subject.score >= 85 ? "default" : "secondary"} className={subject.score >= 85 ? "bg-secondary text-secondary-foreground" : ""}>
+                              {subject.grade}
+                            </Badge>
+                            <p className="text-sm text-muted-foreground mt-1">{subject.score}%</p>
                           </div>
                         </div>
-                        <div className="text-right">
-                          <Badge variant={subject.score >= 85 ? "default" : "secondary"} className={subject.score >= 85 ? "bg-secondary text-secondary-foreground" : ""}>
-                            {subject.grade}
-                          </Badge>
-                          <p className="text-sm text-muted-foreground mt-1">{subject.score}%</p>
-                        </div>
-                      </div>
-                      <Progress value={(subject.lessonsCompleted / subject.totalLessons) * 100} className="h-2" />
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        <Progress value={subject.score} className="h-2" />
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Recent Activity Sidebar */}
@@ -211,34 +248,35 @@ export function EnhancedParentChildProgress() {
                 <Calendar className="w-5 h-5 text-tertiary" />
                 Recent Activity
               </h3>
-              
+
               <Card>
                 <CardContent className="p-4">
                   <div className="space-y-4">
-                    {mockActivities.slice(0, 5).map((activity) => (
-                      <div key={activity.id} className="flex items-start gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                          activity.type === "quiz" ? "bg-primary/20" :
-                          activity.type === "lesson" ? "bg-secondary/20" :
-                          activity.type === "achievement" ? "bg-star/20" :
-                          "bg-tertiary/20"
-                        }`}>
-                          {activity.type === "quiz" && <Trophy className="w-4 h-4 text-primary" />}
-                          {activity.type === "lesson" && <BookOpen className="w-4 h-4 text-secondary" />}
-                          {activity.type === "achievement" && <Star className="w-4 h-4 text-star" />}
-                          {activity.type === "assignment" && <CheckCircle className="w-4 h-4 text-tertiary" />}
+                    {recent_activity.length === 0 ? (
+                      <p className="text-sm text-muted-foreground text-center">No recent activity.</p>
+                    ) : (
+                      recent_activity.slice(0, 5).map((activity) => (
+                        <div key={activity.id} className="flex items-start gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${activity.type === "quiz" ? "bg-primary/20" :
+                            activity.type === "lesson" ? "bg-secondary/20" :
+                              "bg-tertiary/20"
+                            }`}>
+                            {activity.type === "quiz" && <Trophy className="w-4 h-4 text-primary" />}
+                            {activity.type === "lesson" && <BookOpen className="w-4 h-4 text-secondary" />}
+                            {activity.type === "assignment" && <CheckCircle className="w-4 h-4 text-tertiary" />}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-medium truncate">{activity.title}</p>
+                            <p className="text-xs text-muted-foreground">{activity.subject} • {format(new Date(activity.date), 'MMM d, yyyy')}</p>
+                          </div>
+                          {activity.score !== undefined && (
+                            <Badge variant="outline" className="text-xs">
+                              {activity.score}%
+                            </Badge>
+                          )}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium truncate">{activity.title}</p>
-                          <p className="text-xs text-muted-foreground">{activity.subject}</p>
-                        </div>
-                        {activity.score && (
-                          <Badge variant="outline" className="text-xs">
-                            {activity.score}%
-                          </Badge>
-                        )}
-                      </div>
-                    ))}
+                      ))
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -248,7 +286,7 @@ export function EnhancedParentChildProgress() {
 
         <TabsContent value="subjects" className="mt-6">
           <div className="space-y-4">
-            {mockGrades.map((subject) => (
+            {subjects.map((subject) => (
               <Card key={subject.subject}>
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
@@ -261,25 +299,15 @@ export function EnhancedParentChildProgress() {
                     </div>
                     <div className="text-right">
                       <p className="text-3xl font-bold text-primary">{subject.score}%</p>
-                      <Badge variant={subject.trend === "up" ? "default" : subject.trend === "down" ? "destructive" : "secondary"}>
-                        {subject.trend === "up" ? "↑ Improving" : subject.trend === "down" ? "↓ Needs Attention" : "→ Stable"}
-                      </Badge>
                     </div>
                   </div>
-                  
+
                   <div className="grid grid-cols-3 gap-4 pt-4 border-t">
                     <div className="text-center">
-                      <p className="text-2xl font-bold">{subject.lessonsCompleted}</p>
-                      <p className="text-sm text-muted-foreground">Lessons Done</p>
+                      <p className="text-2xl font-bold">{subject.quizzesTaken}</p>
+                      <p className="text-sm text-muted-foreground">Quizzes</p>
                     </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">{Math.round((subject.lessonsCompleted / subject.totalLessons) * 100)}%</p>
-                      <p className="text-sm text-muted-foreground">Progress</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-2xl font-bold">{subject.totalLessons - subject.lessonsCompleted}</p>
-                      <p className="text-sm text-muted-foreground">Remaining</p>
-                    </div>
+                    {/* Add more real stats as available */}
                   </div>
                 </CardContent>
               </Card>
@@ -291,24 +319,20 @@ export function EnhancedParentChildProgress() {
           <Card>
             <CardContent className="p-6">
               <div className="space-y-4">
-                {mockActivities.map((activity) => (
+                {recent_activity.map((activity) => (
                   <div key={activity.id} className="flex items-center gap-4 p-3 rounded-lg hover:bg-muted/50">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      activity.type === "quiz" ? "bg-primary/20" :
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${activity.type === "quiz" ? "bg-primary/20" :
                       activity.type === "lesson" ? "bg-secondary/20" :
-                      activity.type === "achievement" ? "bg-star/20" :
-                      "bg-tertiary/20"
-                    }`}>
+                        "bg-tertiary/20"
+                      }`}>
                       {activity.type === "quiz" && <Trophy className="w-5 h-5 text-primary" />}
                       {activity.type === "lesson" && <BookOpen className="w-5 h-5 text-secondary" />}
-                      {activity.type === "achievement" && <Star className="w-5 h-5 text-star" />}
-                      {activity.type === "assignment" && <CheckCircle className="w-5 h-5 text-tertiary" />}
                     </div>
                     <div className="flex-1">
                       <p className="font-medium">{activity.title}</p>
-                      <p className="text-sm text-muted-foreground">{activity.subject} • {activity.date}</p>
+                      <p className="text-sm text-muted-foreground">{activity.subject} • {format(new Date(activity.date), 'PPP')}</p>
                     </div>
-                    {activity.score && (
+                    {activity.score !== undefined && (
                       <Badge variant="outline" className="text-sm">
                         Score: {activity.score}%
                       </Badge>
@@ -318,32 +342,6 @@ export function EnhancedParentChildProgress() {
               </div>
             </CardContent>
           </Card>
-        </TabsContent>
-
-        <TabsContent value="achievements" className="mt-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[
-              { name: "Quiz Master", icon: "🏆", description: "Completed 10 quizzes", earned: true },
-              { name: "Bookworm", icon: "📚", description: "Read 20 lessons", earned: true },
-              { name: "7-Day Streak", icon: "🔥", description: "Studied 7 days in a row", earned: true },
-              { name: "Math Wizard", icon: "🧮", description: "90% in Math", earned: true },
-              { name: "Science Star", icon: "⭐", description: "Complete all Science", earned: false },
-              { name: "Perfect Score", icon: "💯", description: "100% on any quiz", earned: false },
-              { name: "Early Bird", icon: "🐦", description: "Study before 7am", earned: true },
-              { name: "Team Player", icon: "🤝", description: "Join 5 live classes", earned: false },
-            ].map((achievement, i) => (
-              <Card key={i} className={!achievement.earned ? "opacity-50" : ""}>
-                <CardContent className="p-4 text-center">
-                  <span className="text-4xl">{achievement.icon}</span>
-                  <h4 className="font-semibold mt-2">{achievement.name}</h4>
-                  <p className="text-xs text-muted-foreground">{achievement.description}</p>
-                  {achievement.earned && (
-                    <Badge className="mt-2 bg-secondary text-secondary-foreground">Earned</Badge>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </TabsContent>
       </Tabs>
     </div>

@@ -13,7 +13,7 @@ import {
 const plans = [
   {
     name: "Single Child",
-    price: "GH₵400",
+    price: "GH₵300",
     period: "per child",
     description: "Perfect for families with one child ready to learn",
     features: [
@@ -33,7 +33,7 @@ const plans = [
   },
   {
     name: "Family Plan",
-    price: "GH₵1,500",
+    price: "GH₵1,300",
     period: "for up to 4 children",
     description: "Best value for families with multiple children",
     features: [
@@ -163,11 +163,17 @@ const Pricing = () => {
                     ))}
                   </ul>
 
-                  <Link to="/parent/register-flow" state={{ selectedPlan: { name: plan.name, priceVal: plan.name === "Single Child" ? 400 : 1500 } }}>
+                  <Link to="/parent/register-flow" state={{
+                    selectedPlan: {
+                      name: plan.name,
+                      id: plan.name === "Single Child" ? "single" : "family",
+                      priceVal: plan.name === "Single Child" ? 300 : 1300
+                    }
+                  }}>
                     <Button
                       className={`w-full btn-bounce text-lg py-6 ${plan.popular
-                          ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
-                          : "bg-primary hover:bg-primary/90"
+                        ? "bg-secondary hover:bg-secondary/90 text-secondary-foreground"
+                        : "bg-primary hover:bg-primary/90"
                         }`}
                     >
                       {plan.cta}

@@ -7,6 +7,7 @@ import { CreditCard, Shield, CheckCircle, Loader2 } from "lucide-react";
 import { usePaystackPayment } from "react-paystack";
 import { useToast } from "@/hooks/use-toast";
 import { PaystackProps } from "react-paystack/dist/types";
+import { paymentsAPI } from "@/config/api";
 
 interface PaystackCheckoutProps {
   amount: number;
@@ -23,19 +24,32 @@ export function PaystackCheckout({ amount, email, planName, onSuccess, onClose }
   const config: PaystackProps = {
     reference: `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     email: email,
-    amount: amount * 100, 
-    publicKey: "pk_test_80bb43d7d72d46674060d9605602ba82cd523119", 
+    amount: amount * 100,
+    currency: 'GHS',
+    publicKey: "pk_test_80bb43d7d72d46674060d9605602ba82cd523119",
   };
 
   const initializePayment = usePaystackPayment(config);
 
-  const handleSuccess = (reference: any) => {
-    setIsSuccess(true);
-    toast({
-      title: "Payment Successful!",
-      description: `Your payment for ${planName} was processed successfully.`,
-    });
-    onSuccess(reference.reference);
+  const handleSuccess = async (reference: any) => {
+    try {
+      // Verify with backend
+      await paymentsAPI.verify(reference.reference);
+
+      setIsSuccess(true);
+      toast({
+        title: "Payment Successful!",
+        description: `Your payment for ${planName} was processed successfully.`,
+      });
+      onSuccess(reference.reference);
+    } catch (error) {
+      console.error('Payment verification failed:', error);
+      toast({
+        title: "Verification Failed",
+        description: "Payment was successful but server verification failed. Please contact support.",
+        variant: "destructive",
+      });
+    }
   };
 
   const handleClose = () => {

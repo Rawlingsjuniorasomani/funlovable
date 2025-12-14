@@ -31,12 +31,22 @@ export function TeacherApprovalWorkflow() {
     loadPendingTeachers();
   }, []);
 
-  const loadPendingTeachers = () => {
-    const allUsers = getAllUsers();
-    const pending = allUsers.filter(
-      (u) => u.role === "teacher" && u.approvalStatus === "pending"
-    );
-    setPendingTeachers(pending);
+  const loadPendingTeachers = async () => {
+    try {
+      const allUsers = await getAllUsers();
+      if (Array.isArray(allUsers)) {
+        const pending = allUsers.filter(
+          (u) => u.role === "teacher" && u.approvalStatus === "pending"
+        );
+        setPendingTeachers(pending);
+      } else {
+        console.error("getAllUsers did not return an array:", allUsers);
+        setPendingTeachers([]);
+      }
+    } catch (error) {
+      console.error("Failed to load pending teachers:", error);
+      setPendingTeachers([]);
+    }
   };
 
   const handleApprove = async (teacher: UserType) => {

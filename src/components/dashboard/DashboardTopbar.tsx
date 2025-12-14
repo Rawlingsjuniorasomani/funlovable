@@ -57,7 +57,27 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
               </Button>
             </SidebarTrigger>
           )}
-          <h1 className="font-display font-semibold text-lg hidden sm:block">{title}</h1>
+          <div className="flex flex-col sm:block">
+            <h1 className="font-display font-semibold text-lg">{title}</h1>
+
+            {/* Parent Acting as Student Banner */}
+            {(user as any)?.parent_id && (
+              <div className="flex items-center gap-2 mt-1 sm:ml-4 sm:mt-0 sm:inline-flex bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded text-xs border border-yellow-500/20">
+                <span className="font-semibold">Viewing as Student</span>
+                <Button
+                  size="sm"
+                  variant="link"
+                  className="h-auto p-0 text-yellow-700 underline"
+                  onClick={() => {
+                    sessionStorage.removeItem('viewAsChildId');
+                    window.location.href = '/parent';
+                  }}
+                >
+                  Exit View
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Search Bar - Center */}

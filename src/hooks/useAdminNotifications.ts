@@ -14,6 +14,7 @@ export interface AdminNotification {
 
 interface AdminNotificationState {
   notifications: AdminNotification[];
+  loadNotifications: () => Promise<void>;
   addNotification: (notification: Omit<AdminNotification, 'id' | 'read' | 'createdAt'>) => void;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
@@ -26,33 +27,76 @@ const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const useAdminNotifications = create<AdminNotificationState>()(
   persist(
-    (set, get) => ({
+    (set, get: () => AdminNotificationState) => ({
       notifications: [],
 
+      loadNotifications: async () => {
+        try {
+          // Dynamic import or use API client
+          const token = localStorage.getItem('auth_token');
+          if (!token) return;
+
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          if (response.status === 403) return; // Silent return for non-admins
+          if (response.ok) {
+            const data = await response.json();
+            // Backend returns snake_caseDB fields? Need to map if so.
+            // NotificationModel returns: id, type, title, description, is_read, created_at
+            // Frontend expects: id, type, title, description, read, createdAt
+            const mapped = data.map((n: any) => ({
+              id: n.id,
+              type: n.type,
+              title: n.title,
+              description: n.description,
+              read: n.is_read,
+              createdAt: n.created_at,
+              relatedId: n.related_id
+            }));
+            set({ notifications: mapped });
+          }
+        } catch (error) {
+          console.error('Failed to load notifications:', error);
+        }
+      },
+
       addNotification: (notification) => {
-        const newNotification: AdminNotification = {
-          ...notification,
-          id: generateId(),
-          read: false,
-          createdAt: new Date().toISOString(),
-        };
-        set((state) => ({
-          notifications: [newNotification, ...state.notifications],
-        }));
+        // Optimistic update for local actions, but backend handles real creation
+        // Ideally we just reload
       },
 
-      markAsRead: (id) => {
-        set((state) => ({
-          notifications: state.notifications.map((n) =>
-            n.id === id ? { ...n, read: true } : n
-          ),
-        }));
+      markAsRead: async (id) => {
+        try {
+          const token = localStorage.getItem('auth_token');
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/${id}/read`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          // Update local state
+          set((state) => ({
+            notifications: state.notifications.map((n) =>
+              n.id === id ? { ...n, read: true } : n
+            ),
+          }));
+        } catch (e) {
+          console.error(e);
+        }
       },
 
-      markAllAsRead: () => {
-        set((state) => ({
-          notifications: state.notifications.map((n) => ({ ...n, read: true })),
-        }));
+      markAllAsRead: async () => {
+        try {
+          const token = localStorage.getItem('auth_token');
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/read-all`, {
+            method: 'PUT',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          set((state) => ({
+            notifications: state.notifications.map((n) => ({ ...n, read: true })),
+          }));
+        } catch (e) {
+          console.error(e);
+        }
       },
 
       getUnreadCount: () => {
@@ -68,7 +112,13 @@ export const useAdminNotifications = create<AdminNotificationState>()(
       },
     }),
     {
-      name: 'admin-notifications',
+      name: 'admin-notifications-storage', // Changed name to avoid conflict with old format
+      onRehydrateStorage: () => (state) => {
+        // Auto-load on hydration
+        if (state && (state as any).loadNotifications) {
+          (state as any).loadNotifications();
+        }
+      }
     }
-  )
+  ) as any
 );

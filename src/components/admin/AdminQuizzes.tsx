@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Search, MoreVertical, Edit, Trash2, Eye, Target, Play, CheckCircle, Clock, BarChart3, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,11 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
-import { mockSubjects, mockModules, mockQuizRecords, QuizRecord } from "@/data/mockData";
+import { subjectsAPI, modulesAPI, quizzesAPI } from "@/config/api";
 
 export function AdminQuizzes() {
   const { toast } = useToast();
-  const [quizzes, setQuizzes] = useState<QuizRecord[]>([]);
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -23,36 +26,84 @@ export function AdminQuizzes() {
     title: "", subjectId: "", moduleId: "", questionCount: "10", duration: "15"
   });
 
-  const handleAdd = () => {
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const [subjectsData, modulesData, quizzesData] = await Promise.all([
+        subjectsAPI.getAll(),
+        modulesAPI.getAll(),
+        quizzesAPI.getAll()
+      ]);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+      setModules(Array.isArray(modulesData) ? modulesData : []);
+      setQuizzes((Array.isArray(quizzesData) ? quizzesData : []).map((q: any) => ({
+        ...q,
+        subjectId: q.subject_id || q.subjectId, // Ensure subjectId is resolved if part of module or direct
+        moduleId: q.module_id || q.moduleId,
+        questionCount: q.questions_count || 10, // Placeholder if not in DB
+        duration: q.time_limit_minutes || q.duration || 15,
+        status: q.is_active ? 'active' : 'draft', // Map boolean to status
+        attempts: q.attempts_count || 0,
+        avgScore: q.avg_score || 0,
+      })));
+    } catch (error) {
+      console.error('Failed to load data:', error);
+      toast({ title: "Error loading data", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAdd = async () => {
     if (!formData.title || !formData.subjectId) {
       toast({ title: "Missing Fields", variant: "destructive" });
       return;
     }
-    const newQuiz: QuizRecord = {
-      id: `q${Date.now()}`,
-      title: formData.title,
-      subjectId: formData.subjectId,
-      moduleId: formData.moduleId || undefined,
-      questionCount: parseInt(formData.questionCount),
-      duration: parseInt(formData.duration),
-      status: "draft",
-      attempts: 0,
-      avgScore: 0,
-    };
-    setQuizzes([...quizzes, newQuiz]);
-    setIsAddOpen(false);
-    setFormData({ title: "", subjectId: "", moduleId: "", questionCount: "10", duration: "15" });
-    toast({ title: "Quiz Created" });
+
+    try {
+      // NOTE: Verify backend supports subject_id if module_id is missing, or enforce module_id
+      await quizzesAPI.create({
+        title: formData.title,
+        module_id: formData.moduleId || "", // If empty, backend might complain if required
+        // subject_id: formData.subjectId, // Add if backend supports
+        description: `Duration: ${formData.duration} mins`, // Storing duration in description if no field
+        passing_score: 70, // Default
+      });
+      await loadData();
+      setIsAddOpen(false);
+      setFormData({ title: "", subjectId: "", moduleId: "", questionCount: "10", duration: "15" });
+      toast({ title: "Quiz Created" });
+    } catch (error) {
+      console.error('Failed to create quiz:', error);
+      toast({ title: "Failed to create quiz", variant: "destructive" });
+    }
   };
 
-  const handleDelete = (id: string) => {
-    setQuizzes(quizzes.filter(q => q.id !== id));
-    toast({ title: "Quiz Deleted", variant: "destructive" });
+  const handleDelete = async (id: string) => {
+    try {
+      await quizzesAPI.delete(id);
+      await loadData();
+      toast({ title: "Quiz Deleted", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete quiz:', error);
+      toast({ title: "Failed to delete quiz", variant: "destructive" });
+    }
   };
 
-  const handleStatusChange = (id: string, status: QuizRecord["status"]) => {
-    setQuizzes(quizzes.map(q => q.id === id ? { ...q, status } : q));
-    toast({ title: status === 'active' ? "Quiz Published" : "Status Updated" });
+  const handleStatusChange = async (id: string, status: string) => {
+    const isActive = status === 'active';
+    try {
+      await quizzesAPI.update(id, { is_active: isActive });
+      await loadData();
+      toast({ title: isActive ? "Quiz Published" : "Status Updated" });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast({ title: "Failed to update status", variant: "destructive" });
+    }
   };
 
   const filtered = quizzes.filter(q => {
@@ -97,7 +148,7 @@ export function AdminQuizzes() {
                 <Select value={formData.subjectId} onValueChange={v => setFormData({ ...formData, subjectId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select subject" /></SelectTrigger>
                   <SelectContent>
-                    {mockSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
+                    {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.icon} {s.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -106,7 +157,7 @@ export function AdminQuizzes() {
                 <Select value={formData.moduleId} onValueChange={v => setFormData({ ...formData, moduleId: v })}>
                   <SelectTrigger><SelectValue placeholder="Select module" /></SelectTrigger>
                   <SelectContent>
-                    {mockModules.filter(m => m.subjectId === formData.subjectId).map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
+                    {modules.filter(m => m.subjectId === formData.subjectId).map(m => <SelectItem key={m.id} value={m.id}>{m.title}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
@@ -228,7 +279,7 @@ export function AdminQuizzes() {
             </TableHeader>
             <TableBody>
               {filtered.map(quiz => {
-                const subject = mockSubjects.find(s => s.id === quiz.subjectId);
+                const subject = subjects.find(s => s.id === quiz.subjectId);
                 return (
                   <TableRow key={quiz.id}>
                     <TableCell className="font-medium">{quiz.title}</TableCell>

@@ -46,12 +46,7 @@ interface SubscriptionPlan {
   recommended?: boolean;
 }
 
-const mockPaymentHistory: PaymentHistory[] = [
-  { id: "1", date: "2024-12-01", description: "Premium Plan - Monthly", amount: 29.99, status: "completed", method: "Visa •••• 4242" },
-  { id: "2", date: "2024-11-01", description: "Premium Plan - Monthly", amount: 29.99, status: "completed", method: "Visa •••• 4242" },
-  { id: "3", date: "2024-10-01", description: "Premium Plan - Monthly", amount: 29.99, status: "completed", method: "Visa •••• 4242" },
-  { id: "4", date: "2024-09-01", description: "Standard Plan - Monthly", amount: 19.99, status: "completed", method: "Visa •••• 4242" },
-];
+const mockPaymentHistory: PaymentHistory[] = [];
 
 const subscriptionPlans: SubscriptionPlan[] = [
   {

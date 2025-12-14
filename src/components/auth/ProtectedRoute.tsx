@@ -40,7 +40,7 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = tru
   }
 
   // Check if parent needs to complete onboarding
-  if (requireOnboarding && user.role === 'parent' && !user.onboardingComplete) {
+  if (requireOnboarding && user.role === 'parent' && !user.is_onboarded && !user.onboardingComplete) {
     return <Navigate to="/onboarding" replace />;
   }
 

@@ -12,52 +12,6 @@ export interface Notification {
 
 const STORAGE_KEY = "lovable_notifications";
 
-// Mock initial notifications
-const mockNotifications: Notification[] = [
-  {
-    id: "1",
-    type: "quiz",
-    title: "Quiz Completed!",
-    description: "You scored 9/10 on Fractions & Decimals",
-    time: "2 minutes ago",
-    read: false,
-    actionUrl: "/student/quizzes",
-  },
-  {
-    id: "2",
-    type: "class",
-    title: "Live Class Starting Soon",
-    description: "Mathematics class starts in 30 minutes",
-    time: "30 minutes ago",
-    read: false,
-    actionUrl: "/student/schedule",
-  },
-  {
-    id: "3",
-    type: "message",
-    title: "New Message from Teacher",
-    description: "Teacher sent you feedback on your assignment",
-    time: "1 hour ago",
-    read: false,
-  },
-  {
-    id: "4",
-    type: "achievement",
-    title: "Badge Earned! 🏆",
-    description: "You earned the 'Math Whiz' badge",
-    time: "2 hours ago",
-    read: true,
-  },
-  {
-    id: "5",
-    type: "reminder",
-    title: "Assignment Due Tomorrow",
-    description: "Science project submission deadline",
-    time: "5 hours ago",
-    read: true,
-  },
-];
-
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -66,8 +20,7 @@ export function useNotifications() {
     if (stored) {
       setNotifications(JSON.parse(stored));
     } else {
-      setNotifications(mockNotifications);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(mockNotifications));
+      setNotifications([]);
     }
   }, []);
 

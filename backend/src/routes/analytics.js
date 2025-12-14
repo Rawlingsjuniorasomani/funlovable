@@ -29,6 +29,14 @@ router.get('/admin', authMiddleware, requireRole('admin'), async (req, res) => {
       FROM payments
     `);
 
+    // Daily revenue (last 30 days)
+    const dailyRevenueResult = await pool.query(`
+      SELECT DATE(created_at) as date, SUM(amount) as revenue
+      FROM payments
+      WHERE status = 'success' AND created_at >= CURRENT_DATE - INTERVAL '30 days'
+      GROUP BY DATE(created_at) ORDER BY date
+    `);
+
     // Active subscriptions
     const subscriptionsResult = await pool.query(`
       SELECT plan, COUNT(*) as count 
@@ -45,18 +53,59 @@ router.get('/admin', authMiddleware, requireRole('admin'), async (req, res) => {
       FROM quiz_attempts
     `);
 
-    // Pending teacher approvals
-    const pendingTeachersResult = await pool.query(`
-      SELECT COUNT(*) as count FROM users WHERE role = 'teacher' AND is_approved = false
+    // Recent activity (Users and Payments mixed)
+    const recentActivityResult = await pool.query(`
+      SELECT 'user' as type, name as title, created_at as date, email as subtitle
+      FROM users
+      ORDER BY created_at DESC LIMIT 5
     `);
+
+    const recentPaymentsResult = await pool.query(`
+      SELECT 'payment' as type, amount::text as title, created_at as date, status as subtitle
+      FROM payments
+      ORDER BY created_at DESC LIMIT 5
+    `);
+
+    // Merge and sort
+    const recentActivity = [...recentActivityResult.rows, ...recentPaymentsResult.rows]
+      .sort((a, b) => new Date(b.date) - new Date(a.date))
+      .slice(0, 5);
+
+    // System alerts
+    const alerts = [];
+    const pendingCount = parseInt(pendingTeachersResult.rows[0].count);
+    if (pendingCount > 0) {
+      alerts.push({
+        type: 'warning',
+        message: `${pendingCount} Teacher approval${pendingCount > 1 ? 's' : ''} pending`,
+        date: new Date()
+      });
+    }
+
+    // Check for recent failed payments
+    const failedPaymentsResult = await pool.query(`
+      SELECT COUNT(*) as count FROM payments 
+      WHERE status = 'failed' AND created_at >= CURRENT_DATE - INTERVAL '24 hours'
+    `);
+    const failedCount = parseInt(failedPaymentsResult.rows[0].count);
+    if (failedCount > 0) {
+      alerts.push({
+        type: 'error',
+        message: `${failedCount} Payment failure${failedCount > 1 ? 's' : ''} in last 24h`,
+        date: new Date()
+      });
+    }
 
     res.json({
       userCounts: userCountsResult.rows,
       newUsers: newUsersResult.rows,
       paymentStats: paymentStatsResult.rows[0],
+      dailyRevenue: dailyRevenueResult.rows,
       subscriptions: subscriptionsResult.rows,
       quizStats: quizStatsResult.rows[0],
-      pendingTeachers: parseInt(pendingTeachersResult.rows[0].count)
+      pendingTeachers: pendingCount,
+      recentActivity,
+      systemAlerts: alerts
     });
   } catch (error) {
     console.error('Admin analytics error:', error);
@@ -184,8 +233,11 @@ router.get('/parent', authMiddleware, async (req, res) => {
     const childrenAnalytics = await Promise.all(
       childrenResult.rows.map(async (child) => {
         const progressResult = await pool.query(`
-          SELECT COUNT(*) as completed_lessons
-          FROM user_progress WHERE user_id = $1 AND is_completed = true
+          SELECT 
+            COUNT(*) as completed_lessons,
+            COALESCE(SUM(time_spent_minutes), 0) as total_time
+          FROM user_progress 
+          WHERE user_id = $1 AND is_completed = true
         `, [child.id]);
 
         const quizResult = await pool.query(`
@@ -201,13 +253,38 @@ router.get('/parent', authMiddleware, async (req, res) => {
         return {
           ...child,
           completedLessons: parseInt(progressResult.rows[0].completed_lessons),
+          totalTime: parseInt(progressResult.rows[0].total_time),
           quizStats: quizResult.rows[0],
           xp: xpResult.rows[0] || { total_xp: 0, level: 1 }
         };
       })
     );
 
-    res.json({ children: childrenAnalytics });
+    // Get recent activity for all children
+    const childIds = childrenResult.rows.map(c => c.id);
+    let recentActivity = [];
+
+    if (childIds.length > 0) {
+      // Need to format array for SQL IN clause safely? 
+      // Actually pg allows $1 = ANY(array)
+      const activityResult = await pool.query(`
+        SELECT 'lesson' as type, l.title as name, up.completed_at as date, u.name as student_name
+        FROM user_progress up
+        INNER JOIN lessons l ON up.lesson_id = l.id
+        INNER JOIN users u ON up.user_id = u.id
+        WHERE up.user_id = ANY($1) AND up.is_completed = true
+        UNION ALL
+        SELECT 'quiz' as type, q.title as name, qa.completed_at as date, u.name as student_name
+        FROM quiz_attempts qa
+        INNER JOIN quizzes q ON qa.quiz_id = q.id
+        INNER JOIN users u ON qa.user_id = u.id
+        WHERE qa.user_id = ANY($1)
+        ORDER BY date DESC LIMIT 10
+      `, [childIds]);
+      recentActivity = activityResult.rows;
+    }
+
+    res.json({ children: childrenAnalytics, recentActivity });
   } catch (error) {
     console.error('Parent analytics error:', error);
     res.status(500).json({ error: 'Failed to get analytics' });

@@ -4,8 +4,21 @@ import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { XPDisplay } from "@/components/gamification/XPDisplay";
-import { mockLeaderboard, Student } from "@/data/mockData";
 import { cn } from "@/lib/utils";
+
+// Types
+export interface Student {
+  id: string;
+  name: string;
+  avatar: string; // Emoji
+  grade: string;
+  xp: number;
+  level: number;
+  streak: number;
+  quizzesCompleted: number;
+  avgScore: number;
+  badges: string[];
+}
 
 type SortBy = "xp" | "streak" | "quizzes" | "avgScore";
 type FilterGrade = "all" | "Primary 5" | "Primary 6" | "JHS 1";
@@ -22,17 +35,9 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<SortBy>("xp");
   const [filterGrade, setFilterGrade] = useState<FilterGrade>("all");
 
-  const sortedStudents = [...mockLeaderboard]
-    .filter(s => filterGrade === "all" || s.grade === filterGrade)
-    .sort((a, b) => {
-      switch (sortBy) {
-        case "xp": return b.xp - a.xp;
-        case "streak": return b.streak - a.streak;
-        case "quizzes": return b.quizzesCompleted - a.quizzesCompleted;
-        case "avgScore": return b.avgScore - a.avgScore;
-        default: return 0;
-      }
-    });
+  // TODO: Fetch leaderboard from API
+  const sortedStudents: Student[] = [];
+
 
   const topThree = sortedStudents.slice(0, 3);
   const rest = sortedStudents.slice(3);
@@ -161,9 +166,9 @@ export default function LeaderboardPage() {
             </div>
             <div className="divide-y divide-border">
               {rest.map((student, index) => (
-                <LeaderboardRow 
-                  key={student.id} 
-                  student={student} 
+                <LeaderboardRow
+                  key={student.id}
+                  student={student}
                   rank={index + 4}
                   sortBy={sortBy}
                 />

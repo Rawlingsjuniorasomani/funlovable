@@ -13,7 +13,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { User } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockSubjects } from "@/data/mockData";
+import { subjectsAPI } from "@/config/api";
 
 interface StudentWithDetails extends User {
   grade?: string;
@@ -43,25 +43,46 @@ export function AdminStudents() {
     name: "", email: "", phone: "", grade: "", class: "", parentEmail: "", password: ""
   });
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  const loadSubjects = async () => {
+    try {
+      const data = await subjectsAPI.getAll();
+      setSubjects(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+    }
+  };
 
   useEffect(() => {
     loadStudents();
   }, []);
 
-  const loadStudents = () => {
-    const allUsers = getAllUsers();
-    const studentUsers = allUsers.filter(u => u.role === 'student').map(s => ({
-      ...s,
-      grade: localStorage.getItem(`student_grade_${s.id}`) || 'Primary 5',
-      class: localStorage.getItem(`student_class_${s.id}`) || 'A',
-      enrolledSubjects: JSON.parse(localStorage.getItem(`student_subjects_${s.id}`) || '[]'),
-      status: (localStorage.getItem(`student_status_${s.id}`) || 'active') as 'active' | 'inactive' | 'suspended',
-      lessonsCompleted: Math.floor(Math.random() * 50),
-      assignmentsSubmitted: Math.floor(Math.random() * 30),
-      quizzesTaken: Math.floor(Math.random() * 20),
-      avgScore: Math.floor(Math.random() * 40) + 60,
-    }));
-    setStudents(studentUsers);
+  const loadStudents = async () => {
+    try {
+      const users = await getAllUsers();
+      const studentUsers = (Array.isArray(users) ? users : [])
+        .filter(u => u.role === 'student')
+        .map(s => ({
+          ...s,
+          grade: (s as any).student_class || 'N/A', // Mapped from backend student_class
+          class: (s as any).school || 'N/A', // Using school field as generic class/school info if needed
+          parentName: (s as any).parent_name || 'N/A',
+          enrolledSubjects: (s as any).subjects_list ? (s as any).subjects_list.split(', ') : [],
+          status: (s as any).is_approved ? 'active' : 'inactive', // Map to allowed types
+          avgScore: (s as any).avg_quiz_score ? Math.round((s as any).avg_quiz_score) : 0,
+          lessonsCompleted: (s as any).completed_lessons || 0,
+          quizzesTaken: (s as any).completed_quizzes || 0,
+        }));
+      setStudents(studentUsers as StudentWithDetails[]);
+    } catch (error) {
+      console.error("Failed to load students:", error);
+      toast({ title: "Error", description: "Failed to load students", variant: "destructive" });
+    }
   };
 
   const handleAddStudent = () => {
@@ -69,7 +90,7 @@ export function AdminStudents() {
       toast({ title: "Missing Fields", description: "Please fill all required fields", variant: "destructive" });
       return;
     }
-    
+
     // Create user via localStorage directly for demo
     const newId = `user_${Date.now()}`;
     const newStudent = {
@@ -82,14 +103,14 @@ export function AdminStudents() {
       approvalStatus: 'approved' as const,
       createdAt: new Date().toISOString(),
     };
-    
+
     const users = JSON.parse(localStorage.getItem('lovable_users') || '[]');
     users.push(newStudent);
     localStorage.setItem('lovable_users', JSON.stringify(users));
     localStorage.setItem(`pwd_${newId}`, formData.password);
     localStorage.setItem(`student_grade_${newId}`, formData.grade || 'Primary 5');
     localStorage.setItem(`student_class_${newId}`, formData.class || 'A');
-    
+
     setIsAddOpen(false);
     setFormData({ name: "", email: "", phone: "", grade: "", class: "", parentEmail: "", password: "" });
     loadStudents();
@@ -98,15 +119,15 @@ export function AdminStudents() {
 
   const handleEdit = () => {
     if (!selectedStudent) return;
-    
+
     updateUserByAdmin(selectedStudent.id, {
       name: formData.name,
       phone: formData.phone,
     });
-    
+
     localStorage.setItem(`student_grade_${selectedStudent.id}`, formData.grade);
     localStorage.setItem(`student_class_${selectedStudent.id}`, formData.class);
-    
+
     setIsEditOpen(false);
     loadStudents();
     toast({ title: "Student Updated", description: "Student details updated successfully" });
@@ -162,8 +183,8 @@ export function AdminStudents() {
   };
 
   const filteredStudents = students.filter((s) => {
-    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) || 
-                          s.email.toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
+      s.email.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = statusFilter === "all" || s.status === statusFilter;
     const matchesGrade = gradeFilter === "all" || s.grade === gradeFilter;
     return matchesSearch && matchesStatus && matchesGrade;
@@ -206,20 +227,20 @@ export function AdminStudents() {
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label>Full Name *</Label>
-                <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} placeholder="Enter student name" />
+                <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} placeholder="Enter student name" />
               </div>
               <div className="space-y-2">
                 <Label>Email *</Label>
-                <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} placeholder="student@email.com" />
+                <Input type="email" value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} placeholder="student@email.com" />
               </div>
               <div className="space-y-2">
                 <Label>Password *</Label>
-                <Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} placeholder="Set password" />
+                <Input type="password" value={formData.password} onChange={(e) => setFormData({ ...formData, password: e.target.value })} placeholder="Set password" />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Grade</Label>
-                  <Select value={formData.grade} onValueChange={(v) => setFormData({...formData, grade: v})}>
+                  <Select value={formData.grade} onValueChange={(v) => setFormData({ ...formData, grade: v })}>
                     <SelectTrigger><SelectValue placeholder="Select grade" /></SelectTrigger>
                     <SelectContent>
                       {grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -228,7 +249,7 @@ export function AdminStudents() {
                 </div>
                 <div className="space-y-2">
                   <Label>Class</Label>
-                  <Select value={formData.class} onValueChange={(v) => setFormData({...formData, class: v})}>
+                  <Select value={formData.class} onValueChange={(v) => setFormData({ ...formData, class: v })}>
                     <SelectTrigger><SelectValue placeholder="Select class" /></SelectTrigger>
                     <SelectContent>
                       {['A', 'B', 'C', 'D'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -238,7 +259,7 @@ export function AdminStudents() {
               </div>
               <div className="space-y-2">
                 <Label>Phone (Optional)</Label>
-                <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} placeholder="Phone number" />
+                <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} placeholder="Phone number" />
               </div>
             </div>
             <DialogFooter>
@@ -415,7 +436,7 @@ export function AdminStudents() {
                   {getStatusBadge(selectedStudent.status)}
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-muted/50 rounded-lg">
                   <p className="text-sm text-muted-foreground">Grade & Class</p>
@@ -440,7 +461,7 @@ export function AdminStudents() {
                 <div className="flex flex-wrap gap-2">
                   {selectedStudent.enrolledSubjects?.length ? (
                     selectedStudent.enrolledSubjects.map(subjectId => {
-                      const subject = mockSubjects.find(s => s.id === subjectId);
+                      const subject = subjects.find(s => s.id === subjectId);
                       return subject ? (
                         <Badge key={subjectId} variant="secondary">{subject.icon} {subject.name}</Badge>
                       ) : null;
@@ -464,7 +485,7 @@ export function AdminStudents() {
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Full Name</Label>
-              <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} />
+              <Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
             </div>
             <div className="space-y-2">
               <Label>Email</Label>
@@ -473,7 +494,7 @@ export function AdminStudents() {
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Grade</Label>
-                <Select value={formData.grade} onValueChange={(v) => setFormData({...formData, grade: v})}>
+                <Select value={formData.grade} onValueChange={(v) => setFormData({ ...formData, grade: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {grades.map(g => <SelectItem key={g} value={g}>{g}</SelectItem>)}
@@ -482,7 +503,7 @@ export function AdminStudents() {
               </div>
               <div className="space-y-2">
                 <Label>Class</Label>
-                <Select value={formData.class} onValueChange={(v) => setFormData({...formData, class: v})}>
+                <Select value={formData.class} onValueChange={(v) => setFormData({ ...formData, class: v })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     {['A', 'B', 'C', 'D'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
@@ -492,7 +513,7 @@ export function AdminStudents() {
             </div>
             <div className="space-y-2">
               <Label>Phone</Label>
-              <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
+              <Input value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} />
             </div>
           </div>
           <DialogFooter>
@@ -511,10 +532,10 @@ export function AdminStudents() {
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">Select subjects for this student:</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {mockSubjects.map(subject => (
+              {subjects.map(subject => (
                 <label key={subject.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer">
-                  <input 
-                    type="checkbox" 
+                  <input
+                    type="checkbox"
                     checked={selectedSubjects.includes(subject.id)}
                     onChange={(e) => {
                       if (e.target.checked) {

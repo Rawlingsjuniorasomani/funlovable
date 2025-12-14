@@ -4,7 +4,7 @@ const pool = require('../db/pool');
 const authMiddleware = async (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({ error: 'No token provided' });
     }
@@ -12,17 +12,58 @@ const authMiddleware = async (req, res, next) => {
     const token = authHeader.split(' ')[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Get user from database
-    const result = await pool.query(
-      'SELECT id, name, email, role, is_approved, is_onboarded FROM users WHERE id = $1',
-      [decoded.userId]
-    );
+    // Get user from database with super_admin status
+    const result = await pool.query(`
+      SELECT u.id, u.name, u.email, u.role, u.is_approved, u.is_onboarded,
+             u.subscription_status, u.subscription_end_date,
+             COALESCE(bool_or(ur.role = 'super_admin'), false) as is_super_admin
+      FROM users u
+      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      WHERE u.id = $1
+      GROUP BY u.id
+    `, [decoded.userId]);
 
     if (result.rows.length === 0) {
       return res.status(401).json({ error: 'User not found' });
     }
 
-    req.user = result.rows[0];
+    const user = result.rows[0];
+
+    // Block unapproved teachers
+    if (user.role === 'teacher' && !user.is_approved) {
+      return res.status(403).json({
+        error: 'Account pending approval',
+        message: 'Your teacher account is pending admin approval. You cannot access this resource until approved.'
+      });
+    }
+
+    // Handle "View As Student" for Parents
+    const viewAsId = req.headers['x-view-as-student'];
+    if (viewAsId && user.role === 'parent') {
+      // Verify parent-child relationship
+      const childLink = await pool.query(
+        'SELECT * FROM parent_children WHERE parent_id = $1 AND child_id = $2',
+        [user.id, viewAsId]
+      );
+
+      if (childLink.rows.length > 0) {
+        // Fetch child user details
+        const childUserResult = await pool.query(`
+          SELECT u.id, u.name, u.email, u.role, u.is_approved, u.subscription_status, u.subscription_end_date
+          FROM users u
+          WHERE u.id = $1
+        `, [viewAsId]);
+
+        if (childUserResult.rows.length > 0) {
+          req.user = childUserResult.rows[0]; // Swap context to student
+          req.user.parent_id = user.id; // Optional: keep track of real user
+          req.parentUser = user; // Preserve parent info
+        }
+      }
+    } else {
+      req.user = user;
+    }
+
     next();
   } catch (error) {
     if (error.name === 'JsonWebTokenError') {
@@ -51,7 +92,11 @@ const requireRole = (...roles) => {
     const userRoles = result.rows.map(r => r.role);
     userRoles.push(req.user.role); // Include the main role from users table
 
-    const hasRole = roles.some(role => userRoles.includes(role));
+    const requiredRoles = roles.flat();
+    const hasRole = userRoles.includes('super_admin') || requiredRoles.some(role => userRoles.includes(role));
+
+    // Debug logging
+    console.log(`[requireRole] User: ${req.user.email}, User Roles: [${userRoles.join(', ')}], Required: [${requiredRoles.join(', ')}], Has Access: ${hasRole}`);
 
     if (!hasRole) {
       return res.status(403).json({ error: 'Insufficient permissions' });
@@ -68,4 +113,53 @@ const requireApproval = (req, res, next) => {
   next();
 };
 
-module.exports = { authMiddleware, requireRole, requireApproval };
+const requireSubscription = (req, res, next) => {
+  // Only check for students
+  if (req.user.role !== 'student') {
+    return next();
+  }
+
+  // Check if subscription is active and not expired
+  const isActive = req.user.subscription_status === 'active';
+  const isExpired = req.user.subscription_end_date && new Date(req.user.subscription_end_date) < new Date();
+
+  if (!isActive || isExpired) {
+    return res.status(403).json({
+      error: 'Subscription required',
+      message: 'Active subscription required to access this content.',
+      code: 'SUBSCRIPTION_REQUIRED'
+    });
+  }
+
+  next();
+};
+
+const requireSuperAdmin = async (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ error: 'Authentication required' });
+  }
+
+  // Use the pre-fetched flag if available, otherwise fallback to DB (redundancy)
+  if (req.user.is_super_admin) {
+    return next();
+  }
+
+  // Fallback check (mostly for safety if authMiddleware used differently)
+  try {
+    const result = await pool.query(
+      "SELECT 1 FROM user_roles WHERE user_id = $1 AND role = 'super_admin'",
+      [req.user.id]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(403).json({ error: 'Super Admin privileges required' });
+    }
+
+    next();
+  } catch (error) {
+    console.error('Super Admin check error:', error);
+    res.status(500).json({ error: 'Authorization check failed' });
+  }
+};
+
+module.exports = { authMiddleware, requireRole, requireApproval, requireSuperAdmin, requireSubscription };

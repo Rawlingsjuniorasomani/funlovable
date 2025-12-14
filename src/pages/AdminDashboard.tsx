@@ -16,14 +16,16 @@ import { AdminPayments } from "@/components/admin/AdminPayments";
 import { AdminAnalytics } from "@/components/admin/AdminAnalytics";
 import { AdminNotifications } from "@/components/admin/AdminNotifications";
 import { AdminSettings } from "@/components/admin/AdminSettings";
+import { AdminAdmins } from "@/components/admin/AdminAdmins";
+import { AdminPlans } from "@/components/admin/AdminPlans";
 
 export default function AdminDashboard() {
   return (
-    <div className="min-h-screen bg-background flex w-full">
+    <div className="h-screen bg-background flex w-full overflow-hidden">
       <AdminSidebar />
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col h-full overflow-hidden">
         <DashboardTopbar title="Admin Panel" dashboardType="admin" />
-        <main className="flex-1 p-6 overflow-auto">
+        <main className="flex-1 p-6 overflow-y-auto">
           <Routes>
             <Route index element={<AdminOverview />} />
             <Route path="parents" element={<AdminParents />} />
@@ -40,6 +42,8 @@ export default function AdminDashboard() {
             <Route path="analytics" element={<AdminAnalytics />} />
             <Route path="notifications" element={<AdminNotifications />} />
             <Route path="settings" element={<AdminSettings />} />
+            <Route path="admins" element={<AdminAdmins />} />
+            <Route path="plans" element={<AdminPlans />} />
           </Routes>
         </main>
       </div>

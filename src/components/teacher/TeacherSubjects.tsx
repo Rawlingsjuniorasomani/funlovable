@@ -1,8 +1,17 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Plus, Edit, Trash2, Users, BookOpen, MoreVertical } from "lucide-react";
+import { IconRenderer } from "@/components/shared/IconRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { mockSubjects, Subject } from "@/data/mockData";
+import { subjectsAPI } from "@/config/api";
+interface Subject {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  moduleCount?: number;
+  studentCount?: number;
+}
 import {
   Dialog,
   DialogContent,
@@ -21,37 +30,71 @@ import { useToast } from "@/hooks/use-toast";
 export function TeacherSubjects() {
   const { toast } = useToast();
   const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [loading, setLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [formData, setFormData] = useState({ name: "", description: "", icon: "📚" });
 
-  const handleSave = () => {
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  const loadSubjects = async () => {
+    try {
+      setLoading(true);
+      const data = await subjectsAPI.getTeacher();
+      const uniqueSubjects = (Array.isArray(data) ? data : []).reduce((acc: Subject[], current: Subject) => {
+        const x = acc.find(item => item.name === current.name);
+        if (!x) {
+          return acc.concat([current]);
+        } else {
+          return acc;
+        }
+      }, []);
+      setSubjects(uniqueSubjects);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load subjects. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
     if (!formData.name.trim()) return;
 
-    if (editingSubject) {
-      setSubjects(prev => prev.map(s =>
-        s.id === editingSubject.id
-          ? { ...s, name: formData.name, description: formData.description, icon: formData.icon }
-          : s
-      ));
-      toast({ title: "Subject updated", description: `${formData.name} has been updated.` });
-    } else {
-      const newSubject: Subject = {
-        id: `s${Date.now()}`,
-        name: formData.name,
-        description: formData.description,
-        icon: formData.icon,
-        teacherId: "t1",
-        moduleCount: 0,
-        studentCount: 0,
-      };
-      setSubjects(prev => [...prev, newSubject]);
-      toast({ title: "Subject created", description: `${formData.name} has been created.` });
-    }
+    try {
+      if (editingSubject) {
+        await subjectsAPI.update(editingSubject.id, {
+          name: formData.name,
+          description: formData.description,
+        });
+        toast({ title: "Subject updated", description: `${formData.name} has been updated.` });
+      } else {
+        await subjectsAPI.create({
+          name: formData.name,
+          description: formData.description,
+          icon: formData.icon,
+        });
+        toast({ title: "Subject created", description: `${formData.name} has been created.` });
+      }
 
-    setIsDialogOpen(false);
-    setEditingSubject(null);
-    setFormData({ name: "", description: "", icon: "📚" });
+      await loadSubjects(); // Reload data from backend
+      setIsDialogOpen(false);
+      setEditingSubject(null);
+      setFormData({ name: "", description: "", icon: "📚" });
+    } catch (error) {
+      console.error('Failed to save subject:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save subject. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleEdit = (subject: Subject) => {
@@ -60,10 +103,20 @@ export function TeacherSubjects() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     const subject = subjects.find(s => s.id === id);
-    setSubjects(prev => prev.filter(s => s.id !== id));
-    toast({ title: "Subject deleted", description: `${subject?.name} has been removed.`, variant: "destructive" });
+    try {
+      await subjectsAPI.delete(id);
+      await loadSubjects(); // Reload data from backend
+      toast({ title: "Subject deleted", description: `${subject?.name} has been removed.`, variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to delete subject:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete subject. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const iconOptions = ["📐", "🔬", "📚", "🌍", "💻", "🇫🇷", "🙏", "🎨", "🎵", "⚽"];
@@ -137,7 +190,7 @@ export function TeacherSubjects() {
           >
             <div className="flex items-start justify-between mb-4">
               <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-tertiary/20 flex items-center justify-center text-3xl">
-                {subject.icon}
+                <IconRenderer iconName={subject.icon} />
               </div>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>

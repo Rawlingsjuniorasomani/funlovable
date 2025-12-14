@@ -1,18 +1,48 @@
+import { useState, useEffect } from "react";
 import { Users, GraduationCap, UserCheck, BookOpen, Target, Video, CreditCard, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-const stats = [
-  { label: "Total Parents", value: "0", icon: Users, color: "text-primary", bgColor: "bg-primary/10" },
-  { label: "Total Students", value: "0", icon: GraduationCap, color: "text-secondary", bgColor: "bg-secondary/10" },
-  { label: "Total Teachers", value: "0", icon: UserCheck, color: "text-tertiary", bgColor: "bg-tertiary/10" },
-  { label: "Subjects", value: "0", icon: BookOpen, color: "text-accent", bgColor: "bg-accent/10" },
-  { label: "Active Quizzes", value: "0", icon: Target, color: "text-primary", bgColor: "bg-primary/10" },
-  { label: "Live Classes", value: "0", icon: Video, color: "text-destructive", bgColor: "bg-destructive/10" },
-  { label: "Revenue (Month)", value: "$0", icon: CreditCard, color: "text-secondary", bgColor: "bg-secondary/10" },
-  { label: "Growth", value: "0%", icon: TrendingUp, color: "text-tertiary", bgColor: "bg-tertiary/10" },
-];
+import { StatsCard, StatsColor } from "@/components/dashboard/StatsCard";
 
 export function AdminOverview() {
+  const [statsData, setStatsData] = useState<any>({
+    totalParents: 0,
+    totalStudents: 0,
+    totalTeachers: 0,
+    totalSubjects: 0,
+    totalRevenue: "0.00",
+    recentActivity: [],
+    systemAlerts: []
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const token = localStorage.getItem('auth_token');
+        const res = await fetch('http://localhost:5000/api/admin/stats', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setStatsData(data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch admin stats", err);
+      }
+    };
+    fetchStats();
+  }, []);
+
+  const stats: { label: string; value: string | number; icon: any; color: StatsColor }[] = [
+    { label: "Total Parents", value: statsData.totalParents, icon: Users, color: "blue" },
+    { label: "Total Students", value: statsData.totalStudents, icon: GraduationCap, color: "green" },
+    { label: "Total Teachers", value: statsData.totalTeachers, icon: UserCheck, color: "purple" },
+    { label: "Subjects", value: statsData.totalSubjects, icon: BookOpen, color: "orange" },
+    { label: "Active Quizzes", value: "0", icon: Target, color: "pink" },
+    { label: "Live Classes", value: "0", icon: Video, color: "red" },
+    { label: "Revenue (Total)", value: `GHS ${statsData.totalRevenue}`, icon: CreditCard, color: "teal" },
+    { label: "Growth", value: "0%", icon: TrendingUp, color: "indigo" },
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -22,45 +52,80 @@ export function AdminOverview() {
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
-          <Card key={stat.label} className="animate-fade-in" style={{ animationDelay: `${index * 50}ms` }}>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`w-10 h-10 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                  <stat.icon className={`w-5 h-5 ${stat.color}`} />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                  <p className="text-xs text-muted-foreground">{stat.label}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          <StatsCard
+            key={stat.label}
+            title={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+            color={stat.color}
+            className="animate-fade-in"
+          />
         ))}
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="w-5 h-5 text-primary" />
+            Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {statsData.recentActivity && statsData.recentActivity.length > 0 ? (
+            <div className="space-y-4">
+              {statsData.recentActivity.map((activity: any, i: number) => (
+                <div key={i} className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-full ${activity.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                      {activity.type === 'user' ? <Users className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{activity.title}</p>
+                      <p className="text-xs text-muted-foreground">{activity.subtitle}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{new Date(activity.date).toLocaleDateString()}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
             <div className="text-center py-8 text-muted-foreground">
               <p>No recent activity to display</p>
             </div>
-          </CardContent>
-        </Card>
+          )}
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>System Alerts</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-8 text-muted-foreground">
-              <p>No alerts at this time</p>
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Target className="w-5 h-5 text-red-500" />
+            System Alerts
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {statsData.systemAlerts && statsData.systemAlerts.length > 0 ? (
+            <div className="space-y-3">
+              {statsData.systemAlerts.map((alert: any, i: number) => (
+                <div key={i} className={`p-3 rounded-lg border flex items-start gap-3 ${alert.type === 'error' ? 'bg-red-50 border-red-200 text-red-700' : 'bg-amber-50 border-amber-200 text-amber-700'}`}>
+                  <div className={`mt-0.5 ${alert.type === 'error' ? 'text-red-600' : 'text-amber-600'}`}>
+                    <Target className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{alert.message}</p>
+                    <p className="text-xs opacity-80">{new Date(alert.date).toLocaleTimeString()}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          ) : (
+            <div className="text-center py-8 text-muted-foreground">
+              <p>No system alerts at this time</p>
+              <p className="text-xs">All systems operational</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

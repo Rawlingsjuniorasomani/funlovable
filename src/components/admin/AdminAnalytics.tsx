@@ -1,7 +1,9 @@
+import { useState, useEffect } from "react";
 import { BarChart3, TrendingUp, Users, DollarSign, Target, Clock, Download, Calendar } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getAnalyticsData, getOverviewMetrics } from "@/data/analyticsData";
+import { analyticsAPI } from "@/config/api";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   ChartContainer,
   ChartTooltip,
@@ -12,17 +14,64 @@ import { AreaChart, Area, XAxis, YAxis, BarChart, Bar, PieChart, Pie, Cell, Resp
 const COLORS = ["hsl(var(--primary))", "hsl(var(--secondary))", "hsl(var(--tertiary))", "hsl(var(--quaternary))"];
 
 export function AdminAnalytics() {
-  const { dailyStats } = getAnalyticsData();
-  const metrics = getOverviewMetrics();
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<any>(null);
 
-  const last14Days = dailyStats.slice(-14);
-  const last7Days = dailyStats.slice(-7);
+  useEffect(() => {
+    fetchData();
+  }, []);
 
-  const userTypeData = [
-    { name: "Students", value: 0 },
-    { name: "Parents", value: 0 },
-    { name: "Teachers", value: 0 },
-  ];
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const res = await analyticsAPI.getAdmin();
+      setData(res);
+    } catch (error) {
+      console.error("Failed to fetch analytics:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading || !data) {
+    return <AnalyticsSkeleton />;
+  }
+
+  // Transform User Counts for Pie Chart
+  const userTypeData = (data.userCounts || []).map((item: any) => ({
+    name: item.role.charAt(0).toUpperCase() + item.role.slice(1) + 's',
+    value: parseInt(item.count)
+  }));
+
+
+  // Merge Dates for Trends (Revenue & Registrations)
+  // Create a map of last 14 days
+  const last14DaysMap = new Map();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+    last14DaysMap.set(dateStr, { date: dateStr, registrations: 0, revenue: 0 });
+  }
+
+  // Fill Registrations
+  (data.newUsers || []).forEach((item: any) => {
+    const key = new Date(item.date).toISOString().split('T')[0];
+    if (last14DaysMap.has(key)) {
+      last14DaysMap.get(key).registrations = parseInt(item.count);
+    }
+  });
+
+  // Fill Revenue
+  (data.dailyRevenue || []).forEach((item: any) => {
+    const key = new Date(item.date).toISOString().split('T')[0];
+    if (last14DaysMap.has(key)) {
+      last14DaysMap.get(key).revenue = parseFloat(item.revenue);
+    }
+  });
+
+  const last14Days = Array.from(last14DaysMap.values());
+  const last7Days = last14Days.slice(-7);
 
   const chartConfig = {
     registrations: { label: "Registrations", color: "hsl(var(--primary))" },
@@ -32,6 +81,10 @@ export function AdminAnalytics() {
   };
 
   const formatCurrency = (value: number) => `GH₵${value}`;
+
+  // Calculate totals for cards
+  const totalRegistrationsLast7 = last7Days.reduce((acc, curr) => acc + curr.registrations, 0);
+  const totalRevenueLast7 = last7Days.reduce((acc, curr) => acc + curr.revenue, 0);
 
   return (
     <div className="space-y-6">
@@ -52,12 +105,10 @@ export function AdminAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <Users className="w-5 h-5 text-primary" />
-              <span className={`text-xs ${metrics.registrations.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {metrics.registrations.change >= 0 ? '+' : ''}{metrics.registrations.change}%
-              </span>
+              <span className="text-xs text-muted-foreground">Last 7 Days</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{metrics.registrations.value}</p>
-            <p className="text-xs text-muted-foreground">New Registrations (7d)</p>
+            <p className="text-2xl font-bold text-foreground">{totalRegistrationsLast7}</p>
+            <p className="text-xs text-muted-foreground">New Registrations</p>
           </CardContent>
         </Card>
 
@@ -65,12 +116,10 @@ export function AdminAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <DollarSign className="w-5 h-5 text-secondary" />
-              <span className={`text-xs ${metrics.revenue.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {metrics.revenue.change >= 0 ? '+' : ''}{metrics.revenue.change}%
-              </span>
+              <span className="text-xs text-muted-foreground">Last 7 Days</span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{formatCurrency(metrics.revenue.value)}</p>
-            <p className="text-xs text-muted-foreground">Revenue (7d)</p>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(totalRevenueLast7)}</p>
+            <p className="text-xs text-muted-foreground">Revenue</p>
           </CardContent>
         </Card>
 
@@ -78,12 +127,9 @@ export function AdminAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <Target className="w-5 h-5 text-tertiary" />
-              <span className={`text-xs ${metrics.activeUsers.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {metrics.activeUsers.change >= 0 ? '+' : ''}{metrics.activeUsers.change}%
-              </span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{metrics.activeUsers.value}</p>
-            <p className="text-xs text-muted-foreground">Daily Active Users (avg)</p>
+            <p className="text-2xl font-bold text-foreground">{data.paymentStats?.successful_payments || 0}</p>
+            <p className="text-xs text-muted-foreground">Total Payments</p>
           </CardContent>
         </Card>
 
@@ -91,12 +137,9 @@ export function AdminAnalytics() {
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-2">
               <Clock className="w-5 h-5 text-quaternary" />
-              <span className={`text-xs ${metrics.quizzes.change >= 0 ? 'text-green-500' : 'text-red-500'}`}>
-                {metrics.quizzes.change >= 0 ? '+' : ''}{metrics.quizzes.change}%
-              </span>
             </div>
-            <p className="text-2xl font-bold text-foreground">{metrics.quizzes.value}</p>
-            <p className="text-xs text-muted-foreground">Quizzes Completed (7d)</p>
+            <p className="text-2xl font-bold text-foreground">{data.quizStats?.total_attempts || 0}</p>
+            <p className="text-xs text-muted-foreground">Quizzes Taken</p>
           </CardContent>
         </Card>
       </div>
@@ -177,6 +220,14 @@ export function AdminAnalytics() {
                 </PieChart>
               </ResponsiveContainer>
             </div>
+            <div className="mt-4 flex flex-wrap justify-center gap-4">
+              {userTypeData.map((entry: any, index: number) => (
+                <div key={entry.name} className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
+                  <span className="text-sm text-muted-foreground">{entry.name}: {entry.value}</span>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
 
@@ -218,7 +269,7 @@ export function AdminAnalytics() {
                 </p>
                 <div className="space-y-1 text-sm text-muted-foreground">
                   <p>{day.registrations} new registrations</p>
-                  <p>{day.payments} payments ({formatCurrency(day.revenue)})</p>
+                  <p>{day.revenue} payments ({formatCurrency(day.revenue)})</p>
                   <p>{day.activeUsers} active users</p>
                   <p>{day.quizzes} quizzes completed</p>
                 </div>
@@ -229,4 +280,19 @@ export function AdminAnalytics() {
       </Card>
     </div>
   );
+}
+
+function AnalyticsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Skeleton className="h-10 w-1/3" />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+        <Skeleton className="h-32" />
+      </div>
+      <Skeleton className="h-64" />
+    </div>
+  )
 }

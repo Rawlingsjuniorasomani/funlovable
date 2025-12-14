@@ -1,8 +1,9 @@
+import { useState, useEffect } from "react";
 import { BarChart3, TrendingUp, TrendingDown, Users, Target, BookOpen, Award, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { mockStudents, mockSubjects } from "@/data/mockData";
+import { subjectsAPI, usersAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import {
   ChartContainer,
@@ -24,13 +25,35 @@ const weeklyData = [
 ];
 
 export function TeacherAnalytics() {
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [students, setStudents] = useState<any[]>([]);
+  const totalStudents = students.length;
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      const [subjectsData, studentsData] = await Promise.all([
+        subjectsAPI.getTeacher(),
+        usersAPI.getAll({ role: 'student' })
+      ]);
+      setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
+      setStudents(Array.isArray(studentsData) ? studentsData : []);
+    } catch (error) {
+      console.error('Failed to load data:', error);
+    }
+  };
   const avgScore = 0;
   const totalQuizzes = 0;
   const totalLessons = 0;
   const avgXP = 0;
 
-  const topPerformers: typeof mockStudents = [];
-  const needsAttention: typeof mockStudents = [];
+  const avgAttendance = students.length > 0 ? Math.round(students.reduce((sum, s) => sum + ((s.lessonsCompleted || 0) / 50 * 100), 0) / students.length) : 0;
+
+  const topPerformers: any[] = [];
+  const needsAttention: any[] = [];
 
   const subjectPerformance: any[] = [];
 

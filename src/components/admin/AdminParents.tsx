@@ -23,10 +23,18 @@ export function AdminParents() {
     loadParents();
   }, []);
 
-  const loadParents = () => {
-    const allUsers = getAllUsers();
-    const parentUsers = allUsers.filter(u => u.role === 'parent');
-    setParents(parentUsers);
+  const loadParents = async () => {
+    try {
+      const users = await getAllUsers();
+      // Safety check - users might be undefined if error occurs in context
+      const userArray = Array.isArray(users) ? users : [];
+      const parentUsers = userArray.filter(u => u.role === 'parent');
+      console.log('Loaded parents:', parentUsers);
+      setParents(parentUsers);
+    } catch (error) {
+      console.error("Failed to load parents:", error);
+      toast({ title: "Error", description: "Failed to load parents", variant: "destructive" });
+    }
   };
 
   const handleDelete = (parentId: string) => {

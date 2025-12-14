@@ -2,16 +2,18 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Target, Video,
   Trophy, CreditCard, BarChart3, Bell, Settings, ChevronLeft, ChevronRight,
-  GraduationCap, UserCheck, Users2
+  GraduationCap, UserCheck, Users2, Shield
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { BRANDING } from "@/config/branding";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const navItems = [
   { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+  { label: "Admins", href: "/admin/admins", icon: Shield },
   { label: "Parents", href: "/admin/parents", icon: Users },
   { label: "Students", href: "/admin/students", icon: GraduationCap },
   { label: "Teachers", href: "/admin/teachers", icon: UserCheck },
@@ -22,6 +24,7 @@ const navItems = [
   { label: "Quizzes", href: "/admin/quizzes", icon: Target },
   { label: "Live Classes", href: "/admin/live-classes", icon: Video },
   { label: "Rewards", href: "/admin/rewards", icon: Trophy },
+  { label: "Plans", href: "/admin/plans", icon: FileText },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
@@ -31,9 +34,20 @@ const navItems = [
 export function AdminSidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const location = useLocation();
-  const { notifications, getUnreadByType } = useAdminNotifications();
+  const { notifications, getUnreadByType, loadNotifications } = useAdminNotifications();
+  const { user } = useAuthContext();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    loadNotifications();
+    // Set up polling every minute
+    const interval = setInterval(loadNotifications, 60000);
+    return () => clearInterval(interval);
+  }, [loadNotifications]);
 
   const getNotificationBadge = (href: string) => {
+    // ... existing implementation
     if (href === "/admin/parents") return getUnreadByType("new_parent") + getUnreadByType("new_subscription");
     if (href === "/admin/teachers") return getUnreadByType("teacher_approval");
     if (href === "/admin/students") return getUnreadByType("new_student");
@@ -41,6 +55,19 @@ export function AdminSidebar() {
     if (href === "/admin/notifications") return notifications.filter(n => !n.read).length;
     return 0;
   };
+
+  const visibleNavItems = navItems.filter(item => {
+    const isSuperOnly = ["Payments", "Analytics", "Settings"].includes(item.label);
+
+    // Super Admin Features
+    if (isSuperOnly) return user?.is_super_admin;
+
+    // Regular Admin Features (Hidden for Super Admins)
+    if (item.label === "Admins") return !user?.is_super_admin;
+
+    // Common Features (Parents, Students, Teachers, Content etc.)
+    return true;
+  });
 
   return (
     <aside className={cn(
@@ -62,7 +89,7 @@ export function AdminSidebar() {
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
-        {navItems.map((item) => {
+        {visibleNavItems.map((item) => {
           const isActive = location.pathname === item.href ||
             (item.href !== "/admin" && location.pathname.startsWith(item.href));
           const badgeCount = getNotificationBadge(item.href);

@@ -14,8 +14,9 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { User } from "@/hooks/useAuth";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { mockSubjects } from "@/data/mockData";
+import { subjectsAPI } from "@/config/api";
 import { useMessageStore } from "@/hooks/useMessageStore";
+import { usersAPI } from "@/config/api";
 
 interface TeacherWithDetails extends User {
   assignedSubjects?: string[];
@@ -39,25 +40,53 @@ export function AdminTeachers() {
   const [selectedTeacher, setSelectedTeacher] = useState<TeacherWithDetails | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", password: "" });
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<any[]>([]);
+
   const [emailData, setEmailData] = useState({ subject: "", message: "", recipients: "single" });
   const { sendMessage } = useMessageStore();
+
+  const loadSubjects = async () => {
+    try {
+      const data = await subjectsAPI.getAll();
+      setSubjects(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load subjects:', error);
+    }
+  };
+
+  const loadTeachers = async () => {
+    try {
+      // Fetch teachers from backend API
+      const teachers = await usersAPI.getAll({ role: 'teacher' });
+      // Backend returns array directly, not wrapped in { users: [...] }
+      const teacherUsers = (Array.isArray(teachers) ? teachers : []).map((t: any) => ({
+        ...t,
+        approvalStatus: t.is_approved ? 'approved' as const : 'pending' as const,
+        onboardingComplete: t.is_onboarded,
+        assignedSubjects: t.subjects_list ? t.subjects_list.split(', ') : [],
+        studentsCount: (t as any).studentsCount || 0,
+        classesCreated: (t as any).classesCreated || 0,
+        lessonsCreated: (t as any).lessonsCreated || 0,
+        lastLogin: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
+      }));
+      setTeachers(teacherUsers);
+    } catch (error) {
+      console.error('Failed to load teachers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load teachers. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  useEffect(() => {
+    loadSubjects();
+  }, []);
 
   useEffect(() => {
     loadTeachers();
   }, []);
-
-  const loadTeachers = () => {
-    const allUsers = getAllUsers();
-    const teacherUsers = allUsers.filter(u => u.role === 'teacher').map(t => ({
-      ...t,
-      assignedSubjects: JSON.parse(localStorage.getItem(`teacher_subjects_${t.id}`) || '[]'),
-      studentsCount: Math.floor(Math.random() * 50) + 10,
-      classesCreated: Math.floor(Math.random() * 20),
-      lessonsCreated: Math.floor(Math.random() * 30),
-      lastLogin: new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString(),
-    }));
-    setTeachers(teacherUsers);
-  };
 
   const handleAddTeacher = () => {
     if (!formData.name || !formData.email || !formData.password) {
@@ -101,16 +130,34 @@ export function AdminTeachers() {
     toast({ title: "Teacher Updated", description: "Teacher details updated successfully" });
   };
 
-  const handleApprove = (teacherId: string) => {
-    approveUser(teacherId);
-    loadTeachers();
-    toast({ title: "Teacher Approved", description: "The teacher can now access their dashboard." });
+  const handleApprove = async (teacherId: string) => {
+    try {
+      await usersAPI.approve(teacherId);
+      await loadTeachers();
+      toast({ title: "Teacher Approved", description: "The teacher can now access their dashboard." });
+    } catch (error) {
+      console.error('Failed to approve teacher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to approve teacher. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleReject = (teacherId: string) => {
-    rejectUser(teacherId);
-    loadTeachers();
-    toast({ title: "Teacher Rejected", description: "The teacher has been rejected.", variant: "destructive" });
+  const handleReject = async (teacherId: string) => {
+    try {
+      await usersAPI.reject(teacherId);
+      await loadTeachers();
+      toast({ title: "Teacher Rejected", description: "The teacher has been rejected.", variant: "destructive" });
+    } catch (error) {
+      console.error('Failed to reject teacher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to reject teacher. Please try again.",
+        variant: "destructive"
+      });
+    }
   };
 
   const handleDelete = (teacherId: string) => {
@@ -454,7 +501,7 @@ export function AdminTeachers() {
                 <div className="flex flex-wrap gap-2">
                   {selectedTeacher.assignedSubjects?.length ? (
                     selectedTeacher.assignedSubjects.map(subjectId => {
-                      const subject = mockSubjects.find(s => s.id === subjectId);
+                      const subject = subjects.find(s => s.id === subjectId);
                       return subject ? (
                         <Badge key={subjectId} variant="secondary">{subject.icon} {subject.name}</Badge>
                       ) : null;
@@ -505,7 +552,7 @@ export function AdminTeachers() {
           <div className="space-y-4 py-4">
             <p className="text-sm text-muted-foreground">Select subjects for this teacher:</p>
             <div className="space-y-2 max-h-64 overflow-y-auto">
-              {mockSubjects.map(subject => (
+              {subjects.map(subject => (
                 <label key={subject.id} className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer">
                   <input
                     type="checkbox"

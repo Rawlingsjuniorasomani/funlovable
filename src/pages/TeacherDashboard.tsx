@@ -19,13 +19,13 @@ import { TeacherLessonsPage } from "@/components/teacher/TeacherLessonsPage";
 export default function TeacherDashboard() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="h-screen flex w-full bg-background overflow-hidden">
         <TeacherSidebar />
 
-        <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
           <DashboardTopbar title="Teacher Dashboard" dashboardType="teacher" />
 
-          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
             <Routes>
               <Route index element={<TeacherOverview />} />
               <Route path="subjects" element={<TeacherSubjects />} />

@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { TrendingUp, TrendingDown, BookOpen, Target, Flame, Trophy, Star, Calendar, Clock, Download } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { Button } from "@/components/ui/button";
-import { mockStudents, Student } from "@/data/mockData";
+import { usersAPI } from "@/config/api";
+import { useAuthContext } from "@/contexts/AuthContext";
 import { cn } from "@/lib/utils";
 import { ProgressExport } from "./ProgressExport";
 import {
@@ -13,38 +14,45 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-// Mock children for parent
-const mockChildren = mockStudents.slice(0, 2).map((s, i) => ({
-  ...s,
-  name: i === 0 ? "Kwame Asante" : "Ama Asante",
-  relationship: i === 0 ? "Son" : "Daughter",
-}));
-
 interface ChildProgressProps {
   selectedChild: string;
   onSelectChild: (id: string) => void;
 }
 
 export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgressProps) {
-  const child = mockChildren.find(c => c.id === selectedChild) || mockChildren[0];
+  const { user } = useAuthContext();
+  const [children, setChildren] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Mock subject progress
-  const subjectProgress = [
-    { subject: "Mathematics", icon: "📐", progress: 75, grade: "B+", trend: "up", quizzes: 8, lessons: 15 },
-    { subject: "Science", icon: "🔬", progress: 82, grade: "A-", trend: "up", quizzes: 6, lessons: 12 },
-    { subject: "English", icon: "📚", progress: 68, grade: "B", trend: "same", quizzes: 7, lessons: 14 },
-    { subject: "Social Studies", icon: "🌍", progress: 71, grade: "B", trend: "up", quizzes: 5, lessons: 10 },
-    { subject: "ICT", icon: "💻", progress: 88, grade: "A", trend: "up", quizzes: 4, lessons: 8 },
-    { subject: "French", icon: "🇫🇷", progress: 55, grade: "C+", trend: "down", quizzes: 3, lessons: 6 },
-  ];
+  useEffect(() => {
+    if (user?.id) {
+      loadChildren();
+    }
+  }, [user?.id]);
 
-  // Mock recent quizzes
-  const recentQuizzes = [
-    { title: "Fractions Quiz", subject: "Mathematics", score: 9, total: 10, date: "Dec 10" },
-    { title: "Human Body", subject: "Science", score: 8, total: 10, date: "Dec 9" },
-    { title: "Grammar Test", subject: "English", score: 7, total: 10, date: "Dec 8" },
-    { title: "Computer Basics", subject: "ICT", score: 10, total: 10, date: "Dec 7" },
-  ];
+  const loadChildren = async () => {
+    try {
+      const data = await usersAPI.getChildren(user!.id);
+      setChildren(Array.isArray(data) ? data : []);
+
+      // If no child selected and we have children, select the first one
+      if (!selectedChild && data.length > 0) {
+        onSelectChild(data[0].id);
+      }
+    } catch (error) {
+      console.error('Failed to load children:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const child = children.find(c => c.id === selectedChild) || children[0] || {
+    id: "", name: "", level: 1, xp: 0, streak: 0, avgScore: 0, avatar: "😊"
+  };
+
+  // Placeholder for future API integration
+  const subjectProgress: any[] = [];
+  const recentQuizzes: any[] = [];
 
   return (
     <div className="space-y-6">
@@ -55,7 +63,7 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
           <p className="text-muted-foreground">Monitor your child's learning journey</p>
         </div>
         <div className="flex items-center gap-3">
-          <ProgressExport 
+          <ProgressExport
             childId={child.id}
             childName={child.name}
             childGrade={child.grade}
@@ -65,11 +73,11 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {mockChildren.map(c => (
+              {children.map(c => (
                 <SelectItem key={c.id} value={c.id}>
                   <span className="flex items-center gap-2">
                     <span className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
-                      {c.avatar}
+                      {c.avatar || c.name.charAt(0)}
                     </span>
                     {c.name}
                   </span>
@@ -165,8 +173,8 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
                   <h4 className="font-medium text-foreground">{quiz.title}</h4>
                   <span className={cn(
                     "font-bold",
-                    quiz.score / quiz.total >= 0.8 ? "text-secondary" : 
-                    quiz.score / quiz.total >= 0.6 ? "text-primary" : "text-accent"
+                    quiz.score / quiz.total >= 0.8 ? "text-secondary" :
+                      quiz.score / quiz.total >= 0.6 ? "text-primary" : "text-accent"
                   )}>
                     {quiz.score}/{quiz.total}
                   </span>
@@ -196,13 +204,13 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
             const isToday = i === 2; // Wednesday
             return (
               <div key={day} className="text-center">
-                <div 
+                <div
                   className={cn(
                     "h-24 rounded-lg mb-2 flex items-end justify-center transition-all",
                     isToday ? "bg-primary/20" : "bg-muted"
                   )}
                 >
-                  <div 
+                  <div
                     className={cn(
                       "w-full rounded-lg transition-all duration-500",
                       isToday ? "bg-primary" : "bg-primary/60"
