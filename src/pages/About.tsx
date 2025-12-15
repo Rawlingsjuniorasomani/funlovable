@@ -1,6 +1,6 @@
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
-import { Target, Eye, Heart, Users, Award, BookOpen, Lightbulb, Shield } from "lucide-react";
+import { Target, Eye, Heart, Users, Award, Lightbulb, Shield } from "lucide-react";
 
 const values = [
   {
@@ -39,7 +39,7 @@ const About = () => {
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
               <h1 className="font-display text-4xl md:text-5xl font-bold mb-6">
-                About <span className="gradient-text">Lovable Learning</span>
+                About <span className="gradient-text">Lovable Learn</span>
               </h1>
               <p className="text-xl text-muted-foreground">
                 We're on a mission to transform children's education through technology,
@@ -59,7 +59,7 @@ const About = () => {
                 </h2>
                 <div className="space-y-4 text-muted-foreground">
                   <p>
-                    Lovable Learning Platform was founded with a simple yet powerful vision:
+                    Lovable Learn was founded with a simple yet powerful vision:
                     to make quality education accessible to every child, regardless of their location or background.
                   </p>
                   <p>
@@ -130,7 +130,7 @@ const About = () => {
                 Our <span className="gradient-text">Values</span>
               </h2>
               <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-                These core values guide everything we do at Lovable Learning Platform.
+                These core values guide everything we do at Lovable Learn.
               </p>
             </div>
 

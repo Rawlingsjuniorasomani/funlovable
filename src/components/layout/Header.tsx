@@ -100,16 +100,6 @@ export function Header() {
               <Button
                 variant="ghost"
                 size="icon"
-                className="text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full w-10 h-10 transition-all duration-300"
-              >
-                <Search className="w-5 h-5" />
-              </Button>
-
-              <NotificationCenter />
-
-              <Button
-                variant="ghost"
-                size="icon"
                 onClick={toggleDarkMode}
                 className="text-slate-500 hover:text-orange-600 hover:bg-orange-50 rounded-full w-10 h-10 transition-all duration-300"
               >
@@ -133,7 +123,6 @@ export function Header() {
 
           {/* Mobile Menu Button */}
           <div className="flex lg:hidden items-center gap-3">
-            <NotificationCenter />
             <Button
               variant="ghost"
               size="icon"

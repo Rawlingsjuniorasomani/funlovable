@@ -205,9 +205,7 @@ const Subjects = () => {
                     className="group bg-card rounded-2xl overflow-hidden border border-border card-hover animate-fade-in flex flex-col h-full"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <div className={`h-32 bg-secondary/10 flex items-center justify-center relative`}>
-                      <span className="text-6xl">{subject.icon || "📚"}</span>
-                    </div>
+
                     <div className="p-6 flex flex-col flex-grow">
                       <h3 className="font-display font-semibold text-xl mb-2">{subject.name}</h3>
                       <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-grow">

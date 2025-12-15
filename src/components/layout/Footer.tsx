@@ -147,9 +147,9 @@ export function Footer() {
             © {new Date().getFullYear()} {BRANDING.schoolName}. All rights reserved.
           </p>
           <div className="flex items-center gap-2 text-sm text-slate-500">
-            <span>Designed with</span>
-            <span className="text-red-500">♥</span>
-            <span>for education</span>
+            <span></span>
+            <span className="text-red-500"></span>
+            <span></span>
           </div>
         </div>
       </div>

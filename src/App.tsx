@@ -35,6 +35,7 @@ import AuthSelector from "./pages/AuthSelector";
 import LiveClassSession from "./pages/LiveClassSession";
 import LearningPage from "./pages/student/LearningPage";
 import SubjectDetailPage from "./pages/SubjectDetailPage";
+import ScrollToTop from "./components/layout/ScrollToTop";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
         <Toaster />
         <Sonner />
         <BrowserRouter>
+          <ScrollToTop />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />

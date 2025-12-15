@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2, Book, FlaskConical, Calculator, Globe, Palette, Monitor } from "lucide-react";
+import { ArrowRight, Loader2, Book, FlaskConical, Calculator, Globe, Palette } from "lucide-react";
 import { useEffect, useState } from "react";
 import { subjectsAPI } from "@/config/api";
 
@@ -17,12 +17,12 @@ const SUBJECT_IMAGES: Record<string, string> = {
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600";
 
 const COLORS = [
-  "from-blue-500/20 to-blue-600/20 text-blue-600",
-  "from-green-500/20 to-green-600/20 text-green-600",
-  "from-purple-500/20 to-purple-600/20 text-purple-600",
-  "from-orange-500/20 to-orange-600/20 text-orange-600",
-  "from-pink-500/20 to-pink-600/20 text-pink-600",
-  "from-teal-500/20 to-teal-600/20 text-teal-600",
+  "from-primary/20 to-primary/30 text-primary",
+  "from-secondary/20 to-secondary/30 text-secondary",
+  "from-tertiary/20 to-tertiary/30 text-tertiary",
+  "from-quaternary/20 to-quaternary/30 text-quaternary",
+  "from-accent/20 to-accent/30 text-accent-foreground",
+  "from-primary/20 to-tertiary/30 text-primary",
 ];
 
 export function SubjectsPreview() {
@@ -93,10 +93,7 @@ export function SubjectsPreview() {
                     alt={subject.name}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                   />
-                  <div className={`absolute top-4 right-4 z-20 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm flex items-center justify-center shadow-sm ${colorClass.split(' ')[2]}`}>
-                    {/* Fallback to simple icon if no specific emoji logic, or keep text emoji */}
-                    <span className="text-xl">{subject.icon || "📚"}</span>
-                  </div>
+
                   <div className="absolute bottom-4 left-4 z-20 text-white">
                     <span className="text-xs font-medium bg-primary/90 px-2 py-1 rounded-full backdrop-blur-sm">
                       {subject.lessons || 0} Lessons
