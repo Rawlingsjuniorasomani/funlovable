@@ -9,7 +9,6 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Eye, EyeOff, GraduationCap, Mail, Lock, User, Phone, Users, BookOpen, School, Clock } from "lucide-react";
 import { z } from "zod";
-import { UserRole } from "@/hooks/useAuth";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -29,6 +28,7 @@ const registerSchema = z.object({
 });
 
 type AuthMode = 'login' | 'register';
+type RoleOption = 'student' | 'teacher' | 'parent';
 
 const roleOptions = [
   { value: 'student', label: 'Student', icon: BookOpen, description: 'I want to learn' },
@@ -54,7 +54,7 @@ export default function AuthPage() {
     phone: "",
     password: "",
     confirmPassword: "",
-    role: "parent" as UserRole,
+    role: "parent" as RoleOption,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -82,12 +82,16 @@ export default function AuthPage() {
           const storedUser = localStorage.getItem('lovable_auth');
           if (storedUser) {
             const user = JSON.parse(storedUser);
-            if (user.role === 'parent' && !user.onboardingComplete) {
+            const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
+
+            if (user.role === 'parent' && !isOnboarded) {
               navigate('/onboarding');
             } else if (user.role === 'student') {
               navigate('/student');
             } else if (user.role === 'teacher') {
               navigate('/teacher');
+            } else if (user.role === 'admin') {
+              navigate(user.is_super_admin ? '/super-admin' : '/admin');
             } else {
               navigate('/');
             }
@@ -124,6 +128,9 @@ export default function AuthPage() {
               navigate('/onboarding');
             } else if (formData.role === 'student') {
               navigate('/student');
+            } else if (formData.role === 'teacher') {
+              // Teachers go to dashboard after approval & login; keep them on auth page for now
+              navigate('/');
             } else {
               navigate('/');
             }
@@ -197,7 +204,7 @@ export default function AuthPage() {
                     <Label>I am a...</Label>
                     <RadioGroup
                       value={formData.role}
-                      onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as UserRole }))}
+                      onValueChange={(value) => setFormData(prev => ({ ...prev, role: value as RoleOption }))}
                       className="grid grid-cols-2 md:grid-cols-4 gap-2"
                     >
                       {roleOptions.map((option) => {

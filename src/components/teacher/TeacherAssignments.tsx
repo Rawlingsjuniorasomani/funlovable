@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import {
   Plus, FileText, Clock, Users, CheckCircle, AlertCircle,
-  MoreVertical, Edit, Trash2, Eye, Download, Upload
+  MoreVertical, Edit, Trash2, Eye, Download, Upload, Search, Filter,
+  ChevronDown, ChevronUp, Save, X
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { subjectsAPI, assignmentsAPI } from "@/config/api";
+import { subjectsAPI, assignmentsAPI, modulesAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -23,6 +24,9 @@ import {
 import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription
 } from "@/components/ui/sheet";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 const statusColors = {
   draft: "bg-muted text-muted-foreground",
@@ -32,19 +36,27 @@ const statusColors = {
 
 export function TeacherAssignments() {
   const { toast } = useToast();
+  const { user } = useAuthContext();
+  const [activeTab, setActiveTab] = useState("all");
   const [assignments, setAssignments] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters
+  const [selectedSubject, setSelectedSubject] = useState<string>("all");
+  const [selectedModule, setSelectedModule] = useState<string>("all");
 
   // Create/Edit Dialog State
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [step, setStep] = useState(1); // 1: Basics, 2: Details, 3: Questions (if applicable), 4: Review
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [step, setStep] = useState(1);
 
   const [formData, setFormData] = useState({
     title: "",
-    question: "",
     description: "",
     subjectId: "",
+    moduleId: "", // Optional linkage to module
     dueDate: "",
     totalPoints: 100,
     submissionType: "text", // text, file, both, questions, mixed
@@ -66,17 +78,35 @@ export function TeacherAssignments() {
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [gradingSubmission, setGradingSubmission] = useState<any>(null);
   const [gradingData, setGradingData] = useState({ score: 0, feedback: "" });
+  const [submissionAnswers, setSubmissionAnswers] = useState<any[]>([]);
+  const [loadingAnswers, setLoadingAnswers] = useState(false);
 
   useEffect(() => {
     loadData();
   }, []);
+
+  useEffect(() => {
+    if (selectedSubject && selectedSubject !== 'all') {
+      loadModules(selectedSubject);
+    } else {
+      setModules([]);
+    }
+  }, [selectedSubject]);
+
+  useEffect(() => {
+    // When editing subject changes, load modules for form
+    if (formData.subjectId) {
+      loadModules(formData.subjectId);
+    }
+  }, [formData.subjectId]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [subjectsData, assignmentsData] = await Promise.all([
         subjectsAPI.getTeacher(),
-        assignmentsAPI.getAll()
+        // Limit to assignments for the current teacher if available
+        assignmentsAPI.getAll(user?.id ? { teacherId: user.id } : undefined)
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
       setAssignments((Array.isArray(assignmentsData) ? assignmentsData : []).map((a: any) => ({
@@ -86,7 +116,7 @@ export function TeacherAssignments() {
         dueDate: a.due_date || a.dueDate,
         status: a.status || (a.is_active ? 'active' : 'draft'),
         submissions: Number(a.submission_count || 0),
-        totalStudents: 35, // Placeholder
+        totalStudents: 35, // Placeholder until real counts
       })));
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -96,11 +126,57 @@ export function TeacherAssignments() {
     }
   };
 
-  const handleCreate = async () => {
+  const loadModules = async (subjectId: string) => {
+    try {
+      const data = await modulesAPI.getAll(subjectId);
+      setModules(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Failed to load modules:', error);
+    }
+  };
+
+  const handleEdit = async (assignment: any) => {
+    setEditingId(assignment.id);
+    setLoading(true);
+    try {
+      // Fetch full details including questions
+      const [details, questions] = await Promise.all([
+        assignmentsAPI.getById(assignment.id),
+        assignmentsAPI.getQuestions(assignment.id)
+      ]);
+
+      setFormData({
+        title: details.title,
+        description: details.description || "",
+        subjectId: details.subject_id || details.subjectId,
+        moduleId: "", // If backend supported module_id on assignments
+        dueDate: details.due_date ? new Date(details.due_date).toISOString().split('T')[0] : "",
+        totalPoints: details.max_score || details.total_points || 100,
+        submissionType: details.submission_type || "text",
+        resources: typeof details.resources === 'string' ? details.resources : JSON.stringify(details.resources || []),
+        questions: Array.isArray(questions) ? questions.map((q: any) => ({
+          id: q.id,
+          text: q.question_text,
+          type: q.question_type,
+          options: JSON.parse(q.options || "[]"),
+          correctAnswer: q.correct_answer,
+          marks: q.marks,
+        })) : []
+      });
+
+      setStep(1);
+      setIsDialogOpen(true);
+    } catch (error) {
+      toast({ title: "Failed to load assignment details", variant: "destructive" });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateOrUpdate = async () => {
     if (!formData.title || !formData.subjectId) return;
 
     try {
-      // Parse resources if user entered JSON, else treat as single URL or text
       let resources = [];
       try {
         resources = JSON.parse(formData.resources || "[]");
@@ -110,50 +186,98 @@ export function TeacherAssignments() {
         }
       }
 
-      // Validation: Ensure questions are added for quiz types
       if ((formData.submissionType === 'questions' || formData.submissionType === 'mixed') && formData.questions.length === 0) {
-        toast({
-          title: "Questions Required",
-          description: "Please add at least one question before creating this assignment.",
-          variant: "destructive"
-        });
+        toast({ title: "Questions Required", description: "Please add at least one question.", variant: "destructive" });
         return;
       }
 
-      // Create Assignment first
-      const newAssignment = await assignmentsAPI.create({
-        title: formData.title,
-        description: `**Instructions:**\n${formData.description}`, // We use separate question entities now, so just desc
-        subject_id: formData.subjectId,
-        due_date: formData.dueDate,
-        total_points: formData.totalPoints,
-        submission_type: formData.submissionType,
-        resources: resources,
-        status: 'active'
-      });
+      let assignmentId = editingId;
 
-      // Then add questions if any
-      if (formData.questions.length > 0) {
-        await Promise.all(formData.questions.map((q, index) =>
-          assignmentsAPI.addQuestion(newAssignment.id, {
+      if (editingId) {
+        // Update Assignment
+        await assignmentsAPI.update(editingId, {
+          title: formData.title,
+          description: formData.description,
+          due_date: formData.dueDate,
+          total_points: formData.totalPoints,
+          submission_type: formData.submissionType,
+          resources: resources,
+          status: 'active'
+        });
+
+        // Sync Questions (Differential update is complex, so we might just add new ones or rely on backend to handle replacement if we implemented bulk update. 
+        // For now, let's just ADD new questions or update existing if they have IDs. 
+        // Handling FULL question sync is tricky without bulk-replace endpoint. 
+        // Strategy: We will only ADD new questions for now, or update if we implement logic. 
+        // User requested "Edit assignment details, Add/remove questions".
+        // To keep it simple: We iterate formData.questions. If ID exists, update. If no ID, create. 
+        // Deleted questions: We need to track them or just allow deletion from the "Edit" UI directly via API calls?
+        // Let's assume the Question Builder in Edit Mode handles "Add to state", and "Delete from state". 
+        // Real-time API calls for delete? Or Batch at save? Batch is cleaner but harder. 
+        // Let's do Real-time delete in the UI for already saved questions, and state-delete for new ones.
+        // Actually, let's keep it simple: Batch Save for now, but since we lack bulk update, we loop.
+      } else {
+        // Create Assignment
+        const newAssignment = await assignmentsAPI.create({
+          title: formData.title,
+          description: formData.description,
+          subject_id: formData.subjectId,
+          due_date: formData.dueDate,
+          total_points: formData.totalPoints,
+          submission_type: formData.submissionType,
+          resources: resources,
+          status: 'active'
+        });
+        assignmentId = newAssignment.id;
+      }
+
+      if (assignmentId) {
+        // Process questions
+        // For new assignment, all are new.
+        // For edit, mixture.
+        await Promise.all(formData.questions.map((q, index) => {
+          const qData = {
             question_text: q.text,
             question_type: q.type,
             options: JSON.stringify(q.options),
             correct_answer: q.correctAnswer,
             marks: q.marks,
             order_index: index
-          })
-        ));
+          };
+
+          if (q.id && editingId) {
+            return assignmentsAPI.updateQuestion(q.id, qData);
+          } else {
+            return assignmentsAPI.addQuestion(assignmentId!, qData);
+          }
+        }));
       }
 
       await loadData();
-      toast({ title: "Assignment created successfully" });
+      toast({ title: `Assignment ${editingId ? 'updated' : 'created'} successfully` });
       setIsDialogOpen(false);
       resetForm();
     } catch (error) {
-      console.error('Failed to create assignment:', error);
-      toast({ title: "Failed to create assignment", variant: "destructive" });
+      console.error('Failed to save assignment:', error);
+      toast({ title: "Failed to save assignment", variant: "destructive" });
     }
+  };
+
+  const deleteQuestionFromList = async (index: number) => {
+    const q = formData.questions[index];
+    if (q.id) {
+      // If it exists in backend, delete it there
+      try {
+        await assignmentsAPI.deleteQuestion(q.id);
+      } catch (e) {
+        toast({ title: "Failed to delete question", variant: "destructive" });
+        return;
+      }
+    }
+    setFormData(prev => ({
+      ...prev,
+      questions: prev.questions.filter((_, i) => i !== index)
+    }));
   };
 
   const addQuestion = () => {
@@ -171,31 +295,24 @@ export function TeacherAssignments() {
     });
   };
 
-  const removeQuestion = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      questions: prev.questions.filter((_, i) => i !== index)
-    }));
-  };
-
   const resetForm = () => {
     setFormData({
-      title: "", question: "", description: "", subjectId: "", dueDate: "",
+      title: "", description: "", subjectId: "", moduleId: "", dueDate: "",
       totalPoints: 100, submissionType: "text", resources: "", questions: []
     });
+    setEditingId(null);
     setStep(1);
   };
 
-  const nextStep = () => setStep(s => s + 1);
-  const prevStep = () => setStep(s => s - 1);
-
   const handleDelete = async (id: string) => {
-    try {
-      await assignmentsAPI.delete(id);
-      await loadData();
-      toast({ title: "Assignment deleted", variant: "destructive" });
-    } catch (error) {
-      toast({ title: "Failed to delete assignment", variant: "destructive" });
+    if (confirm("Are you sure? This will delete all submissions.")) {
+      try {
+        await assignmentsAPI.delete(id);
+        await loadData();
+        toast({ title: "Assignment deleted", variant: "destructive" });
+      } catch (error) {
+        toast({ title: "Failed to delete assignment", variant: "destructive" });
+      }
     }
   };
 
@@ -231,405 +348,556 @@ export function TeacherAssignments() {
     }
   };
 
+  const viewSubmissionDetails = async (sub: any) => {
+    setGradingSubmission(sub);
+    setGradingData({ score: sub.score || 0, feedback: sub.feedback || "" });
+    setSubmissionAnswers([]);
+
+    // If questions type, fetch specific answers
+    if (selectedAssignment.submission_type === 'questions' || selectedAssignment.submission_type === 'mixed') {
+      try {
+        setLoadingAnswers(true);
+        const answers = await assignmentsAPI.getAnswers(sub.id);
+        setSubmissionAnswers(answers || []);
+
+        // Auto-calculate score if not graded?
+        // Actually StudentAssignmentDetails does auto-calc, but here we might want to sum up marks awarded.
+        if (sub.status !== 'graded' && answers) {
+          const autoScore = answers.reduce((acc: number, ans: any) => acc + (ans.marks_awarded || 0), 0);
+          setGradingData(prev => ({ ...prev, score: autoScore }));
+        }
+      } catch (error) {
+        console.error("Failed to load answers");
+      } finally {
+        setLoadingAnswers(false);
+      }
+    }
+  };
+
+  const filteredAssignments = assignments.filter(a => {
+    if (selectedSubject !== 'all' && a.subjectId !== selectedSubject) return false;
+
+    if (activeTab === 'active') {
+      return a.status === 'active';
+    }
+
+    if (activeTab === 'completed') {
+      // Treat closed assignments as completed
+      return a.status === 'closed';
+    }
+
+    // "all" tab
+    return true;
+  });
+
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Assignments</h2>
-          <p className="text-muted-foreground">Create and manage student assignments</p>
+          <p className="text-muted-foreground">Manage assignments and grading</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={resetForm}>
-              <Plus className="w-4 h-4 mr-2" />
-              Create Assignment
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Create Assignment - Step {step} of 4</DialogTitle>
-            </DialogHeader>
+        <div className="flex gap-2">
+          <Select value={selectedSubject} onValueChange={setSelectedSubject}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Filter Subject" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Subjects</SelectItem>
+              {subjects.map(s => (
+                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
 
-            <div className="py-4">
-              {/* Step 1: Basics */}
-              {step === 1 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Title</label>
-                    <Input
-                      value={formData.title}
-                      onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                      placeholder="Assignment title"
-                      autoFocus
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Subject</label>
-                    <Select value={formData.subjectId} onValueChange={(v) => setFormData(prev => ({ ...prev, subjectId: v }))}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select subject" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {subjects.map(s => (
-                          <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Due Date</label>
-                    <Input
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
-                    />
-                  </div>
-                </div>
-              )}
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={resetForm}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Assignment
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>{editingId ? "Edit Assignment" : "Create Assignment"} - Step {step} of 4</DialogTitle>
+              </DialogHeader>
 
-              {/* Step 2: Details & Config */}
-              {step === 2 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Instructions / Description</label>
-                    <Textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                      placeholder="Detailed instructions..."
-                      className="min-h-[100px]"
-                    />
+              <div className="py-4">
+                {/* Step 1: Basics */}
+                {step === 1 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4">
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Title</label>
+                        <Input
+                          value={formData.title}
+                          onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+                          placeholder="Assignment title"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Subject</label>
+                        <Select value={formData.subjectId} onValueChange={(v) => setFormData(prev => ({ ...prev, subjectId: v }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select subject" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {subjects.map(s => (
+                              <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Due Date</label>
+                        <Input
+                          type="date"
+                          value={formData.dueDate}
+                          onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Description</label>
+                        <Textarea
+                          value={formData.description}
+                          onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                          className="h-[150px]"
+                          placeholder="Instructions for students..."
+                        />
+                      </div>
+                    </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">Submission Type</label>
-                      <Select value={formData.submissionType} onValueChange={(v) => setFormData(prev => ({ ...prev, submissionType: v }))}>
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="text">Text Only</SelectItem>
-                          <SelectItem value="file">File Upload</SelectItem>
-                          <SelectItem value="both">Text & File</SelectItem>
-                          <SelectItem value="questions">Questions / Quiz</SelectItem>
-                          <SelectItem value="mixed">Mixed (Questions + Upload)</SelectItem>
-                        </SelectContent>
-                      </Select>
+                )}
+
+                {/* Step 2: Settings */}
+                {step === 2 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Submission Type</label>
+                        <Select value={formData.submissionType} onValueChange={(v) => setFormData(prev => ({ ...prev, submissionType: v }))}>
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="text">Text Only</SelectItem>
+                            <SelectItem value="file">File Upload</SelectItem>
+                            <SelectItem value="both">Text & File</SelectItem>
+                            <SelectItem value="questions">Questions / Quiz</SelectItem>
+                            <SelectItem value="mixed">Mixed (Questions + Upload)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-sm font-medium">Total Points</label>
+                        <Input
+                          type="number"
+                          value={formData.totalPoints}
+                          onChange={(e) => setFormData(prev => ({ ...prev, totalPoints: Number(e.target.value) }))}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <label className="text-sm font-medium">Points</label>
+                      <label className="text-sm font-medium">Resources (JSON or URL)</label>
                       <Input
-                        type="number"
-                        value={formData.totalPoints}
-                        onChange={(e) => setFormData(prev => ({ ...prev, totalPoints: Number(e.target.value) }))}
+                        value={formData.resources}
+                        onChange={(e) => setFormData(prev => ({ ...prev, resources: e.target.value }))}
+                        placeholder='[{"name": "Guide", "url": "..."}]'
+                        className="font-mono text-xs"
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Resources (JSON or URL)</label>
-                    <Input
-                      value={formData.resources}
-                      onChange={(e) => setFormData(prev => ({ ...prev, resources: e.target.value }))}
-                      placeholder='[{"name": "Guide", "url": "..."}]'
-                      className="font-mono text-xs"
-                    />
-                  </div>
-                </div>
-              )}
+                )}
 
-              {/* Step 3: Questions (Conditional) */}
-              {step === 3 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                  {(formData.submissionType === 'questions' || formData.submissionType === 'mixed') ? (
-                    <div className="space-y-4 border rounded-lg p-4 bg-muted/20">
-                      <h3 className="font-semibold text-sm">Question Builder ({formData.questions.length})</h3>
+                {/* Step 3: Questions */}
+                {step === 3 && (
+                  <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
+                    {['questions', 'mixed'].includes(formData.submissionType) ? (
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
+                        {/* Builder */}
+                        <div className="lg:col-span-1 space-y-4 border-r pr-4 overflow-y-auto">
+                          <h3 className="font-semibold text-sm">Add Question</h3>
+                          <div className="space-y-3">
+                            <Select value={currentQuestion.type} onValueChange={(v) => setCurrentQuestion({ ...currentQuestion, type: v })}>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="mcq">Multiple Choice</SelectItem>
+                                <SelectItem value="true_false">True / False</SelectItem>
+                                <SelectItem value="short_answer">Short Answer</SelectItem>
+                              </SelectContent>
+                            </Select>
 
-                      {/* Question Form */}
-                      <div className="space-y-3 p-3 bg-background rounded-md border">
-                        <div className="flex gap-2">
-                          <Select value={currentQuestion.type} onValueChange={(v) => setCurrentQuestion({ ...currentQuestion, type: v })}>
-                            <SelectTrigger className="w-[180px]">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="mcq">Multiple Choice</SelectItem>
-                              <SelectItem value="true_false">True / False</SelectItem>
-                              <SelectItem value="short_answer">Short Answer</SelectItem>
-                              <SelectItem value="long_answer">Long Answer</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Input
-                            type="number"
-                            placeholder="Marks"
-                            className="w-20"
-                            value={currentQuestion.marks}
-                            onChange={e => setCurrentQuestion({ ...currentQuestion, marks: Number(e.target.value) })}
-                          />
-                        </div>
+                            <Textarea
+                              placeholder="Question Text"
+                              value={currentQuestion.text}
+                              onChange={e => setCurrentQuestion({ ...currentQuestion, text: e.target.value })}
+                            />
 
-                        <Textarea
-                          placeholder="Question text..."
-                          value={currentQuestion.text}
-                          onChange={e => setCurrentQuestion({ ...currentQuestion, text: e.target.value })}
-                        />
-
-                        {currentQuestion.type === 'mcq' && (
-                          <div className="grid grid-cols-2 gap-2">
-                            {currentQuestion.options.map((opt: string, idx: number) => (
+                            <div className="flex items-center gap-2">
+                              <label className="text-xs font-medium">Marks:</label>
                               <Input
-                                key={idx}
-                                placeholder={`Option ${idx + 1}`}
-                                value={opt}
-                                onChange={e => {
-                                  const newOpts = [...currentQuestion.options];
-                                  newOpts[idx] = e.target.value;
-                                  setCurrentQuestion({ ...currentQuestion, options: newOpts });
-                                }}
+                                type="number"
+                                value={currentQuestion.marks}
+                                onChange={e => setCurrentQuestion({ ...currentQuestion, marks: Number(e.target.value) })}
+                                className="w-20"
                               />
-                            ))}
-                          </div>
-                        )}
-
-                        {(currentQuestion.type === 'mcq' || currentQuestion.type === 'true_false') && (
-                          <Input
-                            placeholder="Correct Answer (Exact text)"
-                            value={currentQuestion.correctAnswer}
-                            onChange={e => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
-                          />
-                        )}
-
-                        <Button type="button" onClick={addQuestion} variant="secondary" className="w-full">
-                          <Plus className="w-4 h-4 mr-2" /> Add Question
-                        </Button>
-                      </div>
-
-                      {/* Question List Preview */}
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
-                        {formData.questions.map((q, idx) => (
-                          <div key={idx} className="flex justify-between items-center p-2 bg-muted rounded text-sm group">
-                            <div className="truncate flex-1">
-                              <Badge variant="outline" className="mr-2 text-xs">{q.type}</Badge>
-                              {q.text}
                             </div>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-6 w-6 opacity-0 group-hover:opacity-100"
-                              onClick={() => removeQuestion(idx)}
-                            >
-                              <Trash2 className="w-3 h-3 text-destructive" />
+
+                            {currentQuestion.type === 'mcq' && (
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium">Options</label>
+                                {currentQuestion.options.map((opt: string, idx: number) => (
+                                  <Input
+                                    key={idx}
+                                    placeholder={`Option ${idx + 1}`}
+                                    value={opt}
+                                    onChange={e => {
+                                      const newOpts = [...currentQuestion.options];
+                                      newOpts[idx] = e.target.value;
+                                      setCurrentQuestion({ ...currentQuestion, options: newOpts });
+                                    }}
+                                    className="h-8 text-sm"
+                                  />
+                                ))}
+                              </div>
+                            )}
+
+                            {['mcq', 'true_false'].includes(currentQuestion.type) && (
+                              <Input
+                                placeholder="Correct Answer (Exact Match)"
+                                value={currentQuestion.correctAnswer}
+                                onChange={e => setCurrentQuestion({ ...currentQuestion, correctAnswer: e.target.value })}
+                                className="h-9"
+                              />
+                            )}
+
+                            <Button onClick={addQuestion} className="w-full" size="sm">
+                              <Plus className="w-4 h-4 mr-2" /> Add
                             </Button>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Preview */}
+                        <div className="lg:col-span-2 space-y-4 overflow-y-auto pl-2">
+                          <h3 className="font-semibold text-sm">Questions ({formData.questions.length})</h3>
+                          {formData.questions.length === 0 && <p className="text-muted-foreground text-sm italic">No questions added yet.</p>}
+                          {formData.questions.map((q, idx) => (
+                            <div key={idx} className="border p-3 rounded-lg relative group bg-card hover:shadow-sm transition-all">
+                              <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <Button size="icon" variant="ghost" className="h-6 w-6 text-destructive" onClick={() => deleteQuestionFromList(idx)}>
+                                  <Trash2 className="w-3 h-3" />
+                                </Button>
+                              </div>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Badge variant="outline" className="text-[10px]">{q.type}</Badge>
+                                <span className="text-xs font-mono bg-muted px-1.5 py-0.5 rounded">{q.marks} pts</span>
+                              </div>
+                              <p className="text-sm font-medium">{q.text}</p>
+                              {q.type === 'mcq' && (
+                                <div className="ml-4 mt-2 space-y-1">
+                                  {q.options.map((opt: string, i: number) => (
+                                    <div key={i} className={cn("text-xs flex items-center gap-2", opt === q.correctAnswer && "text-green-600 font-medium")}>
+                                      <div className={cn("w-2 h-2 rounded-full border", opt === q.correctAnswer ? "bg-green-600 border-green-600" : "border-muted-foreground")} />
+                                      {opt}
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    ) : (
+                      <div className="text-center py-20 text-muted-foreground">
+                        <AlertCircle className="w-12 h-12 mx-auto mb-2 opacity-20" />
+                        <p>Questions are not enabled for this submission type.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Step 4: Review */}
+                {step === 4 && (
+                  <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
+                    <Card>
+                      <CardContent className="p-6 space-y-4">
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div>
+                            <span className="text-muted-foreground block">Title</span>
+                            <span className="font-semibold">{formData.title}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block">Due Date</span>
+                            <span className="font-semibold">{formData.dueDate || "No date"}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block">Type</span>
+                            <span className="font-semibold capitalize">{formData.submissionType}</span>
+                          </div>
+                          <div>
+                            <span className="text-muted-foreground block">Items</span>
+                            <span className="font-semibold">{formData.questions.length} questions</span>
+                          </div>
+                        </div>
+                        <div className="pt-4 border-t">
+                          <span className="text-muted-foreground block text-sm mb-1">Description</span>
+                          <p className="text-sm text-foreground/80">{formData.description || "No description."}</p>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="flex justify-between items-center pt-4 border-t mt-4">
+                <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
+                  Previous
+                </Button>
+                <div className="flex gap-2">
+                  {step < 4 ? (
+                    <Button onClick={() => setStep(s => Math.min(4, s + 1))}>Next</Button>
                   ) : (
-                    <div className="text-center py-12 text-muted-foreground animate-in fade-in zoom-in-95">
-                      <AlertCircle className="w-12 h-12 mx-auto mb-3 text-muted-foreground/50" />
-                      <p className="text-lg font-medium text-foreground">Questions are not enabled</p>
-                      <p className="text-sm mb-4">You selected <strong>{formData.submissionType}</strong> type.</p>
-                      <div className="flex justify-center gap-3">
-                        <Button variant="outline" onClick={prevStep}>
-                          Go Back & Change
-                        </Button>
-                        <Button variant="secondary" onClick={() => setFormData(prev => ({ ...prev, submissionType: 'questions' }))}>
-                          Switch to Quiz Mode
-                        </Button>
-                      </div>
-                    </div>
+                    <Button onClick={handleCreateOrUpdate}>
+                      {editingId ? "Save Changes" : "Create Assignment"}
+                    </Button>
                   )}
                 </div>
-              )}
-
-              {/* Step 4: Review */}
-              {step === 4 && (
-                <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
-                  <div className="border rounded-lg p-4 space-y-3 bg-muted/10">
-                    <div className="grid grid-cols-2 gap-2 text-sm">
-                      <span className="text-muted-foreground">Title:</span>
-                      <span className="font-medium">{formData.title}</span>
-
-                      <span className="text-muted-foreground">Subject:</span>
-                      <span className="font-medium">{subjects.find(s => s.id === formData.subjectId)?.name || 'Unknown'}</span>
-
-                      <span className="text-muted-foreground">Due Date:</span>
-                      <span className="font-medium">{formData.dueDate}</span>
-
-                      <span className="text-muted-foreground">Type:</span>
-                      <span className="font-medium capitalize">{formData.submissionType}</span>
-
-                      <span className="text-muted-foreground">Questions:</span>
-                      <span className="font-medium">{formData.questions.length}</span>
-                    </div>
-
-                    <div className="pt-2 border-t">
-                      <span className="text-sm text-muted-foreground">Instructions:</span>
-                      <p className="text-sm mt-1 max-h-20 overflow-y-auto whitespace-pre-wrap">{formData.description || "None"}</p>
-                    </div>
-                  </div>
-                  <div className="bg-yellow-500/10 border border-yellow-500/20 rounded p-3 text-xs text-yellow-600 flex gap-2">
-                    <AlertCircle className="w-4 h-4" />
-                    Notifications will be sent to all students efficiently upon creation.
-                  </div>
-                </div>
-              )}
-
-              {/* Footer Buttons */}
-              <div className="flex justify-between mt-6 pt-4 border-t">
-                {step > 1 ? (
-                  <Button variant="outline" onClick={prevStep}>Previous</Button>
-                ) : (
-                  <div /> // Spacer
-                )}
-
-                {step < 4 ? (
-                  <Button onClick={nextStep}>Next</Button>
-                ) : (
-                  <Button onClick={handleCreate} disabled={loading}>Create Assignment</Button>
-                )}
               </div>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
-      {/* Assignment List */}
-      <div className="space-y-4">
-        {assignments.map((assignment, index) => {
-          const subject = subjects.find(s => s.id === assignment.subjectId);
-          return (
-            <div
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList>
+          <TabsTrigger value="all">All Assignments</TabsTrigger>
+          <TabsTrigger value="active">Active</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+        </TabsList>
+        <TabsContent value="all" className="space-y-4 mt-4">
+          {filteredAssignments.map((assignment, index) => (
+            <AssignmentCard
               key={assignment.id}
-              className="bg-card rounded-xl border border-border p-5 card-hover animate-fade-in"
-              style={{ animationDelay: `${index * 50}ms` }}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <FileText className="w-6 h-6 text-primary" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-foreground">{assignment.title}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {subject?.name} • Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No date'}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className={cn("capitalize", statusColors[assignment.status as keyof typeof statusColors] || statusColors.draft)}>
-                    {assignment.status}
-                  </Badge>
-                  <Button variant="ghost" size="sm" onClick={() => openSubmissions(assignment)}>
-                    <Eye className="w-4 h-4 mr-2" />
-                    Submissions
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => handleDelete(assignment.id)}>
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
-                <div className="text-center">
-                  <p className="text-2xl font-bold">{assignment.submissions}</p>
-                  <p className="text-xs text-muted-foreground">Submitted</p>
-                </div>
-                <div className="text-center">
-                  <p className="text-2xl font-bold">{assignment.totalPoints}</p>
-                  <p className="text-xs text-muted-foreground">Points</p>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+              assignment={assignment}
+              subjectName={subjects.find(s => s.id === assignment.subjectId)?.name}
+              onEdit={() => handleEdit(assignment)}
+              onDelete={() => handleDelete(assignment.id)}
+              onViewSubmissions={() => openSubmissions(assignment)}
+              index={index}
+            />
+          ))}
+        </TabsContent>
+        {/* Other tabs can use same list with filtered data, but for brevity using same map for now or we filter above */}
+      </Tabs>
 
       {/* Submissions Sheet */}
       <Sheet open={!!selectedAssignment} onOpenChange={(open) => !open && setSelectedAssignment(null)}>
-        <SheetContent className="sm:max-w-2xl overflow-y-auto">
+        <SheetContent className="sm:max-w-3xl overflow-y-auto w-full">
           <SheetHeader className="mb-6">
             <SheetTitle>{selectedAssignment?.title} - Submissions</SheetTitle>
             <SheetDescription>
-              View and grade student work.
+              Review student work and provide grades.
             </SheetDescription>
           </SheetHeader>
 
-          <div className="space-y-6">
-            {submissions.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <p>No submissions yet.</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Student List */}
+            <div className="md:col-span-1 border-r pr-4 space-y-4">
+              <h3 className="font-semibold text-sm text-muted-foreground">Students ({submissions.length})</h3>
+              <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                {submissions.map(sub => (
+                  <div
+                    key={sub.id}
+                    onClick={() => viewSubmissionDetails(sub)}
+                    className={cn(
+                      "p-3 rounded-lg border cursor-pointer hover:bg-muted transition-colors text-sm",
+                      gradingSubmission?.id === sub.id ? "bg-muted border-primary" : "bg-card"
+                    )}
+                  >
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="font-medium">{sub.student_name}</span>
+                      <Badge variant={sub.status === 'graded' ? 'default' : 'secondary'} className="text-[10px]">
+                        {sub.status}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{new Date(sub.submitted_at).toLocaleDateString()}</p>
+                    {sub.score !== null && <p className="text-xs font-bold text-green-600 mt-1">{sub.score} / {selectedAssignment?.totalPoints}</p>}
+                  </div>
+                ))}
+                {submissions.length === 0 && <p className="text-sm text-muted-foreground">No submissions yet.</p>}
               </div>
-            ) : (
-              submissions.map(sub => (
-                <div key={sub.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex justify-between items-start">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-secondary/20 flex items-center justify-center text-sm font-bold text-secondary">
-                        {sub.student_name?.[0]}
-                      </div>
-                      <div>
-                        <p className="font-medium text-sm">{sub.student_name}</p>
-                        <p className="text-xs text-muted-foreground">{new Date(sub.submitted_at).toLocaleString()}</p>
-                      </div>
+            </div>
+
+            {/* Grading Area */}
+            <div className="md:col-span-2 space-y-6">
+              {gradingSubmission ? (
+                <div className="animate-in fade-in slide-in-from-right-4">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="font-bold text-lg">{gradingSubmission.student_name}'s Submission</h3>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm" onClick={() => setGradingSubmission(null)}>Close</Button>
                     </div>
-                    <Badge variant={sub.status === 'graded' ? 'default' : 'outline'}>
-                      {sub.status}
-                    </Badge>
                   </div>
 
-                  <div className="bg-muted p-3 rounded text-sm whitespace-pre-wrap">
-                    {sub.content || "No text content."}
-                  </div>
+                  {/* Submission Content */}
+                  <Card className="mb-6">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium text-muted-foreground">Student Work</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      {gradingSubmission.content && (
+                        <div className="bg-muted/30 p-4 rounded-md text-sm whitespace-pre-wrap font-serif">
+                          {gradingSubmission.content}
+                        </div>
+                      )}
 
-                  {sub.file_url && (
-                    <Button variant="outline" size="sm" className="w-full">
-                      <Download className="w-4 h-4 mr-2" />
-                      Download Attachment
-                    </Button>
-                  )}
+                      {gradingSubmission.file_url && (
+                        <Button variant="outline" className="w-full" asChild>
+                          <a href={gradingSubmission.file_url} target="_blank" rel="noopener noreferrer">
+                            <Download className="w-4 h-4 mr-2" /> Download Attached File
+                          </a>
+                        </Button>
+                      )}
 
-                  {gradingSubmission?.id === sub.id ? (
-                    <div className="bg-background border rounded p-4 space-y-3 mt-2 animate-in fade-in zoom-in-95">
-                      <h4 className="font-medium text-sm">Grade Submission</h4>
-                      <div className="flex items-center gap-2">
-                        <Input
-                          type="number"
-                          placeholder="Score"
-                          className="w-24"
-                          value={gradingData.score}
-                          onChange={(e) => setGradingData(prev => ({ ...prev, score: Number(e.target.value) }))}
+                      {/* Question Answers Table */}
+                      {submissionAnswers.length > 0 && (
+                        <div className="space-y-4 mt-4">
+                          <h4 className="font-medium text-sm">Question Answers</h4>
+                          {loadingAnswers ? <p>Loading answers...</p> : (
+                            <div className="space-y-4">
+                              {submissionAnswers.map((ans, idx) => (
+                                <div key={ans.id} className="border p-3 rounded text-sm space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="font-semibold">Q{idx + 1}: {ans.question_text}</span>
+                                    <Badge variant={ans.is_correct ? 'default' : 'destructive'}>
+                                      {ans.marks_awarded} / {ans.max_marks} pts
+                                    </Badge>
+                                  </div>
+                                  <div className="bg-muted p-2 rounded">
+                                    <span className="text-xs text-muted-foreground block">Answer:</span>
+                                    {ans.answer_text}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+
+                  {/* Grading Form */}
+                  <Card className="border-primary/20 bg-primary/5">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm font-medium">Grade & Feedback</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="space-y-1">
+                          <label className="text-xs font-semibold uppercase">Total Score</label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              type="number"
+                              value={gradingData.score}
+                              onChange={e => setGradingData(prev => ({ ...prev, score: Number(e.target.value) }))}
+                              className="w-24 font-bold text-lg"
+                            />
+                            <span className="text-muted-foreground">/ {selectedAssignment.totalPoints}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold uppercase">Feedback</label>
+                        <Textarea
+                          value={gradingData.feedback}
+                          onChange={e => setGradingData(prev => ({ ...prev, feedback: e.target.value }))}
+                          placeholder="Great job, consider..."
+                          className="bg-background"
                         />
-                        <span className="text-sm text-muted-foreground">/ {selectedAssignment.totalPoints}</span>
                       </div>
-                      <Textarea
-                        placeholder="Feedback"
-                        value={gradingData.feedback}
-                        onChange={(e) => setGradingData(prev => ({ ...prev, feedback: e.target.value }))}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="sm" onClick={() => setGradingSubmission(null)}>Cancel</Button>
-                        <Button size="sm" onClick={handleGrade}>Save Grade</Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex justify-between items-center pt-2">
-                      <div className="text-sm">
-                        {sub.score !== null ? <span className="font-bold text-green-600">Score: {sub.score}</span> : <span className="text-muted-foreground">Not graded</span>}
-                      </div>
-                      <Button size="sm" onClick={() => {
-                        setGradingSubmission(sub);
-                        setGradingData({ score: sub.score || 0, feedback: sub.feedback || "" });
-                      }}>
-                        <CheckCircle className="w-4 h-4 mr-2" />
-                        Grade
+                      <Button onClick={handleGrade} className="w-full">
+                        <CheckCircle className="w-4 h-4 mr-2" /> Save Grade
                       </Button>
-                    </div>
-                  )}
+                    </CardContent>
+                  </Card>
                 </div>
-              ))
-            )}
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-muted-foreground p-8 text-center bg-muted/10 rounded-xl border border-dashed">
+                  <FileText className="w-12 h-12 mb-4 opacity-20" />
+                  <p>Select a student submission from the left list to view details and grade.</p>
+                </div>
+              )}
+            </div>
           </div>
         </SheetContent>
       </Sheet>
-    </div >
+    </div>
+  );
+}
+
+function AssignmentCard({ assignment, subjectName, onEdit, onDelete, onViewSubmissions, index }: any) {
+  return (
+    <div
+      className="bg-card rounded-xl border border-border p-5 card-hover animate-fade-in group"
+      style={{ animationDelay: `${index * 50}ms` }}
+    >
+      <div className="flex items-start justify-between mb-4">
+        <div className="flex items-start gap-4">
+          <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+            <FileText className="w-6 h-6 text-primary" />
+          </div>
+          <div>
+            <h3 className="font-semibold text-foreground group-hover:text-primary transition-colors">{assignment.title}</h3>
+            <p className="text-sm text-muted-foreground">
+              {subjectName} • Due: {assignment.dueDate ? new Date(assignment.dueDate).toLocaleDateString() : 'No date'}
+            </p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className={cn("capitalize", statusColors[assignment.status as keyof typeof statusColors] || statusColors.draft)}>
+            {assignment.status}
+          </Badge>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-8 w-8">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={onEdit}>
+                <Edit className="w-4 h-4 mr-2" /> Edit
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onViewSubmissions}>
+                <Eye className="w-4 h-4 mr-2" /> Submissions
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                <Trash2 className="w-4 h-4 mr-2" /> Delete
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border">
+        <div className="text-center">
+          <p className="text-2xl font-bold">{assignment.submissions}</p>
+          <p className="text-xs text-muted-foreground">Submitted</p>
+        </div>
+        <div className="text-center">
+          <p className="text-2xl font-bold">{assignment.totalPoints}</p>
+          <p className="text-xs text-muted-foreground">Points</p>
+        </div>
+        <div className="col-span-2 flex items-center justify-end">
+          <Button variant="outline" size="sm" className="w-full" onClick={onViewSubmissions}>
+            View Submissions
+          </Button>
+        </div>
+      </div>
+    </div>
   );
 }

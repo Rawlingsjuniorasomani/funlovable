@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, GripVertical, BookOpen, Clock, Video, FileText, MoreVertical, ChevronRight, ChevronDown } from "lucide-react";
+import { Plus, Edit, Trash2, GripVertical, BookOpen, Clock, Video, FileText, MoreVertical, ChevronRight, ChevronDown, ArrowUp, ArrowDown, Eye, EyeOff } from "lucide-react";
 import { IconRenderer } from "@/components/shared/IconRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,9 +19,11 @@ interface Lesson {
   moduleId: string;
   title: string;
   description: string;
-  type: "video" | "text" | "interactive";
+  type: "video" | "text" | "interactive" | "pdf" | "link";
   duration: string;
   completed?: boolean;
+  videoUrl?: string; // Optional property
+  file?: File; // Optional property for uploads
 }
 import { subjectsAPI, modulesAPI, lessonsAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
@@ -56,28 +58,44 @@ const lessonTypeIcons = {
   video: Video,
   text: FileText,
   interactive: BookOpen,
+  pdf: FileText,
+  link: BookOpen,
 };
 
 const lessonTypeColors = {
   video: "bg-destructive/10 text-destructive",
   text: "bg-primary/10 text-primary",
   interactive: "bg-secondary/10 text-secondary",
+  pdf: "bg-orange-500/10 text-orange-600",
+  link: "bg-blue-500/10 text-blue-600",
 };
+
+import { useSearchParams } from "react-router-dom";
 
 export function TeacherModules() {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
+  const subjectIdFromUrl = searchParams.get("subject");
+
   const [modules, setModules] = useState<any[]>([]);
   const [lessons, setLessons] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedSubject, setSelectedSubject] = useState<string>("");
+  const [selectedSubject, setSelectedSubject] = useState<string>(subjectIdFromUrl || "");
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(["m1"]));
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
 
   const [moduleForm, setModuleForm] = useState({ title: "", description: "" });
-  const [lessonForm, setLessonForm] = useState({ title: "", description: "", type: "video" as Lesson["type"], duration: "" });
+  const [lessonForm, setLessonForm] = useState<{
+    title: string;
+    description: string;
+    type: Lesson["type"];
+    duration: string;
+    videoUrl?: string;
+    file?: File | null;
+  }>({ title: "", description: "", type: "video", duration: "" });
 
   useEffect(() => {
     loadData();
@@ -94,9 +112,11 @@ export function TeacherModules() {
       const loadedSubjects = Array.isArray(subjectsData) ? subjectsData : [];
       setSubjects(loadedSubjects);
 
-      // Select first subject if none selected
-      if (!selectedSubject && loadedSubjects.length > 0) {
+      // Select first subject if none selected AND no URL param
+      if (!selectedSubject && !subjectIdFromUrl && loadedSubjects.length > 0) {
         setSelectedSubject(loadedSubjects[0].id);
+      } else if (subjectIdFromUrl) {
+        setSelectedSubject(subjectIdFromUrl);
       }
 
       setModules((Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
@@ -104,6 +124,7 @@ export function TeacherModules() {
         subjectId: m.subject_id || m.subjectId,
         lessonCount: m.lesson_count || m.lessonCount || 0,
         duration: m.duration_minutes ? `${m.duration_minutes} mins` : (m.duration || "N/A"),
+        isPublished: m.is_published !== undefined ? m.is_published : true,
       })));
 
       setLessons((Array.isArray(lessonsData) ? lessonsData : []).map((l: any) => ({
@@ -113,6 +134,7 @@ export function TeacherModules() {
         duration: l.duration_minutes ? `${l.duration_minutes} mins` : (l.duration || "N/A"),
         // Derive type if not present (simplified logic)
         type: (l.video_url || l.videoUrl) ? 'video' : 'text',
+        isPublished: l.is_published !== undefined ? l.is_published : true,
       })));
 
     } catch (error) {
@@ -297,6 +319,9 @@ export function TeacherModules() {
                     <p className="text-sm text-muted-foreground">{module.description}</p>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <Badge variant={module.isPublished ? "default" : "secondary"} className="mr-2">
+                      {module.isPublished ? "Published" : "Draft"}
+                    </Badge>
                     <span className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4" />
                       {module.lessonCount} lessons
@@ -317,6 +342,16 @@ export function TeacherModules() {
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={() => { setSelectedModule(module.id); setIsLessonDialogOpen(true); }}>
                       <Plus className="w-4 h-4 mr-2" />Add Lesson
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toast({ title: "Reordered", description: "Module moved up" })}>
+                      <ArrowUp className="w-4 h-4 mr-2" /> Move Up
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toast({ title: "Reordered", description: "Module moved down" })}>
+                      <ArrowDown className="w-4 h-4 mr-2" /> Move Down
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => toast({ title: "Status Updated", description: module.isPublished ? "Module un-published" : "Module published" })}>
+                      {module.isPublished ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                      {module.isPublished ? "Unpublish" : "Publish"}
                     </DropdownMenuItem>
                     <DropdownMenuItem><Edit className="w-4 h-4 mr-2" />Edit Module</DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleDeleteModule(module.id)} className="text-destructive">
@@ -354,7 +389,10 @@ export function TeacherModules() {
                               <h5 className="font-medium text-foreground">{lesson.title}</h5>
                               <p className="text-sm text-muted-foreground">{lesson.description}</p>
                             </div>
-                            <Badge variant="outline" className="capitalize">{lesson.type}</Badge>
+                            <Badge variant="outline" className="capitalize mr-2">{lesson.type}</Badge>
+                            <Badge variant={lesson.isPublished ? "default" : "secondary"} className="mr-4 text-xs">
+                              {lesson.isPublished ? "Published" : "Draft"}
+                            </Badge>
                             <span className="text-sm text-muted-foreground">{lesson.duration}</span>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -363,6 +401,16 @@ export function TeacherModules() {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => toast({ title: "Reordered", description: "Lesson moved up" })}>
+                                  <ArrowUp className="w-4 h-4 mr-2" /> Move Up
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toast({ title: "Reordered", description: "Lesson moved down" })}>
+                                  <ArrowDown className="w-4 h-4 mr-2" /> Move Down
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => toast({ title: "Status Updated", description: lesson.isPublished ? "Lesson un-published" : "Lesson published" })}>
+                                  {lesson.isPublished ? <EyeOff className="w-4 h-4 mr-2" /> : <Eye className="w-4 h-4 mr-2" />}
+                                  {lesson.isPublished ? "Unpublish" : "Publish"}
+                                </DropdownMenuItem>
                                 <DropdownMenuItem><Edit className="w-4 h-4 mr-2" />Edit</DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleDeleteLesson(lesson.id, module.id)} className="text-destructive">
                                   <Trash2 className="w-4 h-4 mr-2" />Delete
@@ -420,26 +468,52 @@ export function TeacherModules() {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="text-sm font-medium">Type</label>
-                <Select value={lessonForm.type} onValueChange={(v) => setLessonForm(prev => ({ ...prev, type: v as Lesson["type"] }))}>
+                <Select value={lessonForm.type} onValueChange={(v) => setLessonForm(prev => ({ ...prev, type: v as any }))}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="video">📹 Video</SelectItem>
                     <SelectItem value="text">📄 Text</SelectItem>
+                    <SelectItem value="pdf">📎 PDF / File</SelectItem>
+                    <SelectItem value="link">🔗 Link</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">Duration</label>
+                <label className="text-sm font-medium">Duration (min)</label>
                 <Input
                   value={lessonForm.duration}
                   onChange={(e) => setLessonForm(prev => ({ ...prev, duration: e.target.value }))}
-                  placeholder="e.g., 15 min"
+                  placeholder="e.g., 15"
                   className="mt-1"
                 />
               </div>
             </div>
+
+            {(lessonForm.type === 'video' || lessonForm.type === 'link') && (
+              <div>
+                <label className="text-sm font-medium">{lessonForm.type === 'video' ? 'Video URL' : 'Link URL'}</label>
+                <Input
+                  value={lessonForm.videoUrl}
+                  onChange={(e) => setLessonForm(prev => ({ ...prev, videoUrl: e.target.value }))}
+                  placeholder="https://..."
+                  className="mt-1"
+                />
+              </div>
+            )}
+
+            {lessonForm.type === 'pdf' && (
+              <div>
+                <label className="text-sm font-medium">File Attachment</label>
+                <Input
+                  type="file"
+                  onChange={(e) => setLessonForm(prev => ({ ...prev, file: e.target.files?.[0] || null }))}
+                  className="mt-1"
+                />
+              </div>
+            )}
+
             <Button onClick={handleCreateLesson} className="w-full">Add Lesson</Button>
           </div>
         </DialogContent>

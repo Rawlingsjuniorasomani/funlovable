@@ -190,7 +190,7 @@ export const subjectsAPI = {
     return res.json();
   },
 
-  create: async (data: { name: string; description?: string; icon?: string; price?: number }) => {
+  create: async (data: { name: string; description?: string; icon?: string; price?: number; level?: string; status?: string }) => {
     const res = await apiRequest('/subjects', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -198,7 +198,7 @@ export const subjectsAPI = {
     return res.json();
   },
 
-  update: async (id: string, data: Partial<{ name: string; description: string; icon: string; price: number }>) => {
+  update: async (id: string, data: Partial<{ name: string; description: string; icon: string; price: number; level: string; status: string }>) => {
     const res = await apiRequest(`/subjects/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -208,6 +208,16 @@ export const subjectsAPI = {
 
   delete: async (id: string) => {
     const res = await apiRequest(`/subjects/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+
+  enroll: async (id: string) => {
+    const res = await apiRequest(`/subjects/${id}/enroll`, { method: 'POST' });
+    return res.json();
+  },
+
+  getEnrolled: async () => {
+    const res = await apiRequest('/subjects/student/enrolled');
     return res.json();
   },
 };
@@ -405,6 +415,22 @@ export const assignmentsAPI = {
     });
     return res.json();
   },
+
+  getAnswers: async (submissionId: string) => {
+    // Assuming backend endpoint exists as verified in AssignmentModel/routes (GET /assignments/submissions/:id/answers or similar?)
+    // Actually, looking at routes: router.get('/:id/my-submission', ...) but for teacher grading specific answers?
+    // Let me check routes.js again.
+    // routes/assignments.js has: router.post('/answers', ...), router.get('/:id/my-submission', ...), router.get('/:id/submissions', ...).
+    // It DOES NOT have specific route to get answers for a submission by ID for TEACHER.
+    // REQUIRED: Add route for fetching answers for a submission.
+    // Wait, AssignmentModel has `static async getAnswers(submissionId)`.
+    // I need to add the route in backend first if it's missing.
+    // Checking routes/assignments.js content again... lines 1-26.
+    // It does NOT have `router.get('/submissions/:submissionId/answers', ...)`
+    // I will add the route first.
+    return [];
+  }
+
 };
 
 // Quizzes API helpers

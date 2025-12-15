@@ -6,6 +6,7 @@ import { DashboardTopbar } from "@/components/dashboard/DashboardTopbar";
 import { StudentOverview } from "@/components/student/StudentOverview";
 import { StudentSubjects } from "@/components/student/StudentSubjects";
 import { StudentQuizzes } from "@/components/student/StudentQuizzes";
+import { StudentQuizResults } from "@/components/student/StudentQuizResults";
 import { StudentAssignments } from "@/components/student/StudentAssignments";
 import { StudentLiveClasses } from "@/components/student/StudentLiveClasses";
 import { StudentProgress } from "@/components/student/StudentProgress";
@@ -40,6 +41,7 @@ export default function StudentDashboard() {
               <Route path="subjects" element={<StudentSubjects />} />
               <Route path="lessons" element={<StudentLessonsPage />} />
               <Route path="quizzes" element={<StudentQuizzes />} />
+              <Route path="quizzes/results/:attemptId" element={<StudentQuizResults />} />
               <Route path="assignments" element={<StudentAssignments />} />
               <Route path="live-classes" element={<StudentLiveClasses />} />
               <Route path="progress" element={<StudentProgress />} />

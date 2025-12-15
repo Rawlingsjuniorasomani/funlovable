@@ -1,10 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Send, Search, User, Clock, Check, CheckCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { messagingAPI } from "@/config/api";
 
 interface Message {
   id: string;
@@ -24,15 +26,96 @@ interface Teacher {
   unread: number;
 }
 
-// Mocks removed
-
 export function ParentMessages() {
   const { toast } = useToast();
+  const { user } = useAuthContext();
   const [selectedTeacher, setSelectedTeacher] = useState<string | null>(null);
   const [newMessage, setNewMessage] = useState("");
   const [conversations, setConversations] = useState<Record<string, Message[]>>({});
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+
+  // Load inbox and derive teacher list + conversations
+  useEffect(() => {
+    const loadInbox = async () => {
+      if (!user) return;
+
+      try {
+        const inbox: any[] = await messagingAPI.getInbox();
+
+        // Expecting messages shaped roughly like SharedMessage
+        // { id, from, fromName, fromRole, to, toName, subject, content, read, sentAt, type }
+        const teacherMap = new Map<string, Teacher>();
+        const convMap: Record<string, Message[]> = {};
+
+        inbox.forEach((m: any) => {
+          const fromRole = m.fromRole || m.from_role;
+          const toRole = m.toRole || m.to_role;
+
+          // Only consider threads where one side is a teacher and the other is this parent
+          const involvesParent = m.from === user.id || m.to === user.id;
+          const involvesTeacher = fromRole === "teacher" || toRole === "teacher";
+          if (!involvesParent || !involvesTeacher) return;
+
+          const isTeacherSender = fromRole === "teacher";
+          const teacherId = isTeacherSender ? String(m.from) : String(m.to);
+          const teacherName = isTeacherSender ? (m.fromName || "Teacher") : (m.toName || "Teacher");
+
+          const msg: Message = {
+            id: String(m.id),
+            from: isTeacherSender ? "teacher" : "parent",
+            content: m.content || m.message || "",
+            timestamp: m.sentAt
+              ? new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+              : "",
+            read: !!m.read,
+          };
+
+          if (!convMap[teacherId]) convMap[teacherId] = [];
+          convMap[teacherId].push(msg);
+
+          const existing = teacherMap.get(teacherId);
+          const unreadIncrement = !m.read && !isTeacherSender ? 1 : 0;
+          const subject = m.subject || "";
+          const lastTime = m.sentAt
+            ? new Date(m.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+            : "";
+
+          if (existing) {
+            // Update last message/time with the latest one in loop (backend should return sorted by time)
+            teacherMap.set(teacherId, {
+              ...existing,
+              lastMessage: msg.content || existing.lastMessage,
+              lastMessageTime: lastTime || existing.lastMessageTime,
+              unread: existing.unread + unreadIncrement,
+            });
+          } else {
+            teacherMap.set(teacherId, {
+              id: teacherId,
+              name: teacherName,
+              subject: subject || "Teacher",
+              avatar: teacherName.charAt(0).toUpperCase(),
+              lastMessage: msg.content,
+              lastMessageTime: lastTime,
+              unread: unreadIncrement,
+            });
+          }
+        });
+
+        setTeachers(Array.from(teacherMap.values()));
+        // Sort messages by time per conversation (optional safeguard)
+        Object.keys(convMap).forEach((tid) => {
+          convMap[tid].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
+        });
+        setConversations(convMap);
+      } catch (error: any) {
+        console.error("Failed to load inbox:", error);
+        toast({ title: "Failed to load messages", variant: "destructive" });
+      }
+    };
+
+    loadInbox();
+  }, [user, toast]);
 
   const filteredTeachers = teachers.filter(t =>
     t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,23 +125,35 @@ export function ParentMessages() {
   const currentTeacher = teachers.find(t => t.id === selectedTeacher);
   const currentMessages = selectedTeacher ? conversations[selectedTeacher] || [] : [];
 
-  const handleSend = () => {
-    if (!newMessage.trim() || !selectedTeacher) return;
+  const handleSend = async () => {
+    if (!newMessage.trim() || !selectedTeacher || !user) return;
 
-    const message: Message = {
+    const tempMessage: Message = {
       id: `msg-${Date.now()}`,
       from: "parent",
       content: newMessage,
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       read: true,
     };
 
+    // Optimistic UI update
     setConversations(prev => ({
       ...prev,
-      [selectedTeacher]: [...(prev[selectedTeacher] || []), message],
+      [selectedTeacher]: [...(prev[selectedTeacher] || []), tempMessage],
     }));
     setNewMessage("");
-    toast({ title: "Message sent" });
+
+    try {
+      await messagingAPI.send({
+        recipient_id: selectedTeacher,
+        subject: "Parent Message",
+        message: tempMessage.content,
+      });
+      toast({ title: "Message sent" });
+    } catch (error: any) {
+      console.error("Failed to send message:", error);
+      toast({ title: "Failed to send message", variant: "destructive" });
+    }
   };
 
   return (

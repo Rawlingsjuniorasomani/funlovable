@@ -34,14 +34,17 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = tru
       student: '/student',
       teacher: '/teacher',
       parent: '/parent',
-      admin: '/admin',
+      admin: user.is_super_admin ? '/super-admin' : '/admin',
     };
     return <Navigate to={dashboardRoutes[user.role] || '/'} replace />;
   }
 
   // Check if parent needs to complete onboarding
-  if (requireOnboarding && user.role === 'parent' && !user.is_onboarded && !user.onboardingComplete) {
-    return <Navigate to="/onboarding" replace />;
+  if (requireOnboarding && user.role === 'parent') {
+    const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
+    if (!isOnboarded) {
+      return <Navigate to="/onboarding" replace />;
+    }
   }
 
   return <>{children}</>;

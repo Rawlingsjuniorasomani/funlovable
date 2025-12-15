@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, BookOpen, Users, Layers, MoreVertical } from "lucide-react";
+import { Plus, Edit, Trash2, BookOpen, Users, Layers, MoreVertical, CheckCircle } from "lucide-react";
 import { IconRenderer } from "@/components/shared/IconRenderer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
@@ -21,6 +22,7 @@ interface Subject {
   teacherCount: number;
   studentCount: number;
   moduleCount: number;
+  status?: string;
 }
 
 const iconOptions = ["BookOpen", "Calculator", "Beaker", "Globe", "Monitor", "Music", "Palette", "Dna", "Languages", "FileText"];
@@ -66,16 +68,24 @@ export function AdminSubjects() {
     }
   };
 
-  const handleSave = async () => {
-    if (!formData.name) return;
+  const handleSave = async (subjectData?: Partial<Subject>) => {
+    // If subjectData is passed (e.g. for status update), use it.
+    // Otherwise use formData.
+    const dataToSave = subjectData || formData;
+    const isNameValid = subjectData ? true : !!formData.name;
+
+    if (!isNameValid && !subjectData) return;
 
     try {
-      if (editingSubject) {
-        await subjectsAPI.update(editingSubject.id, {
-          name: formData.name,
-          description: formData.description
-        });
-        toast({ title: "Subject Updated", description: `${formData.name} has been updated.` });
+      if (editingSubject || (subjectData && (subjectData as any).id)) {
+        const id = editingSubject?.id || (subjectData as any).id;
+        await subjectsAPI.update(id, {
+          name: dataToSave.name || (subjects.find(s => s.id === id)?.name),
+          description: dataToSave.description,
+          icon: (dataToSave as any).icon,
+          status: (dataToSave as any).status
+        } as any);
+        toast({ title: "Subject Updated", description: "Changes saved successfully." });
       } else {
         await subjectsAPI.create({
           name: formData.name,
@@ -86,9 +96,11 @@ export function AdminSubjects() {
       }
 
       await loadSubjects();
-      setFormData({ name: "", description: "", icon: "BookOpen" });
-      setEditingSubject(null);
-      setIsAddOpen(false);
+      if (!subjectData) {
+        setFormData({ name: "", description: "", icon: "BookOpen" });
+        setEditingSubject(null);
+        setIsAddOpen(false);
+      }
     } catch (error) {
       console.error('Failed to save subject:', error);
       toast({ title: "Error", description: "Failed to save subject", variant: "destructive" });
@@ -146,7 +158,7 @@ export function AdminSubjects() {
               </div>
               <div><Label>Name</Label><Input value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="mt-1" /></div>
               <div><Label>Description</Label><Input value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="mt-1" /></div>
-              <Button onClick={handleSave} className="w-full">{editingSubject ? "Update" : "Create"} Subject</Button>
+              <Button onClick={() => handleSave()} className="w-full">{editingSubject ? "Update" : "Create"} Subject</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -169,16 +181,27 @@ export function AdminSubjects() {
                 <div className="w-14 h-14 rounded-xl bg-gradient-to-br from-primary/20 to-tertiary/20 flex items-center justify-center text-3xl">
                   <IconRenderer iconName={subject.icon} />
                 </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => handleEdit(subject)}><Edit className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleDelete(subject.id)} className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <div className="flex gap-2">
+                  {/* Status badge since API might not return it yet, defaulting to Published for existing ones if undefined */}
+                  <Badge variant={subject.status === 'Draft' || subject.status === 'Pending Approval' ? "secondary" : "default"}>
+                    {subject.status || "Published"}
+                  </Badge>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreVertical className="w-4 h-4" /></Button></DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      {subject.status !== "Published" && (
+                        <DropdownMenuItem onClick={() => handleSave({ ...subject, status: "Published" } as any)}>
+                          <CheckCircle className="w-4 h-4 mr-2" /> Approve
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem onClick={() => handleEdit(subject)}><Edit className="w-4 h-4 mr-2" /> Edit</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleDelete(subject.id)} className="text-destructive"><Trash2 className="w-4 h-4 mr-2" /> Delete</DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
               </div>
               <h3 className="text-lg font-semibold text-foreground mb-1">{subject.name}</h3>
-              <p className="text-sm text-muted-foreground mb-4">{subject.description || "No description"}</p>
+              <p className="text-sm text-muted-foreground mb-4 line-clamp-2">{subject.description || "No description"}</p>
               <div className="flex items-center gap-4 text-sm text-muted-foreground">
                 <div className="flex items-center gap-1"><Layers className="w-4 h-4" /><span>{subject.moduleCount} modules</span></div>
                 <div className="flex items-center gap-1"><Users className="w-4 h-4" /><span>{subject.studentCount} students</span></div>

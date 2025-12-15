@@ -39,7 +39,12 @@ export function AdminQuizzes() {
         quizzesAPI.getAll()
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
-      setModules(Array.isArray(modulesData) ? modulesData : []);
+      // Normalize modules so we always have subjectId available
+      const normalizedModules = (Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
+        ...m,
+        subjectId: m.subject_id || m.subjectId,
+      }));
+      setModules(normalizedModules);
       setQuizzes((Array.isArray(quizzesData) ? quizzesData : []).map((q: any) => ({
         ...q,
         subjectId: q.subject_id || q.subjectId, // Ensure subjectId is resolved if part of module or direct
@@ -65,13 +70,13 @@ export function AdminQuizzes() {
     }
 
     try {
-      // NOTE: Verify backend supports subject_id if module_id is missing, or enforce module_id
       await quizzesAPI.create({
         title: formData.title,
-        module_id: formData.moduleId || "", // If empty, backend might complain if required
-        // subject_id: formData.subjectId, // Add if backend supports
-        description: `Duration: ${formData.duration} mins`, // Storing duration in description if no field
-        passing_score: 70, // Default
+        module_id: formData.moduleId || undefined,
+        subject_id: formData.subjectId,
+        questions_count: parseInt(formData.questionCount, 10) || 10,
+        time_limit_minutes: parseInt(formData.duration, 10) || 15,
+        passing_score: 70,
       });
       await loadData();
       setIsAddOpen(false);

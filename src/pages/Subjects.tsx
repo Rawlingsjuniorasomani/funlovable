@@ -1,9 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, ArrowRight, BookOpen, Clock, Users } from "lucide-react";
+import { Search, ArrowRight, BookOpen, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { subjectsAPI } from "@/config/api";
+import { toast } from "sonner";
 
 const allSubjects = [
   {
@@ -18,7 +22,6 @@ const allSubjects = [
   },
   {
     name: "Science",
-    emoji: "🔬",
     description: "Explore the wonders of biology, chemistry, and physics with hands-on experiments.",
     lessons: 38,
     duration: "25 hours",
@@ -101,20 +104,61 @@ const allSubjects = [
 const gradeFilters = ["All", "Primary", "JHS"];
 
 const Subjects = () => {
+  const [subjects, setSubjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGrade, setSelectedGrade] = useState("All");
+  const { user } = useAuthContext();
+  const navigate = useNavigate();
 
-  const filteredSubjects = allSubjects.filter((subject) => {
+  useEffect(() => {
+    loadSubjects();
+  }, []);
+
+  const loadSubjects = async () => {
+    try {
+      const data = await subjectsAPI.getAll();
+      setSubjects(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load subjects", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAction = async (subjectId: string) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (user.role === 'student') {
+      try {
+        await subjectsAPI.enroll(subjectId);
+        toast.success("Enrolled successfully!");
+        navigate(`/student/learning/${subjectId}`);
+      } catch (error: any) {
+        if (error.response?.data?.message === 'Already enrolled') {
+          navigate(`/student/learning/${subjectId}`);
+        } else {
+          toast.error("Failed to enroll");
+        }
+      }
+    } else {
+      // Teachers/Admins/Parents just view generic details for now
+      toast.info("Enrollment is for students only");
+    }
+  };
+
+  const filteredSubjects = subjects.filter((subject) => {
     const matchesSearch = subject.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      subject.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesGrade = selectedGrade === "All" || subject.grades.includes(selectedGrade);
-    return matchesSearch && matchesGrade;
+      (subject.description && subject.description.toLowerCase().includes(searchQuery.toLowerCase()));
+    return matchesSearch;
   });
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen flex flex-col">
       <Header />
-      <main className="pt-20">
+      <main className="flex-1 pt-20">
         {/* Hero */}
         <section className="py-16 bg-gradient-to-br from-primary/5 via-tertiary/5 to-secondary/5">
           <div className="container mx-auto px-4">
@@ -126,7 +170,7 @@ const Subjects = () => {
                 Discover our comprehensive curriculum designed to make learning engaging and effective.
               </p>
 
-              {/* Search & Filter */}
+              {/* Search */}
               <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -137,18 +181,6 @@ const Subjects = () => {
                     className="pl-10"
                   />
                 </div>
-                <div className="flex gap-2">
-                  {gradeFilters.map((grade) => (
-                    <Button
-                      key={grade}
-                      variant={selectedGrade === grade ? "default" : "outline"}
-                      onClick={() => setSelectedGrade(grade)}
-                      className={selectedGrade === grade ? "bg-primary" : ""}
-                    >
-                      {grade}
-                    </Button>
-                  ))}
-                </div>
               </div>
             </div>
           </div>
@@ -157,7 +189,11 @@ const Subjects = () => {
         {/* Subjects Grid */}
         <section className="py-16">
           <div className="container mx-auto px-4">
-            {filteredSubjects.length === 0 ? (
+            {loading ? (
+              <div className="flex justify-center">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            ) : filteredSubjects.length === 0 ? (
               <div className="text-center py-12">
                 <p className="text-xl text-muted-foreground">No subjects found matching your search.</p>
               </div>
@@ -165,47 +201,31 @@ const Subjects = () => {
               <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredSubjects.map((subject, index) => (
                   <div
-                    key={subject.name}
-                    className="group bg-card rounded-2xl overflow-hidden border border-border card-hover animate-fade-in"
+                    key={subject.id || index}
+                    className="group bg-card rounded-2xl overflow-hidden border border-border card-hover animate-fade-in flex flex-col h-full"
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
-                    <div className={`h-32 bg-gradient-to-r ${subject.color} flex items-center justify-center relative`}>
-                      <span className="text-6xl">{subject.emoji}</span>
+                    <div className={`h-32 bg-secondary/10 flex items-center justify-center relative`}>
+                      <span className="text-6xl">{subject.icon || "📚"}</span>
                     </div>
-                    <div className="p-6">
+                    <div className="p-6 flex flex-col flex-grow">
                       <h3 className="font-display font-semibold text-xl mb-2">{subject.name}</h3>
-                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2">
+                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-grow">
                         {subject.description}
                       </p>
-                      
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {subject.grades.map((grade) => (
-                          <span
-                            key={grade}
-                            className="px-2 py-1 bg-muted rounded-full text-xs font-medium"
-                          >
-                            {grade}
-                          </span>
-                        ))}
-                      </div>
 
                       <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
                         <span className="flex items-center gap-1">
                           <BookOpen className="w-4 h-4" />
-                          {subject.lessons} lessons
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Clock className="w-4 h-4" />
-                          {subject.duration}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          {subject.students.toLocaleString()}
+                          {subject.lessons || 0} lessons
                         </span>
                       </div>
 
-                      <Button className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary hover:opacity-90">
-                        View Modules
+                      <Button
+                        onClick={() => handleAction(subject.id)}
+                        className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary hover:opacity-90 mt-auto"
+                      >
+                        {user?.role === 'student' ? "Enroll & Start Learning" : "Start Learning"}
                         <ArrowRight className="ml-2 w-4 h-4 transition-transform group-hover:translate-x-1" />
                       </Button>
                     </div>

@@ -10,14 +10,17 @@ import { assignmentsAPI } from "@/config/api";
 import { toast } from "sonner";
 
 interface Props {
-    assignment: any;
+    assignment?: any;
+    assignmentId?: string;
     onBack: () => void;
 }
 
 // Exporting component for use in StudentAssignments list
-export function StudentAssignmentDetails({ assignment, onBack }: Props) {
+export function StudentAssignmentDetails({ assignment: propAssignment, assignmentId, onBack }: Props) {
+    const [assignment, setAssignment] = useState<any>(propAssignment);
     const [content, setContent] = useState("");
     const [submitting, setSubmitting] = useState(false);
+    const [loading, setLoading] = useState(false);
 
     // Question Wizard State
     const [questions, setQuestions] = useState<any[]>([]);
@@ -31,13 +34,43 @@ export function StudentAssignmentDetails({ assignment, onBack }: Props) {
     const [submissionId, setSubmissionId] = useState<string | null>(null);
 
     useEffect(() => {
-        loadSubmission();
-        if (assignment.submission_type === 'questions' || assignment.submission_type === 'mixed') {
-            loadQuestions();
+        if (propAssignment) {
+            setAssignment(propAssignment);
+        } else if (assignmentId) {
+            loadAssignment();
         }
-    }, [assignment.id]);
+    }, [propAssignment, assignmentId]);
+
+    const loadAssignment = async () => {
+        try {
+            setLoading(true);
+            const data = await assignmentsAPI.getById(assignmentId!);
+            setAssignment({
+                ...data,
+                // Ensure fields match what component expects
+                due_date: data.due_date || data.dueDate,
+                max_score: data.total_points || data.totalPoints || 100,
+                // derive stats if needed
+                submissions: data.submission_count || 0
+            });
+        } catch (error) {
+            toast.error("Failed to load assignment");
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        if (assignment?.id) {
+            loadSubmission();
+            if (assignment.submission_type === 'questions' || assignment.submission_type === 'mixed') {
+                loadQuestions();
+            }
+        }
+    }, [assignment?.id]);
 
     const loadSubmission = async () => {
+        if (!assignment?.id) return;
         try {
             const data = await assignmentsAPI.getMySubmission(assignment.id);
             if (data && data.id) {
@@ -54,18 +87,17 @@ export function StudentAssignmentDetails({ assignment, onBack }: Props) {
                     setAnswerDetails(detailsMap);
                 }
 
-                // If started, resume wizard
                 if (data.status === 'submitted' || data.status === 'graded') {
-                    // If already submitted, show readonly view (review style)
                     setWizardStep('review');
                 }
             }
         } catch (error) {
-            // Ignore 404, means not started
+            // Ignore 404
         }
     };
 
     const loadQuestions = async () => {
+        if (!assignment?.id) return;
         try {
             setLoadingQuestions(true);
             const data = await assignmentsAPI.getQuestions(assignment.id);
@@ -77,6 +109,10 @@ export function StudentAssignmentDetails({ assignment, onBack }: Props) {
             setLoadingQuestions(false);
         }
     };
+
+    if (loading || !assignment) {
+        return <div className="p-8 text-center">Loading assignment details...</div>;
+    }
 
     // Parse resources if JSON string
     const resources = typeof assignment.resources === 'string'
@@ -109,12 +145,18 @@ export function StudentAssignmentDetails({ assignment, onBack }: Props) {
     const handleSubmit = async (status: 'draft' | 'submitted') => {
         try {
             setSubmitting(true);
-            await assignmentsAPI.submit(assignment.id, {
+            const res = await assignmentsAPI.submit(assignment.id, {
                 content: content || "Question Based Submission",
                 status,
             });
             toast.success(status === 'draft' ? "Draft saved" : "Assignment submitted successfully");
+
             if (status === 'submitted') {
+                // Update local state with the returned submission
+                setAssignment(prev => ({ ...prev, ...res, submissions: 1 })); // Assuming res contains updated status/score
+                setSubmissionId(res.id);
+                // Refresh submission details (answers with correctness)
+                await loadSubmission();
                 setWizardStep('success');
             }
         } catch (error) {
@@ -232,6 +274,22 @@ export function StudentAssignmentDetails({ assignment, onBack }: Props) {
                                                     >
                                                         <div className={`w-4 h-4 rounded-full border ${answers[questions[currentQuestionIndex].id] === opt ? 'bg-primary border-primary' : 'border-muted-foreground'}`} />
                                                         <span>{opt}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+
+                                        {questions[currentQuestionIndex].question_type === 'true_false' && (
+                                            <div className="flex gap-4">
+                                                {['True', 'False'].map((opt) => (
+                                                    <div key={opt}
+                                                        className={`flex-1 flex items-center justify-center p-6 border rounded-xl cursor-pointer transition-all hover:bg-muted ${answers[questions[currentQuestionIndex].id] === opt ? 'bg-primary/10 border-primary ring-2 ring-primary/20' : ''}`}
+                                                        onClick={() => handleAnswerSave(questions[currentQuestionIndex].id, opt)}
+                                                    >
+                                                        <div className={`w-5 h-5 rounded-full border mr-3 flex items-center justify-center ${answers[questions[currentQuestionIndex].id] === opt ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                                            {answers[questions[currentQuestionIndex].id] === opt && <div className="w-2.5 h-2.5 bg-background rounded-full" />}
+                                                        </div>
+                                                        <span className={`text-lg font-medium ${answers[questions[currentQuestionIndex].id] === opt ? 'text-primary' : ''}`}>{opt}</span>
                                                     </div>
                                                 ))}
                                             </div>

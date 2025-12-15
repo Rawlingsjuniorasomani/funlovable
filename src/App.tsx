@@ -25,6 +25,7 @@ import QuizPlayPage from "./pages/QuizPlayPage";
 import AchievementsPage from "./pages/AchievementsPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import AdminDashboard from "./pages/AdminDashboard";
+import SuperAdminDashboard from "./pages/SuperAdminDashboard";
 import AdminLogin from "./pages/AdminLogin";
 import TeacherAuth from "./pages/TeacherAuth";
 import ParentAuth from "./pages/ParentAuth";
@@ -32,6 +33,8 @@ import StudentAuth from "./pages/StudentAuth";
 import { PaymentVerify } from "./pages/PaymentVerify";
 import AuthSelector from "./pages/AuthSelector";
 import LiveClassSession from "./pages/LiveClassSession";
+import LearningPage from "./pages/student/LearningPage";
+import SubjectDetailPage from "./pages/SubjectDetailPage";
 
 const queryClient = new QueryClient();
 
@@ -46,6 +49,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/about" element={<About />} />
             <Route path="/subjects" element={<Subjects />} />
+            <Route path="/subjects/:subjectId" element={
+              <ProtectedRoute allowedRoles={['student', 'teacher', 'admin', 'parent']}>
+                <SubjectDetailPage />
+              </ProtectedRoute>
+            } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
             <Route path="/login" element={<AuthSelector />} />
@@ -63,6 +71,11 @@ const App = () => (
                 <StudentDashboard />
               </ProtectedRoute>
             } />
+            <Route path="/student/learning/:subjectId" element={
+              <ProtectedRoute allowedRoles={['student']}>
+                <LearningPage />
+              </ProtectedRoute>
+            } />
             <Route path="/parent/*" element={
               <ProtectedRoute allowedRoles={['parent']}>
                 <ParentDashboard />
@@ -77,6 +90,11 @@ const App = () => (
             <Route path="/admin/*" element={
               <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false}>
                 <AdminDashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/super-admin/*" element={
+              <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false}>
+                <SuperAdminDashboard />
               </ProtectedRoute>
             } />
             <Route path="/quiz" element={<QuizPage />} />

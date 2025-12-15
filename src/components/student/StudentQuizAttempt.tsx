@@ -11,8 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Clock, ChevronLeft, ChevronRight, Send } from "lucide-react";
 import { toast } from "sonner";
 
-export function StudentQuizAttempt() {
-    const { quizId } = useParams();
+export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: string, onBack?: () => void }) {
+    const { quizId: paramQuizId } = useParams();
+    const quizId = propQuizId || paramQuizId;
     const navigate = useNavigate();
 
     const [quiz, setQuiz] = useState<any>(null);

@@ -1,31 +1,20 @@
-import { BookOpen, ClipboardList, Video, Users } from "lucide-react";
 const features = [{
-  icon: BookOpen,
+  image: "/images/interactive-lessons.png",
   title: "Interactive Lessons",
-  description: "Engaging multimedia content that makes learning fun and memorable for every child.",
-  color: "primary"
+  description: "Engaging multimedia content that makes learning fun and memorable for every child."
 }, {
-  icon: ClipboardList,
+  image: "/images/assignments-quizzes.png",
   title: "Assignments & Quizzes",
-  description: "Regular assessments with instant feedback to track progress and reinforce learning.",
-  color: "secondary"
+  description: "Regular assessments with instant feedback to track progress and reinforce learning."
 }, {
-  icon: Video,
+  image: "/images/live-classes.png",
   title: "Live Classes",
-  description: "Real-time sessions with qualified teachers for personalized guidance and support.",
-  color: "tertiary"
+  description: "Real-time sessions with qualified teachers for personalized guidance and support."
 }, {
-  icon: Users,
+  image: "/images/parent-dashboard.png",
   title: "Parent Dashboard",
-  description: "Monitor your child's progress, attendance, and performance in real-time.",
-  color: "quaternary"
+  description: "Monitor your child's progress, attendance, and performance in real-time."
 }];
-const colorClasses = {
-  primary: "bg-orange-100 text-orange-600",
-  secondary: "bg-orange-50 text-orange-500",
-  tertiary: "bg-amber-100 text-amber-600",
-  quaternary: "bg-slate-100 text-slate-600"
-};
 export function AboutSection() {
   return (
     <section id="about" className="relative py-20 overflow-hidden">
@@ -51,13 +40,13 @@ export function AboutSection() {
         </div>
 
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feature, index) => <div key={feature.title} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-orange-100 card-hover animate-fade-in" style={{
+          {features.map((feature, index) => <div key={feature.title} className="bg-white/80 backdrop-blur-sm rounded-2xl p-6 shadow-sm border border-primary/10 card-hover animate-fade-in group hover:bg-white" style={{
             animationDelay: `${index * 0.1}s`
           }}>
-            <div className={`w-14 h-14 rounded-xl ${colorClasses[feature.color as keyof typeof colorClasses]} flex items-center justify-center mb-4`}>
-              <feature.icon className="w-7 h-7" />
+            <div className="w-full aspect-square relative mb-6 rounded-xl overflow-hidden bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors duration-300">
+              <img src={feature.image} alt={feature.title} className="w-4/5 h-4/5 object-contain drop-shadow-sm transition-transform duration-300 group-hover:scale-110" />
             </div>
-            <h3 className="font-display font-semibold text-xl mb-2">{feature.title}</h3>
+            <h3 className="font-display font-semibold text-xl mb-2 text-primary">{feature.title}</h3>
             <p className="text-muted-foreground">{feature.description}</p>
           </div>)}
         </div>
@@ -82,19 +71,19 @@ export function AboutSection() {
             <div className="grid grid-cols-2 gap-4">
               <div className="bg-orange-50/50 rounded-xl p-6 text-center border border-orange-100">
                 <div className="text-4xl font-bold text-orange-600 mb-1">
-                  
+
                 </div>
                 <p className="text-sm text-slate-500 font-medium">Verified Teachers</p>
               </div>
               <div className="bg-orange-50/50 rounded-xl p-6 text-center border border-orange-100">
                 <div className="text-4xl font-bold text-orange-600 mb-1">
-                  
+
                 </div>
                 <p className="text-sm text-slate-500 font-medium">Courses Available</p>
               </div>
               <div className="bg-orange-50/50 rounded-xl p-6 text-center border border-orange-100">
                 <div className="text-4xl font-bold text-orange-600 mb-1">
-                  
+
                 </div>
                 <p className="text-sm text-slate-500 font-medium">Happy Students</p>
               </div>

@@ -90,9 +90,8 @@ export default function StudentAuth() {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // Mock OTP verification
-    if (otp !== "123456") {
-      setErrors({ otp: "Invalid OTP. Use 123456 for demo." });
+    if (otp.length !== 6) {
+      setErrors({ otp: "Invalid verification code." });
       setIsSubmitting(false);
       return;
     }

@@ -45,7 +45,7 @@ export function ParentAssignments() {
       // For now, let's assume `assignmentsAPI.getAll` might not work directly for child data without backend update.
       // 
       // WORKAROUND: We will assume we added a parent endpoint or use the analytics endpoint which often has this.
-      // Let's use `progressAPI.getStudentProgress` or similar if available, or just mock it if backend support is missing for *Parent viewing Child Assignments specifically*.
+      // Let's use `progressAPI.getStudentProgress` or similar if available if backend support is missing for *Parent viewing Child Assignments specifically*.
       //
       // Checking backend... AssignmentController.getAll checks role.
       // Teacher -> Subject based.

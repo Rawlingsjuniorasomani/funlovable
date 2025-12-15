@@ -8,20 +8,22 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Download, Filter, DollarSign, CreditCard, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// Mock data for initial UI build
-const mockPayments = [
-  { id: "PAY-001", user: "John Doe", email: "john@example.com", plan: "Family Plan", amount: 150.00, status: "completed", date: "2024-03-15", method: "Momo" },
-  { id: "PAY-002", user: "Jane Smith", email: "jane@example.com", plan: "Single Child", amount: 50.00, status: "completed", date: "2024-03-14", method: "Card" },
-  { id: "PAY-003", user: "Robert Johnson", email: "robert@example.com", plan: "Family Plan", amount: 150.00, status: "failed", date: "2024-03-14", method: "Momo" },
-  { id: "PAY-004", user: "Emily Davis", email: "emily@example.com", plan: "Single Child", amount: 50.00, status: "completed", date: "2024-03-13", method: "Card" },
-  { id: "PAY-005", user: "Michael Wilson", email: "michael@example.com", plan: "Family Plan", amount: 150.00, status: "pending", date: "2024-03-12", method: "Bank Transfer" },
-];
+const payments: Array<{
+  id: string;
+  user: string;
+  email: string;
+  plan: string;
+  amount: number;
+  status: string;
+  date: string;
+  method: string;
+}> = [];
 
 export function AdminPayments() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
 
-  const filteredPayments = mockPayments.filter(payment => {
+  const filteredPayments = payments.filter(payment => {
     const matchesSearch =
       payment.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
       payment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||

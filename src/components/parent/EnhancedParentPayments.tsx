@@ -46,7 +46,7 @@ interface SubscriptionPlan {
   recommended?: boolean;
 }
 
-const mockPaymentHistory: PaymentHistory[] = [];
+const paymentHistory: PaymentHistory[] = [];
 
 const subscriptionPlans: SubscriptionPlan[] = [
   {
@@ -285,7 +285,7 @@ export function EnhancedParentPayments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockPaymentHistory.map((payment) => (
+              {paymentHistory.map((payment) => (
                 <TableRow key={payment.id}>
                   <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
                   <TableCell>{payment.description}</TableCell>

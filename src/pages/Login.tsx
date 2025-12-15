@@ -51,14 +51,16 @@ const Login = () => {
         });
         // Navigate based on user role
         const user = result.user;
-        if (user.role === 'parent' && !user.is_onboarded && !user.onboardingComplete) {
+        const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
+
+        if (user.role === 'parent' && !isOnboarded) {
           navigate('/onboarding');
         } else if (user.role === 'student') {
           navigate('/student');
         } else if (user.role === 'teacher') {
           navigate('/teacher');
         } else if (user.role === 'admin') {
-          navigate('/admin');
+          navigate(user.is_super_admin ? '/super-admin' : '/admin');
         } else if (user.role === 'parent') {
           navigate('/parent/dashboard');
         } else {
@@ -145,9 +147,9 @@ const Login = () => {
                   <input type="checkbox" className="rounded border-border" />
                   <span className="text-sm text-muted-foreground">Remember me</span>
                 </label>
-                <a href="#" className="text-sm text-primary hover:underline">
+                <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                   Forgot password?
-                </a>
+                </Link>
               </div>
 
               <Button

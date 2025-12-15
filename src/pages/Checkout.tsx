@@ -65,7 +65,7 @@ export default function Checkout() {
 
     toast({
       title: "Demo Mode",
-      description: "This is a UI mockup. Paystack integration requires backend setup with Lovable Cloud.",
+      description: "Paystack integration is not yet configured. Please connect your backend before accepting live payments.",
     });
 
     setIsProcessing(false);

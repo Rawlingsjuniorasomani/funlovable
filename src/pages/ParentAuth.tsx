@@ -88,7 +88,8 @@ export default function ParentAuth() {
         const storedUser = localStorage.getItem('lovable_auth');
         if (storedUser) {
           const user = JSON.parse(storedUser);
-          if (!user.is_onboarded && !user.onboardingComplete) navigate('/onboarding');
+          const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
+          if (!isOnboarded) navigate('/onboarding');
           else navigate('/parent/dashboard');
         }
       } else {

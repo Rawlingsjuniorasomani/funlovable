@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { FileText, Video, Download, CheckCircle, Clock } from "lucide-react";
+import { FileText, Video, Download, CheckCircle, Clock, Lock, Target } from "lucide-react";
 import { toast } from "sonner";
 
 export function StudentLessonsPage() {
@@ -33,7 +33,7 @@ export function StudentLessonsPage() {
 
     const loadSubjects = async () => {
         try {
-            const data = await subjectsAPI.getAll(); // Student sees their enrolled subjects
+            const data = await subjectsAPI.getEnrolled(); // Student sees their enrolled subjects
             setSubjects(Array.isArray(data) ? data : []);
         } catch (error) {
             toast.error("Failed to load subjects");
@@ -107,74 +107,110 @@ export function StudentLessonsPage() {
                         {selectedModule ? "No lessons found in this module." : "Select a subject and module to view lessons."}
                     </div>
                 ) : (
-                    lessons.map((lesson) => (
-                        <Card key={lesson.id} className="overflow-hidden">
-                            <CardHeader className="bg-muted/30 pb-4">
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            <Badge variant="outline">{lesson.topic || "General"}</Badge>
-                                            {lesson.duration_minutes > 0 && (
-                                                <div className="flex items-center text-xs text-muted-foreground">
-                                                    <Clock className="w-3 h-3 mr-1" />
-                                                    {lesson.duration_minutes} min
-                                                </div>
+                    <>
+                        {/* Module Progress / Quiz Link */}
+                        <div className="bg-card border rounded-xl p-4 mb-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <h3 className="font-semibold text-lg flex items-center gap-2">
+                                    <Target className="w-5 h-5 text-primary" />
+                                    Module Quiz
+                                </h3>
+                                <p className="text-sm text-muted-foreground">
+                                    Complete all {lessons.length} lessons to unlock the quiz for this module.
+                                </p>
+                            </div>
+                            <Button
+                                variant={lessons.every(l => l.completed) ? "default" : "secondary"}
+                                disabled={!lessons.every(l => l.completed)}
+                                className="w-full sm:w-auto min-w-[150px]"
+                                onClick={() => toast.info("Starting Quiz...")}
+                            >
+                                {lessons.every(l => l.completed) ? (
+                                    <>
+                                        <Clock className="w-4 h-4 mr-2" />
+                                        Start Quiz
+                                    </>
+                                ) : (
+                                    <>
+                                        <Lock className="w-4 h-4 mr-2" />
+                                        Locked
+                                        <Badge variant="secondary" className="ml-2 text-xs">
+                                            {lessons.filter(l => l.completed).length}/{lessons.length}
+                                        </Badge>
+                                    </>
+                                )}
+                            </Button>
+                        </div>
+
+                        {lessons.map((lesson) => (
+                            <Card key={lesson.id} className="overflow-hidden">
+                                <CardHeader className="bg-muted/30 pb-4">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <Badge variant="outline">{lesson.topic || "General"}</Badge>
+                                                {lesson.duration_minutes > 0 && (
+                                                    <div className="flex items-center text-xs text-muted-foreground">
+                                                        <Clock className="w-3 h-3 mr-1" />
+                                                        {lesson.duration_minutes} min
+                                                    </div>
+                                                )}
+                                            </div>
+                                            <CardTitle className="text-lg">{lesson.title}</CardTitle>
+                                        </div>
+                                        <Button
+                                            variant={lesson.completed ? "ghost" : "outline"}
+                                            size="sm"
+                                            className={lesson.completed ? "text-green-600" : ""}
+                                            onClick={() => markComplete(lesson.id)}
+                                        >
+                                            <CheckCircle className="w-4 h-4 mr-2" />
+                                            {lesson.completed ? "Completed" : "Mark Complete"}
+                                        </Button>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="pt-4 space-y-4">
+                                    {lesson.content && (
+                                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                                            <p>{lesson.content}</p>
+                                        </div>
+                                    )}
+
+                                    {lesson.learning_objectives && lesson.learning_objectives.length > 0 && (
+                                        <div className="bg-muted/20 p-3 rounded-md">
+                                            <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Learning Objectives</p>
+                                            <ul className="list-disc list-inside text-sm space-y-1">
+                                                {/* Handle simplified structure or JSON parsing if needed */}
+                                                {(typeof lesson.learning_objectives === 'string'
+                                                    ? JSON.parse(lesson.learning_objectives)
+                                                    : Array.isArray(lesson.learning_objectives) ? lesson.learning_objectives : []
+                                                ).map((obj: string, i: number) => (
+                                                    <li key={i}>{obj}</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    )}
+
+                                    {lesson.attachment_url && (
+                                        <div className="flex items-center gap-3 pt-2">
+                                            <Button variant="secondary" size="sm" asChild>
+                                                <a href={`${import.meta.env.VITE_API_URL}${lesson.attachment_url}`} target="_blank" rel="noopener noreferrer">
+                                                    <Download className="w-4 h-4 mr-2" />
+                                                    Download Material
+                                                </a>
+                                            </Button>
+                                            {lesson.attachment_type?.startsWith('video') && (
+                                                <Badge variant="secondary"><Video className="w-3 h-3 mr-1" /> Video</Badge>
+                                            )}
+                                            {lesson.attachment_type?.startsWith('application/pdf') && (
+                                                <Badge variant="secondary"><FileText className="w-3 h-3 mr-1" /> PDF</Badge>
                                             )}
                                         </div>
-                                        <CardTitle className="text-lg">{lesson.title}</CardTitle>
-                                    </div>
-                                    <Button
-                                        variant={lesson.completed ? "ghost" : "outline"}
-                                        size="sm"
-                                        className={lesson.completed ? "text-green-600" : ""}
-                                        onClick={() => markComplete(lesson.id)}
-                                    >
-                                        <CheckCircle className="w-4 h-4 mr-2" />
-                                        {lesson.completed ? "Completed" : "Mark Complete"}
-                                    </Button>
-                                </div>
-                            </CardHeader>
-                            <CardContent className="pt-4 space-y-4">
-                                {lesson.content && (
-                                    <div className="prose prose-sm dark:prose-invert max-w-none">
-                                        <p>{lesson.content}</p>
-                                    </div>
-                                )}
-
-                                {lesson.learning_objectives && lesson.learning_objectives.length > 0 && (
-                                    <div className="bg-muted/20 p-3 rounded-md">
-                                        <p className="text-xs font-semibold uppercase text-muted-foreground mb-2">Learning Objectives</p>
-                                        <ul className="list-disc list-inside text-sm space-y-1">
-                                            {/* Handle simplified structure or JSON parsing if needed */}
-                                            {(typeof lesson.learning_objectives === 'string'
-                                                ? JSON.parse(lesson.learning_objectives)
-                                                : Array.isArray(lesson.learning_objectives) ? lesson.learning_objectives : []
-                                            ).map((obj: string, i: number) => (
-                                                <li key={i}>{obj}</li>
-                                            ))}
-                                        </ul>
-                                    </div>
-                                )}
-
-                                {lesson.attachment_url && (
-                                    <div className="flex items-center gap-3 pt-2">
-                                        <Button variant="secondary" size="sm" asChild>
-                                            <a href={`${import.meta.env.VITE_API_URL}${lesson.attachment_url}`} target="_blank" rel="noopener noreferrer">
-                                                <Download className="w-4 h-4 mr-2" />
-                                                Download Material
-                                            </a>
-                                        </Button>
-                                        {lesson.attachment_type?.startsWith('video') && (
-                                            <Badge variant="secondary"><Video className="w-3 h-3 mr-1" /> Video</Badge>
-                                        )}
-                                        {lesson.attachment_type?.startsWith('application/pdf') && (
-                                            <Badge variant="secondary"><FileText className="w-3 h-3 mr-1" /> PDF</Badge>
-                                        )}
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    ))
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </>
                 )}
             </div>
         </div>

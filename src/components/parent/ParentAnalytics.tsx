@@ -43,7 +43,7 @@ export function ParentAnalytics() {
 
   if (!data) return null;
 
-  const { overview, children, weeklyActivity, monthlyPayments, subjectBreakdown, recentActivity } = data;
+  const { overview = {}, children = [], weeklyActivity = [], monthlyPayments = [], subjectBreakdown = [], recentActivity = [] } = data || {};
 
   // Generate dynamic chart colors and config
   const chartConfig: any = {

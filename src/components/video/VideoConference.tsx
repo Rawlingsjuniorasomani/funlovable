@@ -53,8 +53,6 @@ interface VideoConferenceProps {
   onLeave?: () => void;
 }
 
-const mockParticipants: Participant[] = [];
-
 export function VideoConference({
   classId = "class-123",
   className = "Primary 5 Mathematics",
@@ -68,7 +66,7 @@ export function VideoConference({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [showParticipants, setShowParticipants] = useState(false);
-  const [participants, setParticipants] = useState<Participant[]>(mockParticipants);
+  const [participants, setParticipants] = useState<Participant[]>([]);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [localStream, setLocalStream] = useState<MediaStream | null>(null);

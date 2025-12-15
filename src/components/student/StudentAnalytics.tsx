@@ -8,39 +8,19 @@ import {
 } from "@/components/ui/chart";
 import { AreaChart, Area, XAxis, YAxis, BarChart, Bar, ResponsiveContainer, LineChart, Line, RadialBarChart, RadialBar } from "recharts";
 
-// Mock student analytics data
-const weeklyProgress = [
-  { day: "Mon", quizzes: 2, lessons: 3, xp: 150 },
-  { day: "Tue", quizzes: 1, lessons: 2, xp: 100 },
-  { day: "Wed", quizzes: 3, lessons: 4, xp: 200 },
-  { day: "Thu", quizzes: 2, lessons: 2, xp: 120 },
-  { day: "Fri", quizzes: 4, lessons: 5, xp: 280 },
-  { day: "Sat", quizzes: 1, lessons: 1, xp: 60 },
-  { day: "Sun", quizzes: 2, lessons: 3, xp: 140 },
-];
+const weeklyProgress: Array<{ day: string; quizzes: number; lessons: number; xp: number }> = [];
 
-const subjectPerformance = [
-  { subject: "Mathematics", score: 85, progress: 75 },
-  { subject: "Science", score: 78, progress: 60 },
-  { subject: "English", score: 92, progress: 85 },
-  { subject: "Social Studies", score: 70, progress: 50 },
-  { subject: "French", score: 88, progress: 70 },
-];
+const subjectPerformance: Array<{ subject: string; score: number; progress: number }> = [];
 
-const monthlyXP = [
-  { week: "Week 1", xp: 450 },
-  { week: "Week 2", xp: 620 },
-  { week: "Week 3", xp: 580 },
-  { week: "Week 4", xp: 750 },
-];
+const monthlyXP: Array<{ week: string; xp: number }> = [];
 
 export function StudentAnalytics() {
-  const totalXP = 1850;
-  const level = Math.floor(totalXP / 500) + 1;
-  const xpToNextLevel = 500 - (totalXP % 500);
-  const quizzesCompleted = 24;
-  const averageScore = 82;
-  const streak = 7;
+  const totalXP = 0;
+  const level = 1;
+  const xpToNextLevel = 500;
+  const quizzesCompleted = 0;
+  const averageScore = 0;
+  const streak = 0;
 
   const chartConfig = {
     quizzes: { label: "Quizzes", color: "hsl(var(--primary))" },

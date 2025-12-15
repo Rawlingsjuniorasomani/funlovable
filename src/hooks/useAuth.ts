@@ -254,17 +254,21 @@ export function useAuth() {
 
   const completeOnboarding = useCallback(async () => {
     try {
+      // Mark onboarding complete on the backend
       await authAPI.completeOnboarding();
-      if (authState.user) {
-        setAuthState(prev => ({
-          ...prev,
-          user: prev.user ? { ...prev.user, onboardingComplete: true } : null
-        }));
-      }
+
+      // Refresh current user from backend so is_onboarded and other flags are accurate
+      const { user } = await authAPI.getCurrentUser();
+
+      setAuthState({
+        user: user ? { ...user, onboardingComplete: true } : null,
+        isAuthenticated: !!user,
+        isLoading: false,
+      });
     } catch (error) {
       console.error('Failed to complete onboarding:', error);
     }
-  }, [authState.user]);
+  }, []);
 
   const updateSubscription = useCallback((plan: 'single' | 'family', status: 'active' | 'pending' | 'expired') => {
     updateUser({

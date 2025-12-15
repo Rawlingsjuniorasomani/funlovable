@@ -46,7 +46,7 @@ export function ParentOverview() {
   const totalMinutes = children.reduce((acc: number, child: any) => acc + (child.totalTime || 0), 0);
   const totalHours = Math.round(totalMinutes / 60);
 
-  const totalBadges = children.reduce((acc: number, child: any) => acc + 0, 0); // Achievements not yet in child payload, sticking to 0 or mock for now as per missing query
+  const totalBadges = children.reduce((acc: number, child: any) => acc + 0, 0); // Achievements not yet in child payload, sticking to 0 for now as per missing query
 
   return (
     <>

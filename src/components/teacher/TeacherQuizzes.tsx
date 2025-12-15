@@ -63,6 +63,7 @@ export function TeacherQuizzes() {
   const [filterSubject, setFilterSubject] = useState<string>("all");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [isCreateOpen, setIsCreateOpen] = useState(false);
+  const [selectedQuizForQuestions, setSelectedQuizForQuestions] = useState<Quiz | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     subjectId: "",
@@ -399,6 +400,9 @@ export function TeacherQuizzes() {
               </div>
 
               <div className="flex items-center gap-2">
+                <Button variant="ghost" size="icon" title="Questions" onClick={() => setSelectedQuizForQuestions(quiz)}>
+                  <CheckCircle className="w-4 h-4" />
+                </Button>
                 <Button variant="ghost" size="icon" title="View Results">
                   <BarChart2 className="w-4 h-4" />
                 </Button>
@@ -422,6 +426,176 @@ export function TeacherQuizzes() {
           </div>
         ))}
       </div>
+
+      {selectedQuizForQuestions && (
+        <QuizQuestionsSheet
+          quiz={selectedQuizForQuestions}
+          open={!!selectedQuizForQuestions}
+          onOpenChange={(open) => !open && setSelectedQuizForQuestions(null)}
+        />
+      )}
     </div>
+  );
+}
+
+function QuizQuestionsSheet({ quiz, open, onOpenChange }: { quiz: Quiz; open: boolean; onOpenChange: (open: boolean) => void }) {
+  const { toast } = useToast();
+  const [questions, setQuestions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [newQuestion, setNewQuestion] = useState({
+    text: "",
+    type: "multiple-choice",
+    options: ["", "", "", ""],
+    correctAnswer: "",
+    marks: 5
+  });
+
+  useEffect(() => {
+    if (quiz && open) {
+      loadQuestions();
+    }
+  }, [quiz, open]);
+
+  const loadQuestions = async () => {
+    try {
+      setLoading(true);
+      const data = await quizzesAPI.getQuestions(quiz.id);
+      setQuestions(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Failed to load questions", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAddQuestion = async () => {
+    if (!newQuestion.text || !newQuestion.correctAnswer) {
+      toast({ title: "Validation Error", description: "Question text and correct answer are required.", variant: "destructive" });
+      return;
+    }
+
+    try {
+      await quizzesAPI.addQuestion(quiz.id, {
+        question_text: newQuestion.text,
+        question_type: newQuestion.type,
+        options: JSON.stringify(newQuestion.options),
+        correct_answer: newQuestion.correctAnswer,
+        marks: newQuestion.marks
+      });
+      await loadQuestions();
+      setNewQuestion({ text: "", type: "multiple-choice", options: ["", "", "", ""], correctAnswer: "", marks: 5 });
+      toast({ title: "Question added" });
+    } catch (error) {
+      toast({ title: "Failed to add question", variant: "destructive" });
+    }
+  };
+
+  const handleDeleteQuestion = async (id: string) => {
+    try {
+      await quizzesAPI.deleteQuestion(id);
+      await loadQuestions();
+      toast({ title: "Question deleted" });
+    } catch (error) {
+      toast({ title: "Failed to delete question", variant: "destructive" });
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Manage Questions: {quiz.title}</DialogTitle>
+          <DialogDescription>Add or remove questions for this quiz.</DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Add Question Form */}
+          <div className="space-y-4 border p-4 rounded-lg bg-muted/20">
+            <h3 className="font-semibold text-sm">Add New Question</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={newQuestion.type} onValueChange={(v) => setNewQuestion(prev => ({ ...prev, type: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="multiple-choice">Multiple Choice</SelectItem>
+                    <SelectItem value="true-false">True / False</SelectItem>
+                    <SelectItem value="short-answer">Short Answer</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Marks</Label>
+                <Input type="number" value={newQuestion.marks} onChange={e => setNewQuestion(prev => ({ ...prev, marks: parseInt(e.target.value) || 0 }))} />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Question Text</Label>
+              <Textarea value={newQuestion.text} onChange={e => setNewQuestion(prev => ({ ...prev, text: e.target.value }))} placeholder="Enter question..." />
+            </div>
+
+            {newQuestion.type === 'multiple-choice' && (
+              <div className="grid grid-cols-2 gap-2">
+                {newQuestion.options.map((opt, idx) => (
+                  <Input
+                    key={idx}
+                    value={opt}
+                    onChange={e => {
+                      const opts = [...newQuestion.options];
+                      opts[idx] = e.target.value;
+                      setNewQuestion(prev => ({ ...prev, options: opts }));
+                    }}
+                    placeholder={`Option ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Correct Answer {(newQuestion.type === 'multiple-choice' || newQuestion.type === 'true-false') ? "(Exact Text)" : ""}</Label>
+              {newQuestion.type === 'true-false' ? (
+                <Select value={newQuestion.correctAnswer} onValueChange={(v) => setNewQuestion(prev => ({ ...prev, correctAnswer: v }))}>
+                  <SelectTrigger><SelectValue placeholder="Select Answer" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="True">True</SelectItem>
+                    <SelectItem value="False">False</SelectItem>
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Input value={newQuestion.correctAnswer} onChange={e => setNewQuestion(prev => ({ ...prev, correctAnswer: e.target.value }))} placeholder="Correct answer..." />
+              )}
+            </div>
+
+            <Button onClick={handleAddQuestion} className="w-full">Add Question</Button>
+          </div>
+
+          {/* Question List */}
+          <div className="space-y-2">
+            <h3 className="font-semibold text-sm">Questions ({questions.length})</h3>
+            {questions.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No questions yet.</p>
+            ) : (
+              questions.map((q, i) => (
+                <div key={q.id} className="flex justify-between items-start border p-3 rounded-lg bg-card">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <Badge variant="outline">{i + 1}</Badge>
+                      <Badge className={typeColors[q.question_type] || "bg-secondary"}>{q.question_type}</Badge>
+                      <span className="text-xs text-muted-foreground">({q.marks} marks)</span>
+                    </div>
+                    <p className="text-sm font-medium">{q.question_text}</p>
+                    <p className="text-xs text-muted-foreground mt-1">Answer: {q.correct_answer}</p>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => handleDeleteQuestion(q.id)}>
+                    <Trash2 className="w-4 h-4 text-destructive" />
+                  </Button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 }

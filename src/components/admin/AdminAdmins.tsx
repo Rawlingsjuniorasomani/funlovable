@@ -111,7 +111,7 @@ export function AdminAdmins() {
         try {
             const res = await usersAPI.generateOTP('sensitive_action');
             setGeneratedOtp(res.code);
-            toast({ title: "OTP Sent", description: "Check console for mock OTP code." });
+            toast({ title: "OTP Sent", description: "A verification code has been generated." });
         } catch (error) {
             toast({ title: "Error", description: "Failed to generate OTP", variant: "destructive" });
         }
@@ -218,7 +218,7 @@ export function AdminAdmins() {
 
                         {generatedOtp && (
                             <div className="p-3 bg-muted rounded-md text-center">
-                                <p className="text-xs text-muted-foreground mb-1">Mock OTP (for demo):</p>
+                                <p className="text-xs text-muted-foreground mb-1">Verification code:</p>
                                 <p className="text-xl font-mono font-bold tracking-widest">{generatedOtp}</p>
                             </div>
                         )}

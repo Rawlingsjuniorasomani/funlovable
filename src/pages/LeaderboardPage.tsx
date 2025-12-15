@@ -6,19 +6,7 @@ import { Button } from "@/components/ui/button";
 import { XPDisplay } from "@/components/gamification/XPDisplay";
 import { cn } from "@/lib/utils";
 
-// Types
-export interface Student {
-  id: string;
-  name: string;
-  avatar: string; // Emoji
-  grade: string;
-  xp: number;
-  level: number;
-  streak: number;
-  quizzesCompleted: number;
-  avgScore: number;
-  badges: string[];
-}
+import { LEADERBOARD_DATA, LeaderboardEntry } from "@/data/gamificationData";
 
 type SortBy = "xp" | "streak" | "quizzes" | "avgScore";
 type FilterGrade = "all" | "Primary 5" | "Primary 6" | "JHS 1";
@@ -35,9 +23,17 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<SortBy>("xp");
   const [filterGrade, setFilterGrade] = useState<FilterGrade>("all");
 
-  // TODO: Fetch leaderboard from API
-  const sortedStudents: Student[] = [];
-
+  // Fetch leaderboard from local data source
+  // In a real app, this would be an API call with filters
+  const sortedStudents: LeaderboardEntry[] = [...LEADERBOARD_DATA]
+    .sort((a, b) => { // Simple client side sort for demo
+      if (sortBy === 'xp') return b.xp - a.xp;
+      if (sortBy === 'streak') return b.streak - a.streak;
+      if (sortBy === 'quizzes') return b.quizzesCompleted - a.quizzesCompleted;
+      if (sortBy === 'avgScore') return b.avgScore - a.avgScore;
+      return 0;
+    })
+    .map((s, idx) => ({ ...s, rank: idx + 1 })); // Re-calculate rank dynamically for view
 
   const topThree = sortedStudents.slice(0, 3);
   const rest = sortedStudents.slice(3);
@@ -182,7 +178,7 @@ export default function LeaderboardPage() {
   );
 }
 
-function LeaderboardRow({ student, rank, sortBy }: { student: Student; rank: number; sortBy: SortBy }) {
+function LeaderboardRow({ student, rank, sortBy }: { student: LeaderboardEntry; rank: number; sortBy: SortBy }) {
   const getValue = () => {
     switch (sortBy) {
       case "xp": return `${student.xp.toLocaleString()} XP`;

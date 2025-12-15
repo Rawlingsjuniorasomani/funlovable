@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Users, BookOpen, BarChart3, FileText, Award, TrendingUp, Clock, Calendar, Plus, ChevronRight, MessageSquare, Bell } from "lucide-react";
+import { Users, BookOpen, BarChart3, FileText, Award, TrendingUp, Clock, Calendar, Plus, ChevronRight, MessageSquare, Bell, Layers } from "lucide-react";
 import { StatsCard } from "@/components/dashboard/StatsCard";
 import { Button } from "@/components/ui/button";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -99,7 +99,13 @@ export function TeacherOverview() {
             <Button asChild size="lg" className="bg-white text-purple-600 hover:bg-white/90 font-semibold shadow-lg border-0">
               <Link to="/teacher/subjects">
                 <Plus className="w-5 h-5 mr-2" />
-                Create Course
+                Create Subject
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
+              <Link to="/teacher/modules">
+                <Layers className="w-5 h-5 mr-2" />
+                Add Module
               </Link>
             </Button>
             <Button asChild size="lg" variant="outline" className="bg-white/10 border-white/20 text-white hover:bg-white/20 backdrop-blur-sm">
@@ -120,7 +126,7 @@ export function TeacherOverview() {
           icon={Users}
           subtitle="Across all classes"
           color="blue"
-          trend={{ value: 12, positive: true }} // Mock trend 
+          trend={{ value: 12, positive: true }}
         />
         <StatsCard
           title="Active Courses"

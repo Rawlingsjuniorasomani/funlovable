@@ -54,12 +54,12 @@ const AdminLogin = () => {
 
       const result = await adminLogin(formData.email, formData.password);
 
-      if (result.success) {
+      if (result.success && result.user) {
         toast({
           title: "Admin Login Successful!",
           description: "Welcome back, Admin.",
         });
-        navigate("/admin");
+        navigate(result.user.is_super_admin ? "/super-admin" : "/admin");
       } else {
         setErrors({ email: result.error || "Invalid credentials" });
       }

@@ -49,12 +49,14 @@ export function StudentOverview() {
             Welcome back, {user?.name?.split(' ')[0] || 'Student'}! 👋
           </h1>
           <p className="text-primary-foreground/80 mb-4">
-            Ready to continue your learning journey?
+            {data?.lastPlayedLesson
+              ? `Pick up where you left off: ${data.lastPlayedLesson.title}`
+              : "Ready to continue your learning journey?"}
           </p>
-          <Link to="/student/subjects">
+          <Link to={data?.lastPlayedLesson ? `/student/learning/${data.lastPlayedLesson.subject_id}` : "/student/subjects"}>
             <Button variant="secondary" className="btn-bounce bg-background text-foreground hover:bg-background/90">
               <PlayCircle className="w-4 h-4 mr-2" />
-              Continue Learning
+              {data?.lastPlayedLesson ? "Resume Learning" : "Start Learning"}
             </Button>
           </Link>
         </div>

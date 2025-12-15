@@ -31,11 +31,9 @@ interface BreakoutRoomsProps {
   onJoinRoom?: (roomId: string) => void;
 }
 
-const mockParticipants: Participant[] = [];
-
 export function BreakoutRooms({
   isHost = true,
-  participants = mockParticipants,
+  participants = [],
   onJoinRoom
 }: BreakoutRoomsProps) {
   const [rooms, setRooms] = useState<BreakoutRoom[]>([]);

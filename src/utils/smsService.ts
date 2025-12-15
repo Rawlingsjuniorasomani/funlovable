@@ -1,4 +1,4 @@
-// Arkesel SMS Service - Mock implementation (requires backend for production)
+// Arkesel SMS Service - development stub (requires backend for production)
 
 interface SMSPayload {
   to: string;
@@ -12,7 +12,7 @@ interface SMSResponse {
   error?: string;
 }
 
-// Mock SMS history for demo
+// In-memory SMS history for development
 const smsHistory: { to: string; message: string; sentAt: string; status: string }[] = [];
 
 export const sendSMS = async (payload: SMSPayload): Promise<SMSResponse> => {

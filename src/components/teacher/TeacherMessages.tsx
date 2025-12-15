@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Mail, Send, Search, Bell, User, Users, Plus, Circle, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,7 +23,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useMessageStore, Message } from "@/hooks/useMessageStore";
+import { Message } from "@/hooks/useMessageStore";
+import { messagingAPI } from "@/config/api";
 
 const typeIcons = {
   message: Mail,
@@ -40,7 +41,39 @@ const typeColors = {
 export function TeacherMessages() {
   const { toast } = useToast();
   const { user } = useAuthContext();
-  const { messages: allMessages, sendMessage, markAsRead, deleteMessage } = useMessageStore();
+  const [allMessages, setAllMessages] = useState<Message[]>([]);
+
+  // Load inbox from backend
+  useEffect(() => {
+    const loadMessages = async () => {
+      if (!user) return;
+
+      try {
+        const inbox: any[] = await messagingAPI.getInbox();
+
+        const mapped: Message[] = (Array.isArray(inbox) ? inbox : []).map((m: any) => ({
+          id: String(m.id),
+          from: String(m.from),
+          fromName: m.fromName || "",
+          to: String(m.to ?? "all"),
+          subject: m.subject || "(No subject)",
+          content: m.content || m.message || "",
+          type: (m.type || "message") as Message["type"],
+          sentAt: m.sentAt || new Date().toISOString(),
+          read: !!m.read,
+        }));
+
+        // Sort newest first
+        mapped.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+        setAllMessages(mapped);
+      } catch (error) {
+        console.error("Failed to load teacher messages:", error);
+        toast({ title: "Failed to load messages", variant: "destructive" });
+      }
+    };
+
+    loadMessages();
+  }, [user, toast]);
 
   // Filter messages for current user
   const messages = allMessages.filter(m =>
@@ -68,32 +101,70 @@ export function TeacherMessages() {
     m.fromName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSend = () => {
-    if (!composeForm.subject || !composeForm.content) return;
+  const handleSend = async () => {
+    if (!composeForm.subject || !composeForm.content || !user) return;
 
-    sendMessage({
-      from: user?.id || "t1",
-      fromName: user?.name || "Teacher",
+    const baseMessage: Omit<Message, "id" | "sentAt" | "read"> = {
+      from: user.id,
+      fromName: user.name,
       to: composeForm.to || "all",
       subject: composeForm.subject,
       content: composeForm.content,
       type: composeForm.type,
-    });
+    };
 
-    toast({
-      title: composeForm.type === "announcement" ? "Announcement sent" : "Message sent",
-      description: `Your message has been sent successfully.`
-    });
-    setIsComposeOpen(false);
-    setComposeForm({ to: "", subject: "", content: "", type: "message" });
+    try {
+      // For announcements / broadcasts, prefer the announcements endpoint
+      if (composeForm.type !== "message" || composeForm.to === "all" || composeForm.to === "parents") {
+        await messagingAPI.createAnnouncement({
+          subject_id: undefined, // could be wired to a subject filter later
+          class_name: undefined,
+          title: baseMessage.subject,
+          content: baseMessage.content,
+          priority: composeForm.type === "alert" ? "high" : "normal",
+        });
+      } else {
+        // Direct message to a specific recipient
+        await messagingAPI.send({
+          recipient_id: baseMessage.to,
+          subject: baseMessage.subject,
+          message: baseMessage.content,
+        });
+      }
+
+      // Optimistically add to local list
+      const newMessage: Message = {
+        ...baseMessage,
+        id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        sentAt: new Date().toISOString(),
+        read: true,
+      };
+      setAllMessages(prev => [newMessage, ...prev]);
+
+      toast({
+        title: composeForm.type === "announcement" ? "Announcement sent" : "Message sent",
+        description: `Your message has been sent successfully.`,
+      });
+      setIsComposeOpen(false);
+      setComposeForm({ to: "", subject: "", content: "", type: "message" });
+    } catch (error) {
+      console.error("Failed to send message:", error);
+      toast({ title: "Failed to send message", variant: "destructive" });
+    }
   };
 
-  const handleMarkRead = (id: string) => {
-    markAsRead(id);
+  const handleMarkRead = async (id: string) => {
+    try {
+      await messagingAPI.markAsRead(id);
+      setAllMessages(prev => prev.map(m => m.id === id ? { ...m, read: true } : m));
+    } catch (error) {
+      console.error("Failed to mark message as read:", error);
+    }
   };
 
   const handleDelete = (id: string) => {
-    deleteMessage(id);
+    // No backend delete endpoint yet; perform local delete only
+    setAllMessages(prev => prev.filter(m => m.id !== id));
     setSelectedMessage(null);
     toast({ title: "Message deleted", variant: "destructive" });
   };
