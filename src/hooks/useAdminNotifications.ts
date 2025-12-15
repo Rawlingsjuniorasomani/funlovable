@@ -1,6 +1,7 @@
 // Admin notifications hook for tracking new registrations, payments, and activities
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { notificationsAPI } from '@/config/api';
 
 export interface AdminNotification {
   id: string;
@@ -32,30 +33,26 @@ export const useAdminNotifications = create<AdminNotificationState>()(
 
       loadNotifications: async () => {
         try {
-          // Dynamic import or use API client
           const token = localStorage.getItem('auth_token');
           if (!token) return;
 
-          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
-          if (response.status === 403) return; // Silent return for non-admins
-          if (response.ok) {
-            const data = await response.json();
-            // Backend returns snake_caseDB fields? Need to map if so.
-            // NotificationModel returns: id, type, title, description, is_read, created_at
-            // Frontend expects: id, type, title, description, read, createdAt
-            const mapped = data.map((n: any) => ({
-              id: n.id,
-              type: n.type,
-              title: n.title,
-              description: n.description,
-              read: n.is_read,
-              createdAt: n.created_at,
-              relatedId: n.related_id
-            }));
-            set({ notifications: mapped });
-          }
+          const data = await notificationsAPI.getAll();
+
+          if (!Array.isArray(data)) return;
+
+          // Backend returns snake_caseDB fields? Need to map if so.
+          // NotificationModel returns: id, type, title, description, is_read, created_at
+          // Frontend expects: id, type, title, description, read, createdAt
+          const mapped = data.map((n: any) => ({
+            id: n.id,
+            type: n.type,
+            title: n.title,
+            description: n.description,
+            read: n.is_read,
+            createdAt: n.created_at,
+            relatedId: n.related_id
+          }));
+          set({ notifications: mapped });
         } catch (error) {
           console.error('Failed to load notifications:', error);
         }
@@ -68,11 +65,7 @@ export const useAdminNotifications = create<AdminNotificationState>()(
 
       markAsRead: async (id) => {
         try {
-          const token = localStorage.getItem('auth_token');
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/${id}/read`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          await notificationsAPI.markAsRead(id);
           // Update local state
           set((state) => ({
             notifications: state.notifications.map((n) =>
@@ -86,11 +79,7 @@ export const useAdminNotifications = create<AdminNotificationState>()(
 
       markAllAsRead: async () => {
         try {
-          const token = localStorage.getItem('auth_token');
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/notifications/read-all`, {
-            method: 'PUT',
-            headers: { 'Authorization': `Bearer ${token}` }
-          });
+          await notificationsAPI.markAllAsRead();
           set((state) => ({
             notifications: state.notifications.map((n) => ({ ...n, read: true })),
           }));
@@ -112,7 +101,7 @@ export const useAdminNotifications = create<AdminNotificationState>()(
       },
     }),
     {
-      name: 'admin-notifications-storage', // Changed name to avoid conflict with old format
+      name: 'admin-notifications-storage',
       onRehydrateStorage: () => (state) => {
         // Auto-load on hydration
         if (state && (state as any).loadNotifications) {

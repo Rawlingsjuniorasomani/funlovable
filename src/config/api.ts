@@ -667,12 +667,12 @@ export const notificationsAPI = {
   },
 
   markAsRead: async (id: string) => {
-    const res = await apiRequest(`/notifications/${id}/read`, { method: 'POST' });
+    const res = await apiRequest(`/notifications/${id}/read`, { method: 'PUT' });
     return res.json();
   },
 
   markAllAsRead: async () => {
-    const res = await apiRequest('/notifications/read-all', { method: 'POST' });
+    const res = await apiRequest('/notifications/read-all', { method: 'PUT' });
     return res.json();
   },
 };
