@@ -22,7 +22,11 @@ const typeColors = {
   reminder: "text-quaternary bg-quaternary/10",
 };
 
-export function NotificationCenter() {
+interface NotificationCenterProps {
+  className?: string;
+}
+
+export function NotificationCenter({ className }: NotificationCenterProps) {
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, markAsRead, markAllAsRead, deleteNotification, clearAll } = useNotifications();
 
@@ -38,7 +42,7 @@ export function NotificationCenter() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
+        <Button variant="ghost" size="icon" className={cn("relative", className)}>
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
             <span className="absolute -top-1 -right-1 w-5 h-5 bg-destructive text-destructive-foreground text-xs rounded-full flex items-center justify-center animate-pulse">
@@ -47,7 +51,7 @@ export function NotificationCenter() {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="end">
+      <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="end">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-display font-semibold text-foreground">Notifications</h3>
@@ -89,7 +93,7 @@ export function NotificationCenter() {
                     ) : (
                       <NotificationContent notification={notification} Icon={Icon} />
                     )}
-                    
+
                     {/* Actions */}
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                       {!notification.read && (
