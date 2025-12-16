@@ -26,7 +26,7 @@ export function Header() {
       )}
     >
       <motion.div
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-6"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-8"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -39,10 +39,10 @@ export function Header() {
               <img
                 src="/logo.png"
                 alt="LovableLearn"
-                className="h-12 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
+                className="h-16 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
               />
             </div>
-            <span className="font-bold text-3xl tracking-tight transition-colors duration-300 text-white">
+            <span className="font-bold text-4xl tracking-tight transition-colors duration-300 text-white">
               Lovable <span className="text-orange-600">Learn</span>
             </span>
           </Link>
@@ -84,9 +84,9 @@ export function Header() {
             <Button
               variant="ghost"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full w-16 h-16 flex items-center justify-center"
+              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full w-20 h-20 flex items-center justify-center"
             >
-              {isMobileMenuOpen ? <X className="w-12 h-12" /> : <Menu className="w-12 h-12" />}
+              {isMobileMenuOpen ? <X className="w-16 h-16" /> : <Menu className="w-16 h-16" />}
             </Button>
           </div>
         </div>
@@ -104,7 +104,7 @@ export function Header() {
                 to={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
-                  "px-4 py-5 rounded-md text-2xl font-semibold",
+                  "px-4 py-6 rounded-md text-3xl font-semibold",
                   location.pathname === link.href
                     ? "bg-white/10 text-white"
                     : "text-slate-200 hover:text-white hover:bg-white/5"
@@ -118,14 +118,14 @@ export function Header() {
               <Link to="/login" className="flex-1" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   variant="outline"
-                  className="w-full justify-center text-xl h-16 border-white/30 text-white bg-transparent hover:bg-white/10"
+                  className="w-full justify-center text-2xl h-20 border-white/30 text-white bg-transparent hover:bg-white/10"
                 >
                   Log in
                 </Button>
               </Link>
               <Link to="/register" className="flex-1" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
-                  className="w-full justify-center text-xl h-16 bg-orange-600 hover:bg-orange-700 text-white"
+                  className="w-full justify-center text-2xl h-20 bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   Get Started
                 </Button>
