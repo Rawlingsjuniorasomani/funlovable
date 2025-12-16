@@ -58,9 +58,9 @@ export function PaymentVerify() {
                             </div>
                             <Button onClick={() => {
                                 // Clear any potential stale auth state if needed, though strictly we just redirect
-                                navigate("/login");
+                                navigate("/parent/dashboard");
                             }} className="w-full mt-4">
-                                Continue to Login
+                                Continue to Dashboard
                             </Button>
                         </div>
                     )}

@@ -26,7 +26,7 @@ export function Header() {
       )}
     >
       <motion.div
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-0"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-6"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -39,10 +39,10 @@ export function Header() {
               <img
                 src="/logo.png"
                 alt="LovableLearn"
-                className="h-8 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
+                className="h-12 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
               />
             </div>
-            <span className="font-bold text-xl tracking-tight transition-colors duration-300 text-white">
+            <span className="font-bold text-3xl tracking-tight transition-colors duration-300 text-white">
               Lovable <span className="text-orange-600">Learn</span>
             </span>
           </Link>
@@ -54,7 +54,7 @@ export function Header() {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                  "px-3 py-2 rounded-md text-base font-medium transition-colors",
                   location.pathname === link.href
                     ? "bg-white/10 text-white"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
@@ -68,12 +68,12 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/login">
-              <Button variant="ghost" size="sm" className="text-white/90 hover:text-white hover:bg-white/10">
+              <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10">
                 Log in
               </Button>
             </Link>
             <Link to="/register">
-              <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
+              <Button className="bg-orange-600 hover:bg-orange-700 text-white">
                 Get Started
               </Button>
             </Link>
@@ -83,18 +83,17 @@ export function Header() {
           <div className="flex lg:hidden items-center gap-3">
             <Button
               variant="ghost"
-              size="icon"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full"
+              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full w-16 h-16 flex items-center justify-center"
             >
-              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              {isMobileMenuOpen ? <X className="w-12 h-12" /> : <Menu className="w-12 h-12" />}
             </Button>
           </div>
         </div>
         {/* Mobile Menu */}
         {isMobileMenuOpen && (
           <motion.nav
-            className="mt-3 lg:hidden flex flex-col gap-2"
+            className="mt-6 lg:hidden flex flex-col gap-4"
             initial={{ opacity: 0, y: -8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.25, ease: "easeOut" }}
@@ -105,7 +104,7 @@ export function Header() {
                 to={link.href}
                 onClick={() => setIsMobileMenuOpen(false)}
                 className={cn(
-                  "px-3 py-2 rounded-md text-sm font-medium",
+                  "px-4 py-5 rounded-md text-2xl font-semibold",
                   location.pathname === link.href
                     ? "bg-white/10 text-white"
                     : "text-slate-200 hover:text-white hover:bg-white/5"
@@ -119,14 +118,14 @@ export function Header() {
               <Link to="/login" className="flex-1" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
                   variant="outline"
-                  className="w-full justify-center text-sm border-white/30 text-white bg-transparent hover:bg-white/10"
+                  className="w-full justify-center text-xl h-16 border-white/30 text-white bg-transparent hover:bg-white/10"
                 >
                   Log in
                 </Button>
               </Link>
               <Link to="/register" className="flex-1" onClick={() => setIsMobileMenuOpen(false)}>
                 <Button
-                  className="w-full justify-center text-sm bg-orange-600 hover:bg-orange-700 text-white"
+                  className="w-full justify-center text-xl h-16 bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   Get Started
                 </Button>
