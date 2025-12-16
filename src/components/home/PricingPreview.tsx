@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Check, Star, ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 const plans = [
   {
@@ -39,7 +40,13 @@ const plans = [
 
 export function PricingPreview() {
   return (
-    <section className="relative py-20 overflow-hidden">
+    <motion.section
+      className="relative py-20 overflow-hidden"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       {/* Background Image */}
       <div className="absolute inset-0 z-0">
         <img
@@ -62,11 +69,14 @@ export function PricingPreview() {
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {plans.map((plan, index) => (
-            <div
+            <motion.div
               key={plan.name}
-              className={`relative bg-white/80 backdrop-blur-sm rounded-2xl p-8 border-2 ${plan.color} card-hover animate-fade-in ${plan.popular ? "shadow-lg scale-105" : ""
-                }`}
-              style={{ animationDelay: `${index * 0.1}s` }}
+              className={`relative bg-white/80 backdrop-blur-sm rounded-2xl p-8 border-2 ${plan.color} card-hover ${plan.popular ? "shadow-lg" : ""}`}
+              initial={{ y: 40, opacity: 0 }}
+              whileInView={{ y: 0, opacity: 1 }}
+              viewport={{ once: true, amount: 0.3 }}
+              transition={{ duration: 0.5, delay: index * 0.1, ease: "easeOut" }}
+              whileHover={{ translateY: -6, scale: plan.popular ? 1.03 : 1.02 }}
             >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2">
@@ -107,7 +117,7 @@ export function PricingPreview() {
                   Subscribe Now
                 </Button>
               </Link>
-            </div>
+            </motion.div>
           ))}
         </div>
 
@@ -120,6 +130,6 @@ export function PricingPreview() {
           </Link>
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

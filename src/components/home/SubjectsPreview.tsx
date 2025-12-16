@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Loader2, Book, FlaskConical, Calculator, Globe, Palette } from "lucide-react";
+import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { subjectsAPI } from "@/config/api";
 
@@ -55,7 +56,13 @@ export function SubjectsPreview() {
   }
 
   return (
-    <section className="py-20">
+    <motion.section
+      className="py-20"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-12">
           <div>
@@ -80,10 +87,11 @@ export function SubjectsPreview() {
             const colorClass = COLORS[index % COLORS.length];
 
             return (
-              <div
+              <motion.div
                 key={subject.id || index}
-                className="group bg-card rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl transition-all duration-300 animate-fade-in flex flex-col h-full"
-                style={{ animationDelay: `${index * 0.1}s` }}
+                className="group bg-card rounded-3xl overflow-hidden border border-border/50 shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col h-full"
+                whileHover={{ translateY: -4 }}
+                transition={{ type: "spring", stiffness: 260, damping: 20 }}
               >
                 {/* Image Header */}
                 <div className="relative h-48 overflow-hidden">
@@ -116,11 +124,11 @@ export function SubjectsPreview() {
                     </Button>
                   </Link>
                 </div>
-              </div>
+              </motion.div>
             );
           })}
         </div>
       </div>
-    </section>
+    </motion.section>
   );
 }

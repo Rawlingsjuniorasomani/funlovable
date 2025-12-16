@@ -11,7 +11,12 @@ const Index = () => {
   return (
     <div className="min-h-screen">
       <Header />
-      <main>
+      <div className="bg-orange-600 text-white text-xs sm:text-sm marquee">
+        <div className="marquee-content py-2">
+          Welcome to Lovable Learn Engaging online education for kids Live classes, Quizzes, Parent dashboard to track their children performance
+        </div>
+      </div>
+      <main className="pt-0">
         <HeroSection />
         <AboutSection />
         <SubjectsPreview />

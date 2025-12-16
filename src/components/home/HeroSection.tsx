@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ArrowRight } from "lucide-react";
+import { motion } from "framer-motion";
 
 import { useState, useEffect } from "react";
 
@@ -15,7 +16,13 @@ export function HeroSection() {
     return () => clearInterval(timer);
   }, []);
   return (
-    <section className="relative pt-32 pb-48 overflow-hidden">
+    <motion.section
+      className="relative pt-0 pb-48 overflow-hidden"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.3 }}
+      transition={{ duration: 0.6, ease: "easeOut" }}
+    >
       {/* Background Image with Overlay */}
       {/* Background Image with Overlay */}
       <div className="absolute inset-0 z-0">
@@ -52,12 +59,19 @@ export function HeroSection() {
 
           <div className="flex flex-wrap gap-4 justify-center">
             <Link to="/parent/register-flow">
-              <Button size="lg" className="h-14 px-8 text-base bg-orange-600 hover:bg-orange-700 text-white border-0 rounded-md">
+              <Button
+                size="lg"
+                className="h-14 px-8 text-base bg-orange-600 hover:bg-orange-700 text-white border-0 rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              >
                 Get started
               </Button>
             </Link>
             <Link to="/about">
-              <Button size="lg" variant="outline" className="h-14 px-8 text-base bg-white text-orange-600 hover:bg-orange-50 border-0 rounded-md">
+              <Button
+                size="lg"
+                variant="outline"
+                className="h-14 px-8 text-base bg-white text-orange-600 hover:bg-orange-50 border-0 rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"
+              >
                 Learn More
               </Button>
             </Link>
@@ -66,6 +80,6 @@ export function HeroSection() {
       </div>
 
       {/* Overlapping Search Box */}
-    </section>
+    </motion.section>
   );
 }
