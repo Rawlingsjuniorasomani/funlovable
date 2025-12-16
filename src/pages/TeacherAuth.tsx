@@ -10,6 +10,7 @@ import { Eye, EyeOff, School, Mail, Lock, User, Phone, Clock, AlertCircle, MapPi
 import { z } from "zod";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AuthLayout } from "@/components/auth/AuthLayout";
+import { subjectsAPI } from "@/config/api";
 
 // --- Schemas (Unchanged) ---
 const loginSchema = z.object({
@@ -74,12 +75,15 @@ export default function TeacherAuth() {
   });
 
   useEffect(() => {
-    fetch('http://localhost:5000/api/subjects')
-      .then(res => res.json())
-      .then(data => {
+    const loadSubjects = async () => {
+      try {
+        const data = await subjectsAPI.getAll();
         if (Array.isArray(data)) setSubjects(data);
-      })
-      .catch(err => console.error("Failed to fetch subjects", err));
+      } catch (err) {
+        console.error("Failed to fetch subjects", err);
+      }
+    };
+    loadSubjects();
   }, []);
 
   // --- Handlers ---

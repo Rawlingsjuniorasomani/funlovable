@@ -36,6 +36,10 @@ import LiveClassSession from "./pages/LiveClassSession";
 import LearningPage from "./pages/student/LearningPage";
 import SubjectDetailPage from "./pages/SubjectDetailPage";
 import ScrollToTop from "./components/layout/ScrollToTop";
+import HelpCenter from "./pages/HelpCenter";
+import TermsOfService from "./pages/TermsOfService";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import FAQ from "./pages/FAQ";
 
 const queryClient = new QueryClient();
 
@@ -58,6 +62,10 @@ const App = () => (
             } />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/help" element={<HelpCenter />} />
+            <Route path="/terms" element={<TermsOfService />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/login" element={<AuthSelector />} />
             <Route path="/register" element={<AuthSelector />} />
             <Route path="/auth" element={<AuthPage />} />

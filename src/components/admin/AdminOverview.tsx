@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Users, GraduationCap, UserCheck, BookOpen, Target, Video, CreditCard, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard, StatsColor } from "@/components/dashboard/StatsCard";
+import { analyticsAPI } from "@/config/api";
 
 export function AdminOverview() {
   const [statsData, setStatsData] = useState<any>({
@@ -17,14 +18,21 @@ export function AdminOverview() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const token = localStorage.getItem('auth_token');
-        const res = await fetch('http://localhost:5000/api/admin/stats', {
-          headers: { 'Authorization': `Bearer ${token}` }
+        const data = await analyticsAPI.getAdmin();
+        const counts = Array.isArray(data.userCounts) ? data.userCounts : [];
+        const getCount = (role: string) => {
+          const found = counts.find((c: any) => c.role === role);
+          return found ? parseInt(found.count) : 0;
+        };
+        setStatsData({
+          totalParents: getCount('parent'),
+          totalStudents: getCount('student'),
+          totalTeachers: getCount('teacher'),
+          totalSubjects: data.subjectsCount || 0,
+          totalRevenue: data.paymentStats?.total_revenue?.toString?.() || "0.00",
+          recentActivity: data.recentActivity || [],
+          systemAlerts: data.systemAlerts || []
         });
-        if (res.ok) {
-          const data = await res.json();
-          setStatsData(data);
-        }
       } catch (err) {
         console.error("Failed to fetch admin stats", err);
       }

@@ -7,7 +7,7 @@ export const BRANDING = {
   contact: {
     email: "info@lovablelearn.com",
     phone: "+233 59 939 5735",
-    address: "Accra, Ghana",
+    address: "Kumasi, Ghana",
   },
   social: {
     facebook: "https://facebook.com/lovablelearn",
