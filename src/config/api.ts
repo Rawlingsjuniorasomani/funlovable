@@ -726,6 +726,11 @@ export const notificationsAPI = {
     const res = await apiRequest('/notifications/read-all', { method: 'PUT' });
     return res.json();
   },
+
+  delete: async (id: string) => {
+    const res = await apiRequest(`/notifications/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
 };
 
 // Analytics API helpers

@@ -257,11 +257,16 @@ export default function ParentRegistrationFlow() {
         }
     };
 
-    const handleComplete = () => {
-        completeOnboarding();
-        logout();
-        toast({ title: "Registration Complete", description: "Please log in to continue." });
-        navigate('/parent/auth');
+    const handleComplete = async () => {
+        // Mark onboarding complete and navigate to parent dashboard
+        try {
+            await completeOnboarding();
+            toast({ title: "Registration Complete", description: "Welcome! Redirecting to your dashboard." });
+            navigate('/parent');
+        } catch (error) {
+            console.error('Onboarding completion failed:', error);
+            toast({ title: "Error", description: "Could not complete onboarding. Please try again.", variant: 'destructive' });
+        }
     };
 
     return (

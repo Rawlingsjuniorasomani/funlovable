@@ -12,19 +12,21 @@ export function ParentOverview() {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<{ children: any[], recentActivity: any[] }>({ children: [], recentActivity: [] });
 
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const analytics = await analyticsAPI.getParent();
+      setData(analytics);
+    } catch (error) {
+      console.error("Failed to load parent dashboard:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        const analytics = await analyticsAPI.getParent();
-        setData(analytics);
-      } catch (error) {
-        console.error("Failed to load parent dashboard:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
     loadData();
-  }, []);
+  }, [user?.id, user?.children?.length]); // Refetch when user or children count changes
 
   if (loading) {
     return (

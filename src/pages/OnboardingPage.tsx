@@ -14,8 +14,8 @@ import { Check, ChevronRight, CreditCard, User, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const steps = [
-  { id: 1, name: 'Choose Plan', icon: CreditCard },
-  { id: 2, name: 'Add Child', icon: User },
+  { id: 1, name: 'Add Child', icon: User },
+  { id: 2, name: 'Choose Plan', icon: CreditCard },
   { id: 3, name: 'Payment', icon: CreditCard },
   { id: 4, name: 'Complete', icon: Sparkles },
 ];
@@ -47,14 +47,14 @@ const grades = [
 ];
 
 const allSubjects = [
-  { id: 'math', name: 'Mathematics', emoji: '🔢' },
-  { id: 'english', name: 'English', emoji: '📖' },
-  { id: 'science', name: 'Science', emoji: '🔬' },
-  { id: 'social', name: 'Social Studies', emoji: '🌍' },
-  { id: 'ict', name: 'ICT', emoji: '💻' },
-  { id: 'french', name: 'French', emoji: '🇫🇷' },
-  { id: 'creative', name: 'Creative Arts', emoji: '🎨' },
-  { id: 'rme', name: 'RME', emoji: '📿' },
+  { id: 'math', name: 'Mathematics', },
+  { id: 'english', name: 'English', },
+  { id: 'science', name: 'Science', },
+  { id: 'social', name: 'Social Studies', },
+  { id: 'ict', name: 'ICT', },
+  { id: 'french', name: 'French', },
+  { id: 'creative', name: 'Creative Arts', },
+  { id: 'rme', name: 'RME', },
 ];
 
 export default function OnboardingPage() {
@@ -104,7 +104,7 @@ export default function OnboardingPage() {
         parentId: user.id,
         childId: newChild.id,
         childName: newChild.name,
-        childEmail: `${newChild.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
+        childEmail: newChild.name ? `${newChild.name.toLowerCase().replace(/\s/g, '.')}@student.edu` : 'student@edu.com',
         role: 'student',
         grade: childData.grade,
         class: 'A',
@@ -126,7 +126,8 @@ export default function OnboardingPage() {
 
     if (newChild) {
       toast({ title: "Child added!", description: `${childData.name} has been added to your account.` });
-      setCurrentStep(3);
+      // Move to Plan Selection
+      setCurrentStep(2);
     } else {
       toast({ title: "Error", description: "Could not add child. Please try again.", variant: "destructive" });
     }
@@ -191,8 +192,8 @@ export default function OnboardingPage() {
     setCurrentStep(4);
   };
 
-  const handleComplete = () => {
-    completeOnboarding();
+  const handleComplete = async () => {
+    await completeOnboarding();
     navigate('/parent');
   };
 
@@ -241,57 +242,8 @@ export default function OnboardingPage() {
 
           {/* Step Content */}
           <div className="max-w-2xl mx-auto">
-            {/* Step 1: Choose Plan */}
+            {/* Step 1: Add Child */}
             {currentStep === 1 && (
-              <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose Your Plan</h2>
-                <p className="text-muted-foreground text-center mb-8">Select the best plan for your family</p>
-
-                <div className="grid md:grid-cols-2 gap-4 mb-8">
-                  {plans.map((plan) => (
-                    <button
-                      key={plan.id}
-                      onClick={() => setSelectedPlan(plan)}
-                      className={cn(
-                        "relative p-6 rounded-2xl border-2 text-left transition-all",
-                        selectedPlan.id === plan.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-muted-foreground"
-                      )}
-                    >
-                      {plan.popular && (
-                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-secondary-foreground text-xs px-3 py-1 rounded-full font-medium">
-                          Best Value
-                        </span>
-                      )}
-                      <h3 className="font-display text-lg font-bold mb-1">{plan.name}</h3>
-                      <div className="flex items-baseline gap-1 mb-4">
-                        <span className="text-3xl font-bold">{plan.displayPrice}</span>
-                        <span className="text-muted-foreground text-sm">{plan.period}</span>
-                      </div>
-                      <ul className="space-y-2">
-                        {plan.features.map((feature) => (
-                          <li key={feature} className="flex items-center gap-2 text-sm">
-                            <Check className="w-4 h-4 text-secondary" />
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                    </button>
-                  ))}
-                </div>
-
-                <Button
-                  onClick={() => setCurrentStep(2)}
-                  className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 text-lg"
-                >
-                  Continue <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
-              </div>
-            )}
-
-            {/* Step 2: Add Child */}
-            {currentStep === 2 && (
               <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your Child</h2>
                 <p className="text-muted-foreground text-center mb-8">Enter your child's details to get started</p>
@@ -350,7 +302,7 @@ export default function OnboardingPage() {
                         <option value="" disabled selected>Add a Subject...</option>
                         {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
                           <option key={s.id} value={s.id}>
-                            {s.emoji} {s.name}
+                            {s.name}
                           </option>
                         ))}
                       </select>
@@ -362,7 +314,7 @@ export default function OnboardingPage() {
                           if (!s) return null;
                           return (
                             <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
-                              {s.emoji} {s.name}
+                              {s.name}
                               <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
                             </span>
                           );
@@ -373,18 +325,66 @@ export default function OnboardingPage() {
                 </div>
 
                 <div className="flex gap-4 mt-8">
-                  <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
-                    Back
-                  </Button>
                   <Button
                     onClick={handleAddChild}
-                    className="flex-1 btn-bounce bg-gradient-to-r from-primary to-tertiary"
+                    className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary"
                   >
                     Add Child & Continue <ChevronRight className="w-5 h-5 ml-2" />
                   </Button>
                 </div>
               </div>
             )}
+
+            {/* Step 2: Choose Plan */}
+            {currentStep === 2 && (
+              <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
+                <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose Your Plan</h2>
+                <p className="text-muted-foreground text-center mb-8">Select the best plan for your family</p>
+
+                <div className="grid md:grid-cols-2 gap-4 mb-8">
+                  {plans.map((plan) => (
+                    <button
+                      key={plan.id}
+                      onClick={() => setSelectedPlan(plan)}
+                      className={cn(
+                        "relative p-6 rounded-2xl border-2 text-left transition-all",
+                        selectedPlan.id === plan.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-muted-foreground"
+                      )}
+                    >
+                      {plan.popular && (
+                        <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-secondary text-secondary-foreground text-xs px-3 py-1 rounded-full font-medium">
+                          Best Value
+                        </span>
+                      )}
+                      <h3 className="font-display text-lg font-bold mb-1">{plan.name}</h3>
+                      <div className="flex items-baseline gap-1 mb-4">
+                        <span className="text-3xl font-bold">{plan.displayPrice}</span>
+                        <span className="text-muted-foreground text-sm">{plan.period}</span>
+                      </div>
+                      <ul className="space-y-2">
+                        {plan.features.map((feature) => (
+                          <li key={feature} className="flex items-center gap-2 text-sm">
+                            <Check className="w-4 h-4 text-secondary" />
+                            {feature}
+                          </li>
+                        ))}
+                      </ul>
+                    </button>
+                  ))}
+                </div>
+
+                <Button
+                  onClick={() => setCurrentStep(3)}
+                  className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 text-lg"
+                >
+                  Continue <ChevronRight className="w-5 h-5 ml-2" />
+                </Button>
+              </div>
+            )}
+
+
 
             {/* Step 3: Payment */}
             {currentStep === 3 && !showPaystack && (

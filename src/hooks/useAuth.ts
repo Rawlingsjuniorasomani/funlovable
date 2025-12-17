@@ -224,7 +224,8 @@ export function useAuth() {
     if (!authState.user || authState.user.role !== 'parent') return;
 
     try {
-      const newChild = await usersAPI.addChild(child);
+      const response = await usersAPI.addChild(child);
+      const newChild = response.child || response; // Handle both formats
 
       // Update local state
       const updatedChildren = [...(authState.user.children || []), newChild];
