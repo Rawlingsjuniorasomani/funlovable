@@ -592,7 +592,27 @@ export const parentsAPI = {
   },
 };
 
-// Payments API helpers
+// Rewards API helpers
+export const rewardsAPI = {
+  create: async (data: { student_id: string; type: string; name: string; reason: string }) => {
+    const res = await apiRequest('/rewards', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
+  getMyRewards: async () => {
+    const res = await apiRequest('/rewards');
+    return res.json();
+  },
+
+  delete: async (id: string) => {
+    const res = await apiRequest(`/rewards/${id}`, { method: 'DELETE' });
+    return res.json();
+  },
+};
+
 export const paymentsAPI = {
   getAll: async () => {
     const res = await apiRequest('/payments');
@@ -689,6 +709,11 @@ export const liveClassesAPI = {
 export const notificationsAPI = {
   getAll: async () => {
     const res = await apiRequest('/notifications');
+    return res.json();
+  },
+
+  getMy: async () => {
+    const res = await apiRequest('/notifications/my');
     return res.json();
   },
 
@@ -817,6 +842,11 @@ export const messagingAPI = {
 
   getInbox: async () => {
     const res = await apiRequest('/messaging/inbox');
+    return res.json();
+  },
+
+  getSent: async () => {
+    const res = await apiRequest('/messaging/sent');
     return res.json();
   },
 

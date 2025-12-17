@@ -37,7 +37,7 @@ export function TeacherOverview() {
         quizzesAPI.getAll(),
         lessonsAPI.getAll(),
         liveClassesAPI.getAll({ teacher_id: user?.id, status: 'scheduled' }),
-        notificationsAPI.getAll()
+        notificationsAPI.getMy()
       ]);
 
       const subjects = Array.isArray(subjectsData) ? subjectsData : [];

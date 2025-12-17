@@ -49,23 +49,33 @@ export function TeacherMessages() {
       if (!user) return;
 
       try {
-        const inbox: any[] = await messagingAPI.getInbox();
+        const [inbox, sent, announcements] = await Promise.all([
+          messagingAPI.getInbox(),
+          messagingAPI.getSent ? messagingAPI.getSent() : Promise.resolve([]), // Check if getSent exists in API
+          messagingAPI.getAnnouncements ? messagingAPI.getAnnouncements() : Promise.resolve([])
+        ]);
 
-        const mapped: Message[] = (Array.isArray(inbox) ? inbox : []).map((m: any) => ({
+        const mapMessage = (m: any, source: 'inbox' | 'sent' | 'announcement') => ({
           id: String(m.id),
-          from: String(m.from),
-          fromName: m.fromName || "",
-          to: String(m.to ?? "all"),
-          subject: m.subject || "(No subject)",
-          content: m.content || m.message || "",
-          type: (m.type || "message") as Message["type"],
-          sentAt: m.sentAt || new Date().toISOString(),
-          read: !!m.read,
-        }));
+          from: String(m.sender_id || m.teacher_id), // sender_id for msg, teacher_id for announcement
+          fromName: m.sender_name || m.teacher_name || (source === 'sent' ? 'Me' : 'Unknown'),
+          to: String(m.recipient_id || (m.class_name ? `Class: ${m.class_name}` : 'all')),
+          subject: m.subject || m.title || "(No subject)",
+          content: m.message || m.content || "",
+          type: (m.type || (source === 'announcement' ? 'announcement' : 'message')) as Message["type"],
+          sentAt: m.created_at || new Date().toISOString(),
+          read: !!m.is_read || (source === 'sent'), // Sent msgs read by default
+        });
+
+        const mappedInbox = (Array.isArray(inbox) ? inbox : []).map(m => mapMessage(m, 'inbox'));
+        const mappedSent = (Array.isArray(sent) ? sent : []).map(m => mapMessage(m, 'sent'));
+        const mappedAnnouncements = (Array.isArray(announcements) ? announcements : []).map(m => mapMessage(m, 'announcement'));
+
+        const combined = [...mappedInbox, ...mappedSent, ...mappedAnnouncements];
 
         // Sort newest first
-        mapped.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
-        setAllMessages(mapped);
+        combined.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
+        setAllMessages(combined);
       } catch (error) {
         console.error("Failed to load teacher messages:", error);
         toast({ title: "Failed to load messages", variant: "destructive" });

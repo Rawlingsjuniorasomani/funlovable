@@ -26,7 +26,7 @@ export function Header() {
       )}
     >
       <motion.div
-        className="container mx-auto px-4 sm:px-6 lg:px-8 py-8"
+        className="container mx-auto px-4 sm:px-6 lg:px-8 py-4"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -39,10 +39,10 @@ export function Header() {
               <img
                 src="/logo.png"
                 alt="LovableLearn"
-                className="h-16 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
+                className="h-10 w-auto relative transform transition-transform duration-500 group-hover:rotate-[-5deg] group-hover:scale-110"
               />
             </div>
-            <span className="font-bold text-4xl tracking-tight transition-colors duration-300 text-white">
+            <span className="font-bold text-2xl tracking-tight transition-colors duration-300 text-white">
               Lovable <span className="text-orange-600">Learn</span>
             </span>
           </Link>
@@ -54,7 +54,7 @@ export function Header() {
                 key={link.href}
                 to={link.href}
                 className={cn(
-                  "px-3 py-2 rounded-md text-base font-medium transition-colors",
+                  "px-3 py-2 rounded-md text-sm font-medium transition-colors",
                   location.pathname === link.href
                     ? "bg-white/10 text-white"
                     : "text-slate-300 hover:text-white hover:bg-white/5"
@@ -68,12 +68,12 @@ export function Header() {
           {/* Desktop Actions */}
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/login">
-              <Button variant="ghost" className="text-white/90 hover:text-white hover:bg-white/10">
+              <Button variant="ghost" size="sm" className="text-white/90 hover:text-white hover:bg-white/10">
                 Log in
               </Button>
             </Link>
             <Link to="/register">
-              <Button className="bg-orange-600 hover:bg-orange-700 text-white">
+              <Button size="sm" className="bg-orange-600 hover:bg-orange-700 text-white">
                 Get Started
               </Button>
             </Link>
@@ -84,9 +84,9 @@ export function Header() {
             <Button
               variant="ghost"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full w-20 h-20 flex items-center justify-center"
+              className="text-white hover:text-orange-500 hover:bg-white/10 rounded-full w-10 h-10 flex items-center justify-center"
             >
-              {isMobileMenuOpen ? <X className="w-16 h-16" /> : <Menu className="w-16 h-16" />}
+              {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </Button>
           </div>
         </div>

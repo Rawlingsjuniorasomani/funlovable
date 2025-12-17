@@ -13,7 +13,7 @@ interface Reward {
   awardedAt: string;
   awardedBy: string;
 }
-import { usersAPI } from "@/config/api";
+import { usersAPI, rewardsAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -54,15 +54,31 @@ export function TeacherRewards() {
   });
 
   useEffect(() => {
-    loadStudents();
+    loadData();
   }, []);
 
-  const loadStudents = async () => {
+  const loadData = async () => {
     try {
-      const data = await usersAPI.getAll({ role: 'student' });
-      setStudents(Array.isArray(data) ? data : []);
+      const [studentsData, rewardsData] = await Promise.all([
+        usersAPI.getAll({ role: 'student' }),
+        rewardsAPI.getMyRewards()
+      ]);
+      setStudents(Array.isArray(studentsData) ? studentsData : []);
+
+      const mappedRewards = (Array.isArray(rewardsData) ? rewardsData : []).map((r: any) => ({
+        id: r.id,
+        studentId: r.student_id,
+        studentName: r.student_name || 'Unknown Student',
+        type: r.type,
+        name: r.name,
+        reason: r.reason,
+        awardedAt: r.awarded_at?.split('T')[0] || new Date().toISOString().split('T')[0],
+        awardedBy: user?.name || "Teacher"
+      }));
+      setRewards(mappedRewards);
     } catch (error) {
-      console.error('Failed to load students:', error);
+      console.error('Failed to load data:', error);
+      toast({ title: "Failed to load data", variant: "destructive" });
     }
   };
 
@@ -71,30 +87,42 @@ export function TeacherRewards() {
     r.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleAward = () => {
+  const handleAward = async () => {
     if (!formData.studentId || !formData.name || !formData.reason) return;
 
-    const student = students.find(s => s.id === formData.studentId);
-    if (!student) return;
+    try {
+      const student = students.find(s => s.id === formData.studentId);
+      if (!student) return;
 
-    const newReward: Reward = {
-      id: `r${Date.now()}`,
-      studentId: formData.studentId,
-      studentName: student.name,
-      type: formData.type,
-      name: formData.name,
-      reason: formData.reason,
-      awardedAt: new Date().toISOString().split("T")[0],
-      awardedBy: user?.name || "Teacher",
-    };
+      const newRewardData = await rewardsAPI.create({
+        student_id: formData.studentId,
+        type: formData.type,
+        name: formData.name,
+        reason: formData.reason
+      });
 
-    setRewards(prev => [newReward, ...prev]);
-    toast({
-      title: "Reward given!",
-      description: `${student.name} has received a ${formData.type}!`
-    });
-    setIsDialogOpen(false);
-    setFormData({ studentId: "", type: "badge", name: "", reason: "" });
+      const newReward: Reward = {
+        id: newRewardData.id,
+        studentId: formData.studentId,
+        studentName: student.name,
+        type: formData.type,
+        name: formData.name,
+        reason: formData.reason,
+        awardedAt: new Date().toISOString().split("T")[0],
+        awardedBy: user?.name || "Teacher",
+      };
+
+      setRewards(prev => [newReward, ...prev]);
+      toast({
+        title: "Reward given!",
+        description: `${student.name} has received a ${formData.type}!`
+      });
+      setIsDialogOpen(false);
+      setFormData({ studentId: "", type: "badge", name: "", reason: "" });
+    } catch (error) {
+      console.error('Failed to award:', error);
+      toast({ title: "Failed to give reward", variant: "destructive" });
+    }
   };
 
   const rewardTypeConfig = rewardTypes.find(r => r.type === formData.type);
