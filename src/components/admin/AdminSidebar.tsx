@@ -2,7 +2,7 @@ import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, BookOpen, Layers, FileText, Target, Video,
   Trophy, CreditCard, BarChart3, Bell, Settings, ChevronLeft, ChevronRight,
-  GraduationCap, UserCheck, Users2, Shield
+  GraduationCap, UserCheck, Shield, Gift, LineChart, FileBarChart
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -24,7 +24,6 @@ const navItems = [
   { label: "Quizzes", href: "/admin/quizzes", icon: Target },
   { label: "Live Classes", href: "/admin/live-classes", icon: Video },
   { label: "Rewards", href: "/admin/rewards", icon: Trophy },
-  { label: "Plans", href: "/admin/plans", icon: FileText },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
