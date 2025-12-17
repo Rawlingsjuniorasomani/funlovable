@@ -32,7 +32,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useTeacherNotifications } from "@/hooks/useTeacherNotifications";
 import { useNavigate } from "react-router-dom";
 import { BRANDING } from "@/config/branding";
 import { Badge } from "@/components/ui/badge";
@@ -48,7 +47,6 @@ const menuItems = [
   { title: "Live Classes", icon: Video, path: "/teacher/live" },
   { title: "Rewards", icon: Award, path: "/teacher/rewards" },
   { title: "Messages", icon: MessageSquare, path: "/teacher/messages" },
-  { title: "Notifications", icon: Bell, path: "/teacher/notifications", hasBadge: true },
   { title: "Analytics", icon: BarChart3, path: "/teacher/analytics" },
   { title: "Settings", icon: Settings, path: "/teacher/settings" },
 ];
@@ -57,10 +55,8 @@ export function TeacherSidebar() {
   const location = useLocation();
   const { state } = useSidebar();
   const { logout, user } = useAuthContext();
-  const { getUnreadCount } = useTeacherNotifications();
   const navigate = useNavigate();
   const collapsed = state === "collapsed";
-  const unreadCount = getUnreadCount();
 
   const handleLogout = () => {
     logout();
@@ -105,11 +101,6 @@ export function TeacherSidebar() {
                       >
                         <item.icon className="w-5 h-5 shrink-0" />
                         {!collapsed && <span>{item.title}</span>}
-                        {item.hasBadge && unreadCount > 0 && (
-                          <Badge variant="destructive" className="absolute top-0 right-0 h-5 w-5 flex items-center justify-center p-0 text-xs">
-                            {unreadCount > 9 ? '9+' : unreadCount}
-                          </Badge>
-                        )}
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>

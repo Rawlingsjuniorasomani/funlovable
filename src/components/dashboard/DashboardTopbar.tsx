@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Search, Menu, Sun, Moon, Bell, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { Search, Menu, Sun, Moon, ChevronDown, LogOut, Settings, User } from "lucide-react";
+import { NotificationDropdown } from "./NotificationDropdown";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { SidebarTrigger } from "@/components/ui/sidebar";
@@ -107,9 +108,7 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
             {isDark ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
           </Button>
 
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="w-5 h-5" />
-          </Button>
+          <NotificationDropdown />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -64,9 +64,21 @@ export default function OnboardingPage() {
   const { createSubscription, addPayment, linkChild } = useParentData();
   const { addNotification } = useAdminNotifications();
 
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0]>(plans[0]);
   const [showPaystack, setShowPaystack] = useState(false);
+
+  // Filter steps for students
+  const activeSteps = user?.role === 'student'
+    ? steps.filter(s => s.id !== 1)
+    : steps;
+
+  // Initial step adjustment
+  useEffect(() => {
+    if (user?.role === 'student' && currentStep === 1) {
+      setCurrentStep(2);
+    }
+  }, [user, currentStep]);
 
   const [childData, setChildData] = useState({
     name: '',
@@ -176,20 +188,34 @@ export default function OnboardingPage() {
       description: `${user.name} subscribed to ${selectedPlan.name}`,
     });
 
-    addNotification({
-      type: 'new_payment',
-      title: 'Payment Received',
-      description: `GHS ${selectedPlan.price} payment from ${user.name}`,
-    });
+    // For student/parent, we've already created the subscription record in the store above.
+    // Now just updating local auth context and sending SMS.
 
-    // Send SMS notifications
-    if (user.phone) {
-      await sendSubscriptionSMS(user.phone, user.name, selectedPlan.name);
-      await sendPaymentConfirmationSMS(user.phone, user.name, selectedPlan.price, reference);
+    if (user?.role === 'parent') {
+      // Link pending child if exists (from step 1) - actually step 1 uses `addChild`.
+      // If we are here, child is already added to parent account in Step 1.
+      // We just need to update local context.
+      updateSubscription(selectedPlan.id as 'single' | 'family', 'active');
+
+      // SMS notifications
+      await sendPaymentConfirmationSMS(user.phone || '', user.name, selectedPlan.price, reference);
+      // We don't have child name here easily if multiple, but generic msg works.
+    } else if (user?.role === 'student') {
+      // Update student subscription context
+      // We might need a generic updateSubscription or similar in AuthContext for student
+      // Using completeOnboarding to trigger 'is_onboarded' and refreshing user
     }
 
-    setShowPaystack(false);
+    // Complete onboarding
+    await completeOnboarding();
+
+    // Navigate
     setCurrentStep(4);
+    setTimeout(() => {
+      const target = user?.role === 'parent' ? '/parent' : '/student';
+      navigate(target);
+    }, 3000);
+    navigate('/parent');
   };
 
   const handleComplete = async () => {
@@ -205,34 +231,28 @@ export default function OnboardingPage() {
           {/* Progress Steps */}
           <div className="max-w-3xl mx-auto mb-8">
             <div className="flex items-center justify-between">
-              {steps.map((step, index) => {
+              {activeSteps.map((step, index) => {
                 const Icon = step.icon;
-                const isCompleted = currentStep > step.id;
-                const isCurrent = currentStep === step.id;
+                const isActive = step.id === currentStep;
+                const isCompleted = step.id < currentStep;
 
                 return (
                   <div key={step.id} className="flex items-center">
-                    <div className="flex flex-col items-center">
+                    <div className={cn(
+                      "flex items-center gap-2",
+                      isActive ? "text-primary" : isCompleted ? "text-green-600" : "text-muted-foreground"
+                    )}>
                       <div className={cn(
-                        "w-10 h-10 rounded-full flex items-center justify-center border-2 transition-colors",
-                        isCompleted ? "bg-secondary border-secondary text-secondary-foreground" :
-                          isCurrent ? "bg-primary border-primary text-primary-foreground" :
-                            "bg-muted border-border text-muted-foreground"
+                        "w-8 h-8 rounded-full flex items-center justify-center border-2 transition-colors",
+                        isActive ? "border-primary bg-primary/10" :
+                          isCompleted ? "border-green-600 bg-green-100" : "border-muted-foreground/30"
                       )}>
-                        {isCompleted ? <Check className="w-5 h-5" /> : <Icon className="w-5 h-5" />}
+                        {isCompleted ? <Check className="w-4 h-4" /> : <Icon className="w-4 h-4" />}
                       </div>
-                      <span className={cn(
-                        "text-xs mt-2 font-medium",
-                        isCurrent ? "text-primary" : "text-muted-foreground"
-                      )}>
-                        {step.name}
-                      </span>
+                      <span className="font-medium hidden sm:block">{step.name}</span>
                     </div>
-                    {index < steps.length - 1 && (
-                      <div className={cn(
-                        "h-0.5 w-16 md:w-24 mx-2",
-                        isCompleted ? "bg-secondary" : "bg-border"
-                      )} />
+                    {index < activeSteps.length - 1 && (
+                      <div className="w-12 h-0.5 mx-4 bg-muted" />
                     )}
                   </div>
                 );
@@ -242,95 +262,101 @@ export default function OnboardingPage() {
 
           {/* Step Content */}
           <div className="max-w-2xl mx-auto">
-            {/* Step 1: Add Child */}
-            {currentStep === 1 && (
-              <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
-                <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your Child</h2>
-                <p className="text-muted-foreground text-center mb-8">Enter your child's details to get started</p>
-
-                <div className="space-y-6">
-                  <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="childName">Child's Name</Label>
-                      <Input
-                        id="childName"
-                        placeholder="Enter name"
-                        value={childData.name}
-                        onChange={(e) => setChildData(prev => ({ ...prev, name: e.target.value }))}
-                      />
+            {/* Step 1: Add Child (Parents Only) */}
+            {currentStep === 1 && user?.role === 'parent' && (
+              <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-bold">Tell us about your child</h2>
+                  <p className="text-muted-foreground">We'll personalize their learning experience</p>
+                </div>
+                <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
+                  <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your Child</h2>
+                  <p className="text-muted-foreground text-center mb-8">Enter your child's details to get started</p>
+                  {/* ... child form fields ... */}
+                  <div className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="childName">Child's Name</Label>
+                        <Input
+                          id="childName"
+                          placeholder="Enter name"
+                          value={childData.name}
+                          onChange={(e) => setChildData(prev => ({ ...prev, name: e.target.value }))}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="childAge">Age</Label>
+                        <Input
+                          id="childAge"
+                          type="number"
+                          min="3"
+                          max="18"
+                          placeholder="Enter age"
+                          value={childData.age}
+                          onChange={(e) => setChildData(prev => ({ ...prev, age: e.target.value }))}
+                        />
+                      </div>
                     </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="childAge">Age</Label>
-                      <Input
-                        id="childAge"
-                        type="number"
-                        min="3"
-                        max="18"
-                        placeholder="Enter age"
-                        value={childData.age}
-                        onChange={(e) => setChildData(prev => ({ ...prev, age: e.target.value }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Class</Label>
-                    <select
-                      className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={childData.grade}
-                      onChange={(e) => setChildData(prev => ({ ...prev, grade: e.target.value }))}
-                    >
-                      <option value="" disabled>Select Grade</option>
-                      {grades.map((grade) => (
-                        <option key={grade} value={grade}>{grade}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Select Subjects</Label>
-                    <div className="space-y-3">
+                      <Label>Class</Label>
                       <select
                         className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                        onChange={(e) => {
-                          if (e.target.value) {
-                            handleSubjectToggle(e.target.value);
-                            e.target.value = ""; // Reset
-                          }
-                        }}
+                        value={childData.grade}
+                        onChange={(e) => setChildData(prev => ({ ...prev, grade: e.target.value }))}
                       >
-                        <option value="" disabled selected>Add a Subject...</option>
-                        {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
-                          <option key={s.id} value={s.id}>
-                            {s.name}
-                          </option>
+                        <option value="" disabled>Select Grade</option>
+                        {grades.map((grade) => (
+                          <option key={grade} value={grade}>{grade}</option>
                         ))}
                       </select>
+                    </div>
 
-                      <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-dashed border-border bg-muted/30">
-                        {childData.subjects.length === 0 && <span className="text-sm text-muted-foreground p-1">No subjects selected</span>}
-                        {childData.subjects.map(sid => {
-                          const s = allSubjects.find(sub => sub.id === sid);
-                          if (!s) return null;
-                          return (
-                            <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
+                    <div className="space-y-2">
+                      <Label>Select Subjects</Label>
+                      <div className="space-y-3">
+                        <select
+                          className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                          onChange={(e) => {
+                            if (e.target.value) {
+                              handleSubjectToggle(e.target.value);
+                              e.target.value = ""; // Reset
+                            }
+                          }}
+                        >
+                          <option value="" disabled selected>Add a Subject...</option>
+                          {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
+                            <option key={s.id} value={s.id}>
                               {s.name}
-                              <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
-                            </span>
-                          );
-                        })}
+                            </option>
+                          ))}
+                        </select>
+
+                        <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-dashed border-border bg-muted/30">
+                          {childData.subjects.length === 0 && <span className="text-sm text-muted-foreground p-1">No subjects selected</span>}
+                          {childData.subjects.map(sid => {
+                            const s = allSubjects.find(sub => sub.id === sid);
+                            if (!s) return null;
+                            return (
+                              <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
+                                {s.name}
+                                <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
+                              </span>
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
 
-                <div className="flex gap-4 mt-8">
-                  <Button
-                    onClick={handleAddChild}
-                    className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary"
-                  >
-                    Add Child & Continue <ChevronRight className="w-5 h-5 ml-2" />
-                  </Button>
+                  <div className="flex gap-4 mt-8">
+                    <Button
+                      onClick={handleAddChild}
+                      className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary"
+                    >
+                      Add Child & Continue <ChevronRight className="w-5 h-5 ml-2" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             )}
@@ -339,7 +365,7 @@ export default function OnboardingPage() {
             {currentStep === 2 && (
               <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose Your Plan</h2>
-                <p className="text-muted-foreground text-center mb-8">Select the best plan for your family</p>
+                <p className="text-muted-foreground text-center mb-8">Select the best plan for {user?.role === 'student' ? 'you' : 'your family'}</p>
 
                 <div className="grid md:grid-cols-2 gap-4 mb-8">
                   {plans.map((plan) => (
@@ -375,16 +401,21 @@ export default function OnboardingPage() {
                   ))}
                 </div>
 
-                <Button
-                  onClick={() => setCurrentStep(3)}
-                  className="w-full btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 text-lg"
-                >
-                  Continue <ChevronRight className="w-5 h-5 ml-2" />
-                </Button>
+                <div className="flex gap-4">
+                  {user?.role === 'parent' && (
+                    <Button variant="outline" onClick={() => setCurrentStep(1)} className="flex-1">
+                      Back
+                    </Button>
+                  )}
+                  <Button
+                    onClick={() => setCurrentStep(3)}
+                    className="flex-1 btn-bounce bg-gradient-to-r from-primary to-tertiary py-6 text-lg"
+                  >
+                    Continue <ChevronRight className="w-5 h-5 ml-2" />
+                  </Button>
+                </div>
               </div>
             )}
-
-
 
             {/* Step 3: Payment */}
             {currentStep === 3 && !showPaystack && (
@@ -398,8 +429,8 @@ export default function OnboardingPage() {
                     <span className="font-bold">{selectedPlan.name}</span>
                   </div>
                   <div className="flex justify-between items-center mb-4">
-                    <span className="font-medium">Children Added</span>
-                    <span>{user?.children?.length || 1}</span>
+                    <span className="font-medium">Users Included</span>
+                    <span>{selectedPlan.id === 'family' ? 'Up to 4' : '1'}</span>
                   </div>
                   <div className="border-t border-border pt-4">
                     <div className="flex justify-between items-center">
@@ -444,7 +475,7 @@ export default function OnboardingPage() {
                 </div>
                 <h2 className="font-display text-2xl font-bold mb-2">You're All Set! 🎉</h2>
                 <p className="text-muted-foreground mb-8">
-                  Your account is ready. Start exploring your child's learning journey now!
+                  Your account is ready. Start exploring your learning journey now!
                 </p>
 
                 <Button

@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -7,21 +7,82 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Search, Download, Filter, DollarSign, CreditCard, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-const payments: Array<{
-  id: string;
-  user: string;
-  email: string;
-  plan: string;
-  amount: number;
-  status: string;
-  date: string;
-  method: string;
-}> = [];
+import { useAuthContext } from "@/contexts/AuthContext";
 
 export function AdminPayments() {
+  const { getAllUsers } = useAuthContext();
+  const [payments, setPayments] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Edit State
+  const [editingPayment, setEditingPayment] = useState<any>(null);
+  const [editForm, setEditForm] = useState({ plan: 'single', status: 'active', expiresAt: '' });
+
+  const fetchPayments = async () => {
+    try {
+      setLoading(true);
+      const users = await getAllUsers();
+      const activeSubs = users
+        .filter(u => u.subscription?.status) // Show all with subscription record
+        .map(u => ({
+          id: `SUB-${u.id.substring(0, 8)}`,
+          userId: u.id, // Store real user ID for updates
+          user: u.name,
+          email: u.email,
+          plan: u.subscription?.plan || 'single',
+          amount: u.subscription?.plan === 'family' ? 1300 : 300,
+          status: u.subscription?.status || 'pending',
+          date: u.createdAt,
+          expiresAt: u.subscription?.expiresAt || '',
+          method: 'Paystack'
+        }));
+
+      setPayments(activeSubs);
+    } catch (error) {
+      console.error("Failed to fetch payments:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPayments();
+  }, [getAllUsers]);
+
+  const handleEditClick = (payment: any) => {
+    setEditingPayment(payment);
+    setEditForm({
+      plan: payment.plan === 'Family Plan' ? 'family' : payment.plan, // Normalize if needed
+      status: payment.status,
+      expiresAt: payment.expiresAt ? new Date(payment.expiresAt).toISOString().split('T')[0] : ''
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editingPayment) return;
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${editingPayment.userId}/subscription`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}` // simple auth check
+        },
+        body: JSON.stringify(editForm)
+      });
+
+      if (response.ok) {
+        setEditingPayment(null);
+        fetchPayments(); // Refresh list
+      } else {
+        console.error("Failed to update");
+      }
+    } catch (error) {
+      console.error("Error updating subscription:", error);
+    }
+  };
 
   const filteredPayments = payments.filter(payment => {
     const matchesSearch =
@@ -36,8 +97,10 @@ export function AdminPayments() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
+      case "active":
       case "completed": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
       case "pending": return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
+      case "cancelled":
       case "failed": return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
       default: return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
     }
@@ -59,7 +122,7 @@ export function AdminPayments() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">Total Revenue</p>
-              <h3 className="text-2xl font-bold">GHS 12,450.00</h3>
+              <h3 className="text-2xl font-bold">GHS {payments.reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}</h3>
             </div>
           </CardContent>
         </Card>
@@ -71,7 +134,7 @@ export function AdminPayments() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">Active Subscriptions</p>
-              <h3 className="text-2xl font-bold">142</h3>
+              <h3 className="text-2xl font-bold">{payments.filter(p => p.status === 'active' || p.status === 'completed').length}</h3>
             </div>
           </CardContent>
         </Card>
@@ -83,7 +146,7 @@ export function AdminPayments() {
             </div>
             <div>
               <p className="text-sm text-muted-foreground font-medium">This Month</p>
-              <h3 className="text-2xl font-bold">GHS 2,850.00</h3>
+              <h3 className="text-2xl font-bold">GHS {payments.filter(p => new Date(p.date).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}</h3>
             </div>
           </CardContent>
         </Card>
@@ -126,9 +189,9 @@ export function AdminPayments() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
+                <SelectItem value="active">Active</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -137,21 +200,24 @@ export function AdminPayments() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Transaction ID</TableHead>
+                  <TableHead>ID</TableHead>
                   <TableHead>User</TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Amount</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Date</TableHead>
-                  <TableHead>Method</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPayments.length === 0 ? (
+                {loading ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
-                      No payments found matching your filters.
+                    <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
+                  </TableRow>
+                ) : filteredPayments.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                      No payments found.
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -164,7 +230,7 @@ export function AdminPayments() {
                           <span className="text-xs text-muted-foreground">{payment.email}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{payment.plan}</TableCell>
+                      <TableCell className="capitalize">{payment.plan}</TableCell>
                       <TableCell className="font-medium">GHS {payment.amount.toFixed(2)}</TableCell>
                       <TableCell>
                         <Badge variant="outline" className={`${getStatusColor(payment.status)} capitalize`}>
@@ -172,9 +238,10 @@ export function AdminPayments() {
                         </Badge>
                       </TableCell>
                       <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{payment.method}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="sm">Details</Button>
+                        <Button variant="outline" size="sm" onClick={() => handleEditClick(payment)}>
+                          Manage
+                        </Button>
                       </TableCell>
                     </TableRow>
                   ))
@@ -184,6 +251,64 @@ export function AdminPayments() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Edit Dialog */}
+      {editingPayment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <Card className="w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">
+            <CardHeader>
+              <CardTitle>Manage Subscription</CardTitle>
+              <CardDescription>Update details for {editingPayment.user}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Plan</label>
+                <Select
+                  value={editForm.plan}
+                  onValueChange={(val) => setEditForm(prev => ({ ...prev, plan: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="single">Single Child</SelectItem>
+                    <SelectItem value="family">Family Plan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select
+                  value={editForm.status}
+                  onValueChange={(val) => setEditForm(prev => ({ ...prev, status: val }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Expires At</label>
+                <Input
+                  type="date"
+                  value={editForm.expiresAt}
+                  onChange={(e) => setEditForm(prev => ({ ...prev, expiresAt: e.target.value }))}
+                />
+              </div>
+              <div className="flex justify-end gap-3 mt-6">
+                <Button variant="outline" onClick={() => setEditingPayment(null)}>Cancel</Button>
+                <Button onClick={handleSave}>Save Changes</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   );
 }

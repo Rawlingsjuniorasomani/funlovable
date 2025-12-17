@@ -111,7 +111,10 @@ export default function StudentAuth() {
       });
 
       if (result.success) {
-        setRegisterStep(3);
+        // Redirect to onboarding/payment workflow instead of just success message
+        // Since we are now logged in (token stored in useAuth logic), we can navigate
+        toast({ title: "Registration Successful", description: "Please complete your subscription." });
+        navigate('/onboarding');
       } else {
         setErrors({ email: result.error || 'Registration failed' });
         // Go back to step 1 if meaningful error? Or stay here?
@@ -141,7 +144,11 @@ export default function StudentAuth() {
         toast({ title: "Welcome back!", description: "Ready to learn!" });
         // Ensure we navigate to student, but if result.user says otherwise, we have a problem.
         // For StudentAuth, we expect student.
-        navigate('/student');
+        if (result.user?.role === 'student' && !result.user?.is_onboarded) {
+          navigate('/onboarding');
+        } else {
+          navigate('/student');
+        }
       } else {
         setErrors({ email: result.error || 'Login failed' });
       }
