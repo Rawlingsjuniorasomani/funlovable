@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
+import { API_URL } from "@/config/api";
 
 export function AdminSettings() {
   const { toast } = useToast();
@@ -42,7 +43,7 @@ export function AdminSettings() {
       // I'll use a direct fetch with token for now to avoid import errors if apiRequest isn't easily accessible (it is export const).
 
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/settings`, {
+      const res = await fetch(`${API_URL}/settings`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -62,7 +63,7 @@ export function AdminSettings() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem('auth_token');
-      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000/api'}/settings`, {
+      const res = await fetch(`${API_URL}/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

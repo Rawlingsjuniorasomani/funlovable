@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Search, Download, Filter, DollarSign, CreditCard, Calendar } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAuthContext } from "@/contexts/AuthContext";
+import { API_URL } from "@/config/api";
 
 export function AdminPayments() {
   const { getAllUsers } = useAuthContext();
@@ -64,7 +65,7 @@ export function AdminPayments() {
     if (!editingPayment) return;
 
     try {
-      const response = await fetch(`http://localhost:5000/api/users/${editingPayment.userId}/subscription`, {
+      const response = await fetch(`${API_URL}/users/${editingPayment.userId}/subscription`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
