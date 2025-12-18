@@ -72,7 +72,7 @@ export function AdminSidebar() {
 
   return (
     <aside className={cn(
-      "h-screen bg-card border-r border-border flex flex-col transition-all duration-300 sticky top-0",
+      "h-screen bg-orange-600 text-white flex flex-col transition-all duration-300 sticky top-0 border-r-0",
       isCollapsed ? "w-16" : "w-64"
     )}>
       <div className="p-4 border-b border-border flex items-center justify-between">
@@ -81,10 +81,10 @@ export function AdminSidebar() {
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary to-tertiary flex items-center justify-center">
               <GraduationCap className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-display font-bold text-foreground text-sm">{BRANDING.schoolShortName} Admin</span>
+            <span className="font-display font-bold text-white text-sm">{BRANDING.schoolShortName} Admin</span>
           </div>
         )}
-        <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className="shrink-0">
+        <Button variant="ghost" size="icon" onClick={() => setIsCollapsed(!isCollapsed)} className="shrink-0 text-white hover:bg-white/10 hover:text-white">
           {isCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
         </Button>
       </div>
@@ -102,8 +102,8 @@ export function AdminSidebar() {
               className={cn(
                 "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all relative",
                 isActive
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                  ? "bg-white text-orange-600 shadow-sm"
+                  : "text-white/90 hover:bg-white/10 hover:text-white",
                 isCollapsed && "justify-center px-2"
               )}
               title={isCollapsed ? item.label : undefined}
