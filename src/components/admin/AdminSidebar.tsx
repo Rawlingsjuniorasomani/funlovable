@@ -56,13 +56,15 @@ export function AdminSidebar() {
   };
 
   const visibleNavItems = navItems.filter(item => {
-    const isSuperOnly = ["Payments", "Analytics", "Settings"].includes(item.label);
-
-    // Super Admin Features
+    // Super Admin Features Only
+    const isSuperOnly = ["Settings"].includes(item.label);
     if (isSuperOnly) return user?.is_super_admin;
 
     // Regular Admin Features (Hidden for Super Admins)
     if (item.label === "Admins") return !user?.is_super_admin;
+
+    // Payments visible to all admins (regular + super)
+    if (item.label === "Payments") return true;
 
     // Common Features (Parents, Students, Teachers, Content etc.)
     return true;
