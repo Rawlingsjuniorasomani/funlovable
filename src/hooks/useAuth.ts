@@ -45,8 +45,6 @@ interface AuthState {
   isLoading: boolean;
 }
 
-const STORAGE_KEY = 'lovable_auth';
-
 export function useAuth() {
   const [authState, setAuthState] = useState<AuthState>({
     user: null,
@@ -54,29 +52,14 @@ export function useAuth() {
     isLoading: true,
   });
 
-  // Check auth on mount
+  // Check auth on mount - state-only, no localStorage persistence
   useEffect(() => {
     const initAuth = async () => {
-      const token = localStorage.getItem('auth_token');
-      if (!token) {
-        setAuthState({ user: null, isAuthenticated: false, isLoading: false });
-        // Stop loading if no token
-        return;
-      }
-
       try {
         const { user } = await authAPI.getCurrentUser();
-        setAuthState({ user, isAuthenticated: true, isLoading: false });
-      } catch (error: any) {
-        console.error('Auth initialization failed:', error);
-        // Only clear token if it's an auth error (401)
-        if (error.response?.status === 401) {
-          localStorage.removeItem('auth_token');
-          setAuthState({ user: null, isAuthenticated: false, isLoading: false });
-        } else {
-          // Keep the token but stop loading - user might need to retry or refresh
-          setAuthState({ user: null, isAuthenticated: false, isLoading: false });
-        }
+        setAuthState({ user, isAuthenticated: !!user, isLoading: false });
+      } catch (error) {
+        setAuthState({ user: null, isAuthenticated: false, isLoading: false });
       }
     };
 
@@ -86,8 +69,7 @@ export function useAuth() {
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
       const { user, token } = await authAPI.login(email, password);
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      // Token stored in memory only (no localStorage)
       setAuthState({ user, isAuthenticated: true, isLoading: false });
       return { success: true, user };
     } catch (error: any) {
@@ -101,8 +83,7 @@ export function useAuth() {
   const adminLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
       const { user, token } = await authAPI.adminLogin(email, password);
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+      // Token stored in memory only (no localStorage)
       setAuthState({ user, isAuthenticated: true, isLoading: false });
       return { success: true, user };
     } catch (error: any) {
@@ -137,8 +118,7 @@ export function useAuth() {
 
       // If no token returned (e.g. pending approval), don't set auth state
       if (token) {
-        localStorage.setItem('auth_token', token);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+        // Token stored in memory only (no localStorage)
         setAuthState({ user, isAuthenticated: true, isLoading: false });
       }
 
@@ -152,8 +132,7 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem(STORAGE_KEY);
+    // Clear auth state (no localStorage to clear)
     setAuthState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
@@ -227,14 +206,24 @@ export function useAuth() {
       const response = await usersAPI.addChild(child);
       const newChild = response.child || response; // Handle both formats
 
-      // Update local state
-      const updatedChildren = [...(authState.user.children || []), newChild];
-      setAuthState(prev => ({
-        ...prev,
-        user: prev.user ? { ...prev.user, children: updatedChildren } : null
-      }));
-
-      return newChild;
+      // Refresh user from server to get the authoritative children list
+      try {
+        const { user: refreshedUser } = await authAPI.getCurrentUser();
+        setAuthState(prev => ({
+          ...prev,
+          user: refreshedUser
+        }));
+        return newChild;
+      } catch (refreshErr) {
+        console.warn('Could not refresh user after addChild, using local update:', refreshErr);
+        // Fallback: update local state
+        const updatedChildren = [...(authState.user.children || []), newChild];
+        setAuthState(prev => ({
+          ...prev,
+          user: prev.user ? { ...prev.user, children: updatedChildren } : null
+        }));
+        return newChild;
+      }
     } catch (error) {
       console.error('Failed to add child:', error);
     }
