@@ -8,7 +8,7 @@ export default defineConfig(({ mode }) => {
   // Define API_URL based on mode - avoid importing from api.ts to prevent build issues
   const API_URL = mode === 'development'
     ? 'http://localhost:5000'
-    : 'https://funlovable.onrender.com';
+    : 'https://funlovable-backends.onrender.com';
 
   return {
     server: {
