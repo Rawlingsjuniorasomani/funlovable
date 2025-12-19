@@ -3,6 +3,7 @@ import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
 
+import { API_URL } from "./src/config/api";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
   server: {
@@ -10,11 +11,11 @@ export default defineConfig(({ mode }) => ({
     port: 8080,
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: API_URL,
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:5000',
+        target: API_URL,
         ws: true,
         changeOrigin: true,
       },

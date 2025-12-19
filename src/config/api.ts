@@ -1,11 +1,8 @@
 // During local development we commonly run the backend on port 5001
 // (if 5000 is in use). Prefer VITE_API_URL when provided, otherwise
-// default to localhost:5001 to match the dev backend used in this workspace.
-// Use an indexed access to avoid certain TS setups complaining about `env` on ImportMeta
-export const API_URL = (import.meta as any)['env']?.VITE_API_URL || 'http://localhost:5000/api';
-const apiUrl = import.meta.env.VITE_API_URL
-const vite_env = import.meta.env.VITE_ENV
-const api = vite_env === 'development' ? 'http://localhost:5000/api' : 'https://funlovable.onrender.com/api';
+// use production URL for deployed environments
+const vite_env = import.meta.env.MODE;
+export const API_URL = vite_env === 'development' ? 'http://localhost:5000' : 'https://funlovable.onrender.com';
 
 // Helper function for API calls
 export const apiRequest = async (
@@ -29,7 +26,7 @@ export const apiRequest = async (
     headers.set('x-view-as-student', String(viewAsChildId));
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
+  const response = await fetch(`${API_URL}/${"api"}${endpoint}`, {
     ...options,
     headers,
     credentials: 'include', // Send cookies with request for session-based auth
