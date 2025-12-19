@@ -32,7 +32,7 @@ export function StatsCard({ title, value, subtitle, icon: Icon, trend, color = "
 
   return (
     <div className={cn(
-      "rounded-2xl p-6 shadow-md border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative overflow-hidden",
+      "rounded-2xl p-4 sm:p-5 shadow-md border transition-all duration-300 hover:shadow-lg hover:-translate-y-1 relative overflow-hidden",
       styles.bg,
       styles.border,
       className
@@ -42,9 +42,9 @@ export function StatsCard({ title, value, subtitle, icon: Icon, trend, color = "
 
       <div className="flex items-start justify-between relative z-10">
         <div className="space-y-1">
-          <p className={cn("text-sm font-medium", styles.subtext)}>{title}</p>
+          <p className={cn("text-xs sm:text-sm font-medium", styles.subtext)}>{title}</p>
           <div className="flex items-baseline gap-2">
-            <h3 className={cn("text-3xl font-display font-bold", styles.text)}>{value}</h3>
+            <h3 className={cn("text-2xl sm:text-3xl font-display font-bold", styles.text)}>{value}</h3>
           </div>
           {subtitle && <p className={cn("text-xs opacity-90", styles.subtext)}>{subtitle}</p>}
 
@@ -56,8 +56,8 @@ export function StatsCard({ title, value, subtitle, icon: Icon, trend, color = "
           )}
         </div>
 
-        <div className={cn("p-3 rounded-xl shadow-sm backdrop-blur-sm", styles.iconBg, styles.text)}>
-          <Icon className="w-6 h-6" />
+        <div className={cn("p-2 sm:p-2.5 rounded-xl shadow-sm backdrop-blur-sm", styles.iconBg, styles.text)}>
+          <Icon className="w-4 h-4 sm:w-5 sm:h-5" />
         </div>
       </div>
     </div>

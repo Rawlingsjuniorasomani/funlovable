@@ -7,9 +7,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { useParentData } from "@/data/parentDataStore";
 import { useAdminNotifications } from "@/hooks/useAdminNotifications";
-import { sendWelcomeSMS } from "@/utils/smsService";
-import { Eye, EyeOff, Users, Mail, Lock, User, Phone, Check, ArrowRight, ArrowLeft } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowRight } from "lucide-react";
 import { z } from "zod";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import authHeroOriginal from "@/assets/auth-hero.jpg";
 
 // --- Schemas ---
 
@@ -38,11 +39,10 @@ type AuthView = 'login' | 'register';
 export default function ParentAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, register, updateSubscription } = useAuthContext();
-  const { registerParent, createSubscription, addPayment } = useParentData();
+  const { login } = useAuthContext();
+  const { registerParent } = useParentData();
   const { addNotification } = useAdminNotifications();
 
-  // State
   // State
   const [view, setView] = useState<AuthView>('login');
   const [showPassword, setShowPassword] = useState(false);
@@ -76,9 +76,8 @@ export default function ParentAuth() {
       const result = await login(formData.email, formData.password);
       if (result.success) {
         toast({ title: "Welcome back!", description: "Login successful." });
-        const storedUser = localStorage.getItem('lovable_auth');
-        if (storedUser) {
-          const user = JSON.parse(storedUser);
+        if (result.user) {
+          const user = result.user;
           const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
           if (!isOnboarded) navigate('/onboarding');
           else navigate('/parent/dashboard');
@@ -100,49 +99,12 @@ export default function ParentAuth() {
     try {
       registerDetailsSchema.parse(formData);
 
-      const result = await register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-        role: 'parent',
-        phone: formData.phone || undefined,
+      toast({
+        title: 'Payment Required',
+        description: 'Parent accounts are created only after payment. Please choose a plan to continue.',
+        variant: 'default'
       });
-
-      if (result.success) {
-        // Register in parent data store for admin visibility
-        registerParent({
-          name: formData.name,
-          email: formData.email,
-          phone: formData.phone || undefined,
-        });
-
-        // Notifications
-        addNotification({
-          type: 'new_parent',
-          title: 'New Parent Registration',
-          description: `${formData.name} just registered as a parent`,
-          relatedId: result.user?.id,
-        });
-
-        if (formData.phone) await sendWelcomeSMS(formData.phone, formData.name);
-
-        toast({ title: "Account Created!", description: "Continuing to onboarding..." });
-
-        // Login Logic Implicit? 
-        // register() usually returns user but DOES IT SET AUTH STATE?
-        // useAuth.ts register() => setAuthState if token returned.
-        // Yes it does.
-
-        navigate('/onboarding');
-      } else {
-        const errorMsg = result.error || 'Registration failed';
-        setErrors({ email: errorMsg });
-        toast({
-          variant: "destructive",
-          title: "Registration Failed",
-          description: errorMsg
-        });
-      }
+      navigate('/pricing');
 
     } catch (error) {
       handleZodError(error);
@@ -150,8 +112,6 @@ export default function ParentAuth() {
       setIsSubmitting(false);
     }
   };
-
-
 
   const handleZodError = (error: any) => {
     if (error instanceof z.ZodError) {
@@ -163,143 +123,117 @@ export default function ParentAuth() {
     }
   };
 
-  // --- Render Helpers ---
-
-
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-50 via-purple-50 to-fuchsia-50 dark:from-violet-950/20 dark:via-purple-950/20 dark:to-fuchsia-950/20 flex items-center justify-center px-4 py-8">
-      <div className={`w-full max-w-md`}>
+    <AuthLayout
+      title={view === 'login' ? "Welcome Back" : "Parent Registration"}
+      subtitle={view === 'login' ? "Sign in to your dashboard" : "Join our learning community"}
+      image={authHeroOriginal}
+    >
+      {view === 'login' && (
+        <>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="email" className="sr-only">Email</Label>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="email" name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`} />
+              </div>
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            </div>
 
-        {/* Back Link View Logic */}
-        {view === 'register' && (
-          <Button variant="ghost" onClick={() => setView('login')} className="mb-4 text-muted-foreground pl-0 hover:bg-transparent">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Login
-          </Button>
-        )}
+            <div className="space-y-2">
+              <Label htmlFor="password" className="sr-only">Password</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Password" value={formData.password} onChange={handleChange} className={`pl-10 h-12 pr-10 ${errors.password ? "border-destructive" : ""}`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+            </div>
 
-        <div className="bg-card rounded-3xl p-8 border border-border shadow-lg transition-all duration-300">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <input type="checkbox" id="remember" className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" />
+                <label htmlFor="remember" className="text-sm text-muted-foreground font-medium">Remember me</label>
+              </div>
+              <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">Forgot Password?</Link>
+            </div>
 
-          {/* Header */}
-          <div className="text-center mb-6">
-            {view === 'register' ? (
-              <>
-                <h1 className="font-display text-2xl font-bold">Create Account</h1>
-                <p className="text-muted-foreground mb-6">Join our learning community</p>
-              </>
-            ) : (
-              <>
-                <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-500 to-fuchsia-500 flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <Users className="w-10 h-10 text-white" />
-                </div>
-                <h1 className="font-display text-2xl font-bold">Parent Login</h1>
-                <p className="text-muted-foreground">Monitor your children's progress</p>
-              </>
-            )}
+            <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base font-semibold" disabled={isSubmitting}>
+              {isSubmitting ? "Signing in..." : "Sign In"}
+            </Button>
+          </form>
+
+          <div className="text-center mt-6">
+            <p className="text-muted-foreground text-sm">
+              Don't have an account? <button onClick={() => setView('register')} className="text-primary hover:underline font-semibold">Sign Up</button>
+            </p>
           </div>
+        </>
+      )}
 
-          {/* LOGIN VIEW */}
-          {view === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="email" name="email" type="email" placeholder="parent@email.com" value={formData.email} onChange={handleChange} className={`pl-10 ${errors.email ? "border-destructive" : ""}`} />
-                </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+      {view === 'register' && (
+        <>
+          <form onSubmit={handleRegister} className="space-y-4">
+            <div className="space-y-2">
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="name" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} className={`pl-10 h-12 ${errors.name ? "border-destructive" : ""}`} />
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Enter your password" value={formData.password} onChange={handleChange} className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+              {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            </div>
+
+            <div className="space-y-2">
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="phone" name="phone" type="tel" placeholder="Phone Number" value={formData.phone} onChange={handleChange} className="pl-10 h-12" />
               </div>
+            </div>
 
-              <div className="flex items-center justify-end">
-                <a href="#" className="text-sm text-primary hover:underline">Forgot password?</a>
+            <div className="space-y-2">
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="email" name="email" type="email" placeholder="Email" value={formData.email} onChange={handleChange} className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`} />
               </div>
+              {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            </div>
 
-              <Button type="submit" className="w-full bg-gradient-to-r from-violet-500 to-purple-500 hover:from-violet-600 hover:to-purple-600 text-white py-6 text-lg font-semibold" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign In"}
-              </Button>
-
-              <div className="text-center mt-6">
-                <p className="text-muted-foreground text-sm">
-                  New here? <button type="button" onClick={() => setView('register')} className="text-primary hover:underline font-semibold">Create Account</button>
-                </p>
+            <div className="space-y-2">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Password" value={formData.password} onChange={handleChange} className={`pl-10 h-12 pr-10 ${errors.password ? "border-destructive" : ""}`} />
+                <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
-            </form>
-          )}
+              {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
+            </div>
 
-          {/* REGISTER */}
-          {view === 'register' && (
-            <form onSubmit={handleRegister} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="name" name="name" placeholder="Enter your full name" value={formData.name} onChange={handleChange} className={`pl-10 ${errors.name ? "border-destructive" : ""}`} />
-                </div>
-                {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
+            <div className="space-y-2">
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className={`pl-10 h-12 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} />
+                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
+              {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="phone" name="phone" type="tel" placeholder="+233 XX XXX XXXX" value={formData.phone} onChange={handleChange} className="pl-10" />
-                </div>
-              </div>
+            <Button type="submit" className="w-full h-12 font-semibold mt-4" disabled={isSubmitting}>
+              {isSubmitting ? "Creating..." : "Create Account & Continue"} <ArrowRight className="w-4 h-4 ml-2" />
+            </Button>
+          </form>
 
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="email" name="email" type="email" placeholder="parent@email.com" value={formData.email} onChange={handleChange} className={`pl-10 ${errors.email ? "border-destructive" : ""}`} />
-                </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Create a password" value={formData.password} onChange={handleChange} className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm password" value={formData.confirmPassword} onChange={handleChange} className={`pl-10 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
-                    {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
-              </div>
-
-              <Button type="submit" className="w-full mt-4" disabled={isSubmitting}>
-                {isSubmitting ? "Creating..." : "Create Account & Continue"} <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </form>
-          )}
-
-
-
-        </div>
-      </div>
-    </div>
+          <div className="text-center mt-4">
+            <button type="button" onClick={() => setView('login')} className="text-sm text-muted-foreground hover:text-foreground">
+              Already have an account? Log in
+            </button>
+          </div>
+        </>
+      )}
+    </AuthLayout>
   );
 }

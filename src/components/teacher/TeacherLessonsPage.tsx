@@ -11,8 +11,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Upload, FileText, CheckCircle, Loader2, Plus, Trash2, Edit, BookOpen, Clock } from "lucide-react";
+import { useAuthContext } from "@/contexts/AuthContext";
 
 export function TeacherLessonsPage() {
+  const { user } = useAuthContext();
   const [loading, setLoading] = useState(false);
   const [lessons, setLessons] = useState<any[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
@@ -45,7 +47,7 @@ export function TeacherLessonsPage() {
     try {
       const [subjectsData, lessonsData] = await Promise.all([
         subjectsAPI.getTeacher(),
-        lessonsAPI.getAll()
+        lessonsAPI.getAll(user?.id ? { teacherId: user.id } : undefined)
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
       setLessons(Array.isArray(lessonsData) ? lessonsData : []);

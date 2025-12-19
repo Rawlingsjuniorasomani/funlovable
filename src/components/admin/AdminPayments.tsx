@@ -1,265 +1,495 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Search, Download, Filter, DollarSign, CreditCard, Calendar } from "lucide-react";
+import { Search, Download, Filter, DollarSign, CreditCard, Calendar, Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useAuthContext } from "@/contexts/AuthContext";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { API_URL } from "@/config/api";
+import { useAuth } from "@/hooks/useAuth";
+import jsPDF from "jspdf";
+import autoTable from "jspdf-autotable";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function AdminPayments() {
-  const { getAllUsers } = useAuthContext();
+  // Payments state
   const [payments, setPayments] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentsLoading, setPaymentsLoading] = useState(true);
+  const [paymentSearchTerm, setPaymentSearchTerm] = useState("");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
 
-  // Edit State
-  const [editingPayment, setEditingPayment] = useState<any>(null);
+  // Subscriptions state
+  const [subscriptions, setSubscriptions] = useState<any[]>([]);
+  const [subsLoading, setSubsLoading] = useState(true);
+  const [subSearchTerm, setSubSearchTerm] = useState("");
+  const [subStatusFilter, setSubStatusFilter] = useState("all");
+  const [subPlanFilter, setSubPlanFilter] = useState("all");
+
+  // Edit state
+  const [editingSubscription, setEditingSubscription] = useState<any>(null);
   const [editForm, setEditForm] = useState({ plan: 'single', status: 'active', expiresAt: '' });
 
+  // Get auth context (token handled via HTTP-only cookies/headers)
+  const authContext = useAuth();
+
+  // Fetch payments
   const fetchPayments = async () => {
     try {
-      setLoading(true);
-      const users = await getAllUsers();
-      const activeSubs = users
-        .filter(u => u.subscription?.status) // Show all with subscription record
-        .map(u => ({
-          id: `SUB-${u.id.substring(0, 8)}`,
-          userId: u.id, // Store real user ID for updates
-          user: u.name,
-          email: u.email,
-          plan: u.subscription?.plan || 'single',
-          amount: u.subscription?.plan === 'family' ? 1300 : 300,
-          status: u.subscription?.status || 'pending',
-          date: u.createdAt,
-          expiresAt: u.subscription?.expiresAt || '',
-          method: 'Paystack'
-        }));
+      setPaymentsLoading(true);
+      const query = new URLSearchParams();
+      if (paymentStatusFilter !== 'all') query.append('status', paymentStatusFilter);
 
-      setPayments(activeSubs);
+      // Auth via HTTP-only cookies or session (not localStorage token)
+      const response = await fetch(`${API_URL}/admin/payments?${query}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch payments');
+      const data = await response.json();
+      setPayments(data.payments || []);
     } catch (error) {
       console.error("Failed to fetch payments:", error);
     } finally {
-      setLoading(false);
+      setPaymentsLoading(false);
+    }
+  };
+
+  // Fetch subscriptions
+  const fetchSubscriptions = async () => {
+    try {
+      setSubsLoading(true);
+      const query = new URLSearchParams();
+      if (subStatusFilter !== 'all') query.append('status', subStatusFilter);
+      if (subPlanFilter !== 'all') query.append('plan', subPlanFilter);
+
+      // Auth via HTTP-only cookies or session (not localStorage token)
+      const response = await fetch(`${API_URL}/admin/subscriptions?${query}`, {
+        credentials: 'include',
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch subscriptions');
+      const data = await response.json();
+      setSubscriptions(data.subscriptions || []);
+    } catch (error) {
+      console.error("Failed to fetch subscriptions:", error);
+    } finally {
+      setSubsLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPayments();
-  }, [getAllUsers]);
+  }, [paymentStatusFilter]);
 
-  const handleEditClick = (payment: any) => {
-    setEditingPayment(payment);
+  useEffect(() => {
+    fetchSubscriptions();
+  }, [subStatusFilter, subPlanFilter]);
+
+  // Filter payments
+  const filteredPayments = payments.filter(payment => {
+    const matchesSearch =
+      payment.user_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+      payment.user_email?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
+      payment.payment_id?.toLowerCase().includes(paymentSearchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  // Filter subscriptions
+  const filteredSubscriptions = subscriptions.filter(sub => {
+    const matchesSearch =
+      sub.user_name?.toLowerCase().includes(subSearchTerm.toLowerCase()) ||
+      sub.user_email?.toLowerCase().includes(subSearchTerm.toLowerCase());
+    return matchesSearch;
+  });
+
+  const getStatusColor = (status: string) => {
+    switch (status?.toLowerCase()) {
+      case 'success':
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'failed':
+      case 'expired':
+      case 'cancelled':
+        return 'bg-red-100 text-red-800 border-red-200';
+      default:
+        return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  const handleEditClick = (subscription: any) => {
+    setEditingSubscription(subscription);
     setEditForm({
-      plan: payment.plan === 'Family Plan' ? 'family' : payment.plan, // Normalize if needed
-      status: payment.status,
-      expiresAt: payment.expiresAt ? new Date(payment.expiresAt).toISOString().split('T')[0] : ''
+      plan: subscription.plan || 'single',
+      status: subscription.status || 'active',
+      expiresAt: subscription.expires_at ? new Date(subscription.expires_at).toISOString().split('T')[0] : ''
     });
   };
 
   const handleSave = async () => {
-    if (!editingPayment) return;
+    if (!editingSubscription) return;
 
     try {
-      const response = await fetch(`${API_URL}/users/${editingPayment.userId}/subscription`, {
+      const response = await fetch(`${API_URL}/admin/subscriptions/${editingSubscription.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}` // simple auth check
         },
+        credentials: 'include',
         body: JSON.stringify(editForm)
       });
 
       if (response.ok) {
-        setEditingPayment(null);
-        fetchPayments(); // Refresh list
+        setEditingSubscription(null);
+        fetchSubscriptions();
       } else {
-        console.error("Failed to update");
+        console.error("Failed to update subscription");
       }
     } catch (error) {
       console.error("Error updating subscription:", error);
     }
   };
 
-  const filteredPayments = payments.filter(payment => {
-    const matchesSearch =
-      payment.user.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      payment.id.toLowerCase().includes(searchTerm.toLowerCase());
+  const stats = {
+    totalRevenue: payments
+      .filter(p => p.payment_status === 'success')
+      .reduce((sum, p) => sum + (parseFloat(p.amount) || 0), 0),
+    activeSubscriptions: subscriptions.filter(s => s.status === 'active').length,
+    totalSubscriptions: subscriptions.length,
+    pendingPayments: payments.filter(p => p.payment_status === 'pending').length
+  };
 
-    const matchesStatus = statusFilter === "all" || payment.status === statusFilter;
+  const exportToPDF = () => {
+    const doc = new jsPDF();
 
-    return matchesSearch && matchesStatus;
-  });
+    doc.setFontSize(18);
+    doc.text("Payment History", 14, 22);
+    doc.setFontSize(11);
+    doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 14, 30);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "active":
-      case "completed": return "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20";
-      case "pending": return "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20";
-      case "cancelled":
-      case "failed": return "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20";
-      default: return "bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20";
+    const tableData = filteredPayments.map(p => [
+      p.reference?.substring(0, 12),
+      p.user_name,
+      p.user_email,
+      p.user_role,
+      `${p.currency} ${parseFloat(p.amount).toFixed(2)}`,
+      p.payment_status,
+      new Date(p.payment_date).toLocaleDateString(),
+      p.plan || '-'
+    ]);
+
+    autoTable(doc, {
+      head: [['Ref', 'Name', 'Email', 'Role', 'Amount', 'Status', 'Date', 'Plan']],
+      body: tableData,
+      startY: 40,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [66, 66, 66] }
+    });
+
+    doc.save("payments.pdf");
+  };
+
+  const exportToCSV = () => {
+    const headers = ['Reference', 'Name', 'Email', 'Role', 'Amount', 'Currency', 'Status', 'Date', 'Plan'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredPayments.map(p => [
+        p.reference,
+        `"${p.user_name}"`,
+        p.user_email,
+        p.user_role,
+        p.amount,
+        p.currency,
+        p.payment_status,
+        new Date(p.payment_date).toLocaleDateString(),
+        p.plan || ''
+      ].join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    if (link.download !== undefined) {
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', 'payments.csv');
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Payments & Subscriptions</h1>
-        <p className="text-muted-foreground">Manage revenue, transaction history, and subscription plans.</p>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <p className="text-2xl font-bold">GHS {stats.totalRevenue.toFixed(2)}</p>
+              </div>
+
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Active Subscriptions</p>
+                <p className="text-2xl font-bold">{stats.activeSubscriptions}</p>
+              </div>
+              <CreditCard className="w-8 h-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Subscriptions</p>
+                <p className="text-2xl font-bold">{stats.totalSubscriptions}</p>
+              </div>
+              <Calendar className="w-8 h-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Pending Payments</p>
+                <p className="text-2xl font-bold">{stats.pendingPayments}</p>
+              </div>
+              <Filter className="w-8 h-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">Total Revenue</p>
-              <h3 className="text-2xl font-bold">GHS {payments.reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}</h3>
-            </div>
-          </CardContent>
-        </Card>
+      {/* Tabs for Payments and Subscriptions */}
+      <Tabs defaultValue="payments" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="payments">Payments</TabsTrigger>
+          <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-blue-500/10 flex items-center justify-center">
-              <CreditCard className="w-6 h-6 text-blue-600 dark:text-blue-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">Active Subscriptions</p>
-              <h3 className="text-2xl font-bold">{payments.filter(p => p.status === 'active' || p.status === 'completed').length}</h3>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-purple-500/10 flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-purple-600 dark:text-purple-400" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground font-medium">This Month</p>
-              <h3 className="text-2xl font-bold">GHS {payments.filter(p => new Date(p.date).getMonth() === new Date().getMonth()).reduce((acc, curr) => acc + curr.amount, 0).toFixed(2)}</h3>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Transactions Table */}
-      <Card>
-        <CardHeader className="pb-3">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <CardTitle>Transaction History</CardTitle>
-              <CardDescription>View and manage recent payments</CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Button variant="outline" size="sm">
-                <Download className="w-4 h-4 mr-2" />
-                Export
-              </Button>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {/* Filters */}
-          <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search by user, email, or ID..."
-                className="pl-9"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full md:w-[180px]">
-                <div className="flex items-center gap-2">
-                  <Filter className="w-4 h-4" />
-                  <SelectValue placeholder="Filter by Status" />
+        {/* Payments Tab */}
+        <TabsContent value="payments" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Payment History</CardTitle>
+              <CardDescription>View all payments received from parents and students</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4 flex-wrap">
+                <div className="flex-1 min-w-[200px] relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name, email, or reference..."
+                    value={paymentSearchTerm}
+                    onChange={(e) => setPaymentSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
                 </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="pending">Pending</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+                <Select value={paymentStatusFilter} onValueChange={setPaymentStatusFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="success">Success</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Download className="w-4 h-4 mr-2" />
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent>
+                    <DropdownMenuItem onClick={exportToPDF}>
+                      Export as PDF
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={exportToCSV}>
+                      Export as Excel (CSV)
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
 
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>ID</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Amount</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {loading ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8">Loading...</TableCell>
-                  </TableRow>
-                ) : filteredPayments.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                      No payments found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredPayments.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-mono text-xs">{payment.id}</TableCell>
-                      <TableCell>
-                        <div className="flex flex-col">
-                          <span className="font-medium">{payment.user}</span>
-                          <span className="text-xs text-muted-foreground">{payment.email}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell className="capitalize">{payment.plan}</TableCell>
-                      <TableCell className="font-medium">GHS {payment.amount.toFixed(2)}</TableCell>
-                      <TableCell>
-                        <Badge variant="outline" className={`${getStatusColor(payment.status)} capitalize`}>
-                          {payment.status}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{new Date(payment.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-right">
-                        <Button variant="outline" size="sm" onClick={() => handleEditClick(payment)}>
-                          Manage
-                        </Button>
-                      </TableCell>
+              <div className="rounded-md border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Reference</TableHead>
+                      <TableHead>User</TableHead>
+                      <TableHead>Role</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Subscription Plan</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {paymentsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredPayments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          No payments found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredPayments.map((payment) => (
+                        <TableRow key={payment.payment_id}>
+                          <TableCell className="font-mono text-xs">{payment.reference?.substring(0, 12)}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{payment.user_name}</span>
+                              <span className="text-xs text-muted-foreground">{payment.user_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="capitalize text-xs">{payment.user_role}</TableCell>
+                          <TableCell className="font-medium">{payment.currency} {parseFloat(payment.amount).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getStatusColor(payment.payment_status)}>
+                              {payment.payment_status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>{new Date(payment.payment_date).toLocaleDateString()}</TableCell>
+                          <TableCell className="capitalize">{payment.plan || '-'}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Subscriptions Tab */}
+        <TabsContent value="subscriptions" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Management</CardTitle>
+              <CardDescription>Manage active and inactive subscriptions</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-4 flex-wrap">
+                <div className="flex-1 min-w-[200px] relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Search by name or email..."
+                    value={subSearchTerm}
+                    onChange={(e) => setSubSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={subStatusFilter} onValueChange={setSubStatusFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Filter by status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="active">Active</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="cancelled">Cancelled</SelectItem>
+                    <SelectItem value="expired">Expired</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={subPlanFilter} onValueChange={setSubPlanFilter}>
+                  <SelectTrigger className="w-[150px]">
+                    <SelectValue placeholder="Filter by plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Plans</SelectItem>
+                    <SelectItem value="single">Single Child</SelectItem>
+                    <SelectItem value="family">Family Plan</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="rounded-md border overflow-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Plan</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Amount</TableHead>
+                      <TableHead>Starts</TableHead>
+                      <TableHead>Expires</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {subsLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8">
+                          <Loader2 className="w-4 h-4 animate-spin mx-auto" />
+                        </TableCell>
+                      </TableRow>
+                    ) : filteredSubscriptions.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                          No subscriptions found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredSubscriptions.map((sub) => (
+                        <TableRow key={sub.id}>
+                          <TableCell>
+                            <div className="flex flex-col">
+                              <span className="font-medium">{sub.user_name}</span>
+                              <span className="text-xs text-muted-foreground">{sub.user_email}</span>
+                            </div>
+                          </TableCell>
+                          <TableCell className="capitalize">{sub.plan}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className={getStatusColor(sub.status)}>
+                              {sub.status}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>GHS {parseFloat(sub.amount).toFixed(2)}</TableCell>
+                          <TableCell>{sub.starts_at ? new Date(sub.starts_at).toLocaleDateString() : '-'}</TableCell>
+                          <TableCell>{sub.expires_at ? new Date(sub.expires_at).toLocaleDateString() : '-'}</TableCell>
+                          <TableCell className="text-right">
+                            <Button variant="outline" size="sm" onClick={() => handleEditClick(sub)}>
+                              Edit
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
 
       {/* Edit Dialog */}
-      {editingPayment && (
+      {editingSubscription && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">
             <CardHeader>
-              <CardTitle>Manage Subscription</CardTitle>
-              <CardDescription>Update details for {editingPayment.user}</CardDescription>
+              <CardTitle>Edit Subscription</CardTitle>
+              <CardDescription>Update details for {editingSubscription.user_name}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -303,7 +533,7 @@ export function AdminPayments() {
                 />
               </div>
               <div className="flex justify-end gap-3 mt-6">
-                <Button variant="outline" onClick={() => setEditingPayment(null)}>Cancel</Button>
+                <Button variant="outline" onClick={() => setEditingSubscription(null)}>Cancel</Button>
                 <Button onClick={handleSave}>Save Changes</Button>
               </div>
             </CardContent>

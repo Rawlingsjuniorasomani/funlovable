@@ -103,7 +103,14 @@ export function AdminParents() {
                   <TableCell>{parent.children?.length || 0}</TableCell>
                   <TableCell>
                     <Badge variant={parent.subscription?.status === 'active' ? 'default' : 'secondary'}>
-                      {parent.subscription?.plan || 'None'}
+                      {(() => {
+                        const plan = parent.subscription?.plan;
+                        if (!plan) return 'None';
+                        const lowerPlan = plan.toLowerCase();
+                        if (lowerPlan === 'standard plan' || lowerPlan === 'single child' || lowerPlan === 'single plan') return 'Single Plan';
+                        if (lowerPlan === 'premium plan' || lowerPlan === 'family plan') return 'Family Plan';
+                        return plan;
+                      })()}
                     </Badge>
                   </TableCell>
                   <TableCell>{new Date(parent.createdAt).toLocaleDateString()}</TableCell>

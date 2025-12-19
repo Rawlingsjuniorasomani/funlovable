@@ -10,23 +10,14 @@ export interface Notification {
   actionUrl?: string;
 }
 
-const STORAGE_KEY = "lovable_notifications";
-
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      setNotifications(JSON.parse(stored));
-    } else {
-      setNotifications([]);
-    }
-  }, []);
+  // No localStorage persistence - notifications should come from backend API
 
   const saveNotifications = useCallback((newNotifications: Notification[]) => {
+    // Store in memory only (not localStorage)
     setNotifications(newNotifications);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newNotifications));
   }, []);
 
   const addNotification = useCallback((notification: Omit<Notification, "id" | "time" | "read">) => {

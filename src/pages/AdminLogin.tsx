@@ -143,9 +143,6 @@ const AdminLogin = () => {
             />
             <label htmlFor="remember" className="text-sm text-muted-foreground font-medium">Remember me</label>
           </div>
-          <button type="button" className="text-sm text-primary font-medium hover:underline">
-            Forgot Password?
-          </button>
         </div>
 
         <Button

@@ -32,19 +32,12 @@ export function AdminSettings() {
   const loadSettings = async () => {
     try {
       // Assuming a generic apiRequest helper exists or we use fetch with auth
+      // Auth via HTTP-only cookies/session (no localStorage token)
       // For consistency with codebase, we should use a configured API helper if available,
       // but `adminAPI` or similar might not have `getSettings`.
-      // I'll assume we can use `apiRequest` from `config/api` if exported, or just fetch with token.
-      // Checking local files: `src/config/api.ts` exports `apiRequest`.
 
-      // However, to keep it simple and self-contained here or properly use `api.ts`.
-      // Let's check imports. I need to import `apiRequest` or `API_URL`.
-      // I will add the import in a separate block if needed, but here I am replacing the component body.
-      // I'll use a direct fetch with token for now to avoid import errors if apiRequest isn't easily accessible (it is export const).
-
-      const token = localStorage.getItem('auth_token');
       const res = await fetch(`${API_URL}/settings`, {
-        headers: { Authorization: `Bearer ${token}` }
+        credentials: 'include'
       });
       if (res.ok) {
         const data = await res.json();
@@ -62,13 +55,13 @@ export function AdminSettings() {
 
   const handleSave = async () => {
     try {
-      const token = localStorage.getItem('auth_token');
+      // Auth via HTTP-only cookies/session (no localStorage token)
       const res = await fetch(`${API_URL}/settings`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
         },
+        credentials: 'include',
         body: JSON.stringify(settings)
       });
 

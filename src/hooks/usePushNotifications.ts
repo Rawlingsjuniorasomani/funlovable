@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { toast } from "sonner";
 
-const NOTIFICATION_PREFS_KEY = "lovable_notification_prefs";
-
 export interface NotificationPrefs {
   enabled: boolean;
   quizReminders: boolean;
@@ -31,20 +29,18 @@ export function usePushNotifications() {
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
-  useEffect(() => {
-    const saved = localStorage.getItem(NOTIFICATION_PREFS_KEY);
-    if (saved) {
-      setPrefs(JSON.parse(saved));
-    }
+  // No localStorage persistence for notification prefs
+  // Browser notification permissions managed separately by browser
 
+  useEffect(() => {
     if ("Notification" in window) {
       setPermission(Notification.permission);
     }
   }, []);
 
   const savePrefs = useCallback((newPrefs: NotificationPrefs) => {
+    // Store in memory only (not localStorage)
     setPrefs(newPrefs);
-    localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(newPrefs));
   }, []);
 
   const requestPermission = useCallback(async () => {

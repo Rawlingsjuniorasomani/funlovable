@@ -1,21 +1,9 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowRight, Loader2, Book, FlaskConical, Calculator, Globe, Palette } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { motion } from "framer-motion";
 import { useEffect, useState } from "react";
 import { subjectsAPI } from "@/config/api";
-
-const SUBJECT_IMAGES: Record<string, string> = {
-  "Mathematics": "/images/subjects/mathematics.png",
-  "Science": "/images/subjects/science.png",
-  "English": "/images/subjects/english.png",
-  "Social Studies": "/images/subjects/social-studies.png",
-  "Creative Arts": "/images/subjects/creative-arts.png",
-  "ICT": "/images/subjects/computing.png",
-  "Computing": "/images/subjects/computing.png", // Alias for ICT if needed
-};
-
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1503676260728-1c00da094a0b?auto=format&fit=crop&q=80&w=600";
 
 const COLORS = [
   "from-primary/20 to-primary/30 text-primary",
@@ -70,7 +58,7 @@ export function SubjectsPreview() {
               Explore <span className="gradient-text">Subjects</span>
             </h2>
             <p className="text-muted-foreground max-w-2xl">
-              Discover our wide range of subjects designed for comprehensive learning. Each course is crafted to engage and inspire.
+              Discover our wide range of subjects designed for comprehensive learning.
             </p>
           </div>
           <Link to="/subjects">
@@ -83,9 +71,6 @@ export function SubjectsPreview() {
 
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-8">
           {subjects.map((subject, index) => {
-            const image = subject.image_url || SUBJECT_IMAGES[subject.name] || FALLBACK_IMAGE;
-            const colorClass = COLORS[index % COLORS.length];
-
             return (
               <motion.div
                 key={subject.id || index}
@@ -93,31 +78,16 @@ export function SubjectsPreview() {
                 whileHover={{ translateY: -4 }}
                 transition={{ type: "spring", stiffness: 260, damping: 20 }}
               >
-                {/* Image Header */}
-                <div className="relative h-48 overflow-hidden">
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent z-10" />
-                  <img
-                    src={image}
-                    alt={subject.name}
-                    className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-                  />
-
-                  <div className="absolute bottom-4 left-4 z-20 text-white">
-                    <span className="text-xs font-medium bg-primary/90 px-2 py-1 rounded-full backdrop-blur-sm">
-                      {subject.lessons || 0} Lessons
-                    </span>
-                  </div>
-                </div>
-
-                <div className="p-6 flex flex-col flex-grow">
-                  <h3 className="font-display font-bold text-xl mb-2 group-hover:text-primary transition-colors">
+                <div className="p-8 flex flex-col flex-grow items-center text-center">
+                  <h3 className="font-display font-bold text-2xl mb-4 group-hover:text-primary transition-colors">
                     {subject.name}
                   </h3>
-                  <p className="text-muted-foreground text-sm mb-6 line-clamp-2 flex-grow">
-                    {subject.description}
-                  </p>
 
-                  <Link to={`/subjects/${subject.id}`} className="mt-auto">
+                  <span className="text-sm font-medium bg-secondary/10 text-secondary-foreground px-3 py-1 rounded-full mb-6">
+                    {subject.lessons || 0} Lessons
+                  </span>
+
+                  <Link to={`/subjects/${subject.id}`} className="mt-auto w-full">
                     <Button className="w-full rounded-xl group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300" variant="secondary">
                       Start Learning
                       <ArrowRight className="ml-2 w-4 h-4" />

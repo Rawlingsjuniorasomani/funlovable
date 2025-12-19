@@ -60,13 +60,13 @@ export function ParentSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-tertiary to-secondary flex items-center justify-center text-primary-foreground font-bold">
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-sidebar-foreground font-bold">
             {user?.avatar || 'P'}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <p className="font-semibold text-foreground truncate">{user?.name || 'Parent'}</p>
-              <p className="text-xs text-muted-foreground">Parent Account</p>
+              <p className="font-semibold text-sidebar-foreground truncate">{user?.name || 'Parent'}</p>
+              <p className="text-xs text-sidebar-foreground/80">Parent Account</p>
             </div>
           )}
         </div>
@@ -82,7 +82,7 @@ export function ParentSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink to={item.url} end={item.url === "/parent"}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span className="font-bold">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -100,7 +100,7 @@ export function ParentSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink to={item.url}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span className="font-bold">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -118,7 +118,7 @@ export function ParentSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink to={item.url}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span className="font-bold">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -136,7 +136,7 @@ export function ParentSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)}>
                     <NavLink to={item.url}>
                       <item.icon className="w-4 h-4" />
-                      <span>{item.title}</span>
+                      <span className="font-bold">{item.title}</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -149,7 +149,10 @@ export function ParentSidebar() {
       <SidebarFooter className="p-4">
         <Button
           variant="ghost"
-          className={cn("w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10", collapsed && "justify-center")}
+          className={cn(
+            "w-full justify-start text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-white/15",
+            collapsed && "justify-center"
+          )}
           onClick={logout}
         >
           <LogOut className="w-4 h-4" />

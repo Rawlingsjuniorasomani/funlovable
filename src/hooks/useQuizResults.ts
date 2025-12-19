@@ -15,16 +15,7 @@ const STORAGE_KEY = 'quiz_results';
 export function useQuizResults() {
   const [results, setResults] = useState<QuizResult[]>([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setResults(JSON.parse(stored));
-      } catch {
-        setResults([]);
-      }
-    }
-  }, []);
+  // No localStorage persistence - quiz results should come from backend API
 
   const saveResult = useCallback((result: Omit<QuizResult, 'completedAt'>) => {
     const newResult: QuizResult = {
@@ -33,9 +24,8 @@ export function useQuizResults() {
     };
 
     setResults(prev => {
-      const updated = [...prev, newResult];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      return updated;
+      // Store in memory only (not localStorage)
+      return [...prev, newResult];
     });
 
     return newResult;
@@ -64,7 +54,7 @@ export function useQuizResults() {
   }, [results]);
 
   const clearResults = useCallback(() => {
-    localStorage.removeItem(STORAGE_KEY);
+    // Clear in-memory results
     setResults([]);
   }, []);
 

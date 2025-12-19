@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { Eye, EyeOff, GraduationCap, Mail, Lock, User, Sparkles, Phone, School, Calendar, ArrowRight, CheckCircle2 } from "lucide-react";
+import { paymentsAPI, plansAPI } from "@/config/api";
+import { Eye, EyeOff, Mail, Lock, User, Phone, School, Calendar, ArrowRight, CheckCircle2, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { z } from "zod";
+import { AuthLayout } from "@/components/auth/AuthLayout";
+import authHeroOriginal from "@/assets/auth-hero.jpg";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -28,12 +31,12 @@ const registerStep1Schema = z.object({
 });
 
 type AuthMode = 'login' | 'register';
-type RegisterStep = 1 | 2 | 3; // 1: Details, 2: OTP, 3: Success
+type RegisterStep = 1 | 2 | 3; // 1: Details, 2: OTP, 3: Payment
 
 export default function StudentAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const { login, register } = useAuthContext();
+  const { login } = useAuthContext();
 
   const [mode, setMode] = useState<AuthMode>('login');
   const [registerStep, setRegisterStep] = useState<RegisterStep>(1);
@@ -42,6 +45,9 @@ export default function StudentAuth() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [otp, setOtp] = useState("");
+
+  const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+  const [selectedPlanId, setSelectedPlanId] = useState<string>('');
 
   const [formData, setFormData] = useState({
     name: "",
@@ -61,6 +67,26 @@ export default function StudentAuth() {
       setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
+
+  useEffect(() => {
+    const loadPlans = async () => {
+      try {
+        const data = await plansAPI.getAll();
+        const plans = Array.isArray(data) ? data : [];
+        setAvailablePlans(plans);
+        if (!selectedPlanId && plans[0]?.id) {
+          setSelectedPlanId(plans[0].id);
+        }
+      } catch {
+        setAvailablePlans([]);
+      }
+    };
+
+    if (mode === 'register') {
+      loadPlans();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode]);
 
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
@@ -96,38 +122,52 @@ export default function StudentAuth() {
       return;
     }
 
-    // Proceed to register
     try {
+      toast({ title: 'OTP Verified', description: 'Now select a plan and complete payment.' });
+      setRegisterStep(3);
+    } catch (error) {
+      console.error(error);
+      toast({ variant: "destructive", title: "Error", description: "Something went wrong." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleStartStudentPayment = async () => {
+    setIsSubmitting(true);
+    try {
+      if (!selectedPlanId) {
+        toast({ title: 'Select Plan', description: 'Please select a plan to continue.', variant: 'destructive' });
+        return;
+      }
+
       const generatedEmail = `${formData.phone}@edulearn.com`;
-      const result = await register({
+
+      const payload = {
         name: formData.name,
         email: generatedEmail,
         phone: formData.phone,
         password: formData.password,
-        role: 'student',
         school: formData.school,
         age: Number(formData.age),
         studentClass: formData.studentClass,
+      };
+
+      const response = await paymentsAPI.initializeRegistration({
+        email: generatedEmail,
+        role: 'student',
+        planId: selectedPlanId,
+        payload,
       });
 
-      if (result.success) {
-        // Redirect to onboarding/payment workflow instead of just success message
-        // Since we are now logged in (token stored in useAuth logic), we can navigate
-        toast({ title: "Registration Successful", description: "Please complete your subscription." });
-        navigate('/onboarding');
-      } else {
-        setErrors({ email: result.error || 'Registration failed' });
-        // Go back to step 1 if meaningful error? Or stay here?
-        // Staying here might imply OTP issue but error could be 'Email taken'.
-        // If email taken (phone taken), probably should go back.
-        if (result.error?.includes('registered')) {
-          toast({ variant: "destructive", title: "Registration Failed", description: "This phone number is already registered." });
-          setRegisterStep(1);
-        }
+      if (response?.authorization_url) {
+        window.location.href = response.authorization_url;
+        return;
       }
-    } catch (error) {
-      console.error(error);
-      toast({ variant: "destructive", title: "Error", description: "Something went wrong." });
+
+      toast({ title: 'Payment Error', description: 'Failed to initialize payment.', variant: 'destructive' });
+    } catch (error: any) {
+      toast({ title: 'Payment Error', description: error?.message || 'Failed to start payment.', variant: 'destructive' });
     } finally {
       setIsSubmitting(false);
     }
@@ -142,8 +182,6 @@ export default function StudentAuth() {
       const result = await login(formData.email, formData.password);
       if (result.success) {
         toast({ title: "Welcome back!", description: "Ready to learn!" });
-        // Ensure we navigate to student, but if result.user says otherwise, we have a problem.
-        // For StudentAuth, we expect student.
         if (result.user?.role === 'student' && !result.user?.is_onboarded) {
           navigate('/onboarding');
         } else {
@@ -165,139 +203,144 @@ export default function StudentAuth() {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-sky-50 dark:from-blue-950/20 dark:via-indigo-950/20 dark:to-sky-950/20 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-card rounded-3xl p-8 border border-border shadow-lg">
-          {/* Logo */}
-          <div className="text-center mb-6">
-            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-blue-500 via-indigo-500 to-sky-500 flex items-center justify-center mx-auto mb-4 shadow-lg relative">
-              <GraduationCap className="w-10 h-10 text-white" />
-              <Sparkles className="w-5 h-5 text-yellow-300 absolute -top-1 -right-1" />
+  const renderStepper = () => (
+    <div className="flex items-center justify-center mb-6 w-full">
+      <div className="flex items-center gap-4">
+        {[1, 2, 3].map((s) => (
+          <div key={s} className="flex items-center gap-2">
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 transition-all ${registerStep >= s ? "border-primary bg-primary text-primary-foreground" : "border-muted-foreground text-muted-foreground"
+              }`}>
+              {registerStep > s ? <Check className="w-4 h-4" /> : s}
             </div>
-            <h1 className="font-display text-2xl font-bold">
-              {mode === 'login' ? 'Student Login' : 'Student Registration'}
-            </h1>
-            <p className="text-muted-foreground">
-              {mode === 'login' ? 'Continue your learning journey' :
-                registerStep === 1 ? 'Step 1: Personal Details' :
-                  registerStep === 2 ? 'Step 2: Verify Phone' : 'Registration Complete!'}
-            </p>
+            <span className={`text-sm font-medium ${registerStep >= s ? "text-primary" : "text-muted-foreground"}`}>
+              {s === 1 ? "Details" : s === 2 ? "Verify" : "Payment"}
+            </span>
+            {s < 3 && <div className="w-8 h-px bg-border" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <AuthLayout
+      title={mode === 'login' ? "Welcome Back" : "Student Registration"}
+      subtitle={mode === 'login' ? "Sign in to your dashboard" : "Join our learning community"}
+      image={authHeroOriginal}
+    >
+      {/* Mode Toggle */}
+      {registerStep !== 3 && (
+        <div className="text-center mb-6">
+          <p className="text-muted-foreground text-sm">
+            {mode === 'login' ? "Don't have an account? " : "Already have an account? "}
+            <button
+              onClick={() => {
+                setMode(mode === 'login' ? 'register' : 'login');
+                setRegisterStep(1);
+                setErrors({});
+              }}
+              className="text-primary hover:underline font-semibold"
+            >
+              {mode === 'login' ? "Sign Up" : "Sign In"}
+            </button>
+          </p>
+        </div>
+      )}
+
+      {/* Login Form */}
+      {mode === 'login' && (
+        <form onSubmit={handleLogin} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email" className="sr-only">Email</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="Email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`}
+              />
+            </div>
+            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password" className="sr-only">Password</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                id="password"
+                name="password"
+                type={showPassword ? "text" : "password"}
+                placeholder="Password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`pl-10 h-12 pr-10 ${errors.password ? "border-destructive" : ""}`}
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+            {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
           </div>
 
-          {/* Mode Toggle */}
-          {registerStep !== 3 && (
-            <div className="flex bg-muted rounded-lg p-1 mb-6">
-              <button
-                type="button"
-                onClick={() => setMode('login')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${mode === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-                  }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => { setMode('register'); setRegisterStep(1); }}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${mode === 'register' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-                  }`}
-              >
-                Register
-              </button>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <input type="checkbox" id="remember" className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" />
+              <label htmlFor="remember" className="text-sm text-muted-foreground font-medium">Remember me</label>
             </div>
-          )}
+            <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">
+              Forgot Password?
+            </Link>
+          </div>
 
-          {/* Login Form */}
-          {mode === 'login' && (
-            <form onSubmit={handleLogin} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    placeholder="student@email.com"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className={`pl-10 ${errors.email ? "border-destructive" : ""}`}
-                  />
-                </div>
-                {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Enter your password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`}
-                  />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
-              </div>
-              {mode === 'login' && (
-                <div className="flex items-center justify-end">
-                  <a href="#" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                  </a>
-                </div>
-              )}
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600 text-white py-6 text-lg font-semibold" disabled={isSubmitting}>
-                {isSubmitting ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
-          )}
+          <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base font-semibold" disabled={isSubmitting}>
+            {isSubmitting ? "Signing in..." : "Sign In"}
+          </Button>
+        </form>
+      )}
 
-          {/* Register Flow */}
-          {mode === 'register' && registerStep === 1 && (
+      {/* Register Flow */}
+      {mode === 'register' && (
+        <div className="space-y-6">
+          {renderStepper()}
+
+          {registerStep === 1 && (
             <form onSubmit={handleRegisterStep1} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="name" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} className={`pl-10 ${errors.name ? "border-destructive" : ""}`} />
+                  <Input id="name" name="name" placeholder="Full Name" value={formData.name} onChange={handleChange} className={`pl-10 h-12 ${errors.name ? "border-destructive" : ""}`} />
                 </div>
                 {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="phone" name="phone" placeholder="024XXXXXXX" value={formData.phone} onChange={handleChange} className={`pl-10 ${errors.phone ? "border-destructive" : ""}`} />
+                  <Input id="phone" name="phone" placeholder="Phone Number" value={formData.phone} onChange={handleChange} className={`pl-10 h-12 ${errors.phone ? "border-destructive" : ""}`} />
                 </div>
                 {errors.phone && <p className="text-sm text-destructive">{errors.phone}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="school">School</Label>
                 <div className="relative">
                   <School className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="school" name="school" placeholder="School Name" value={formData.school} onChange={handleChange} className={`pl-10 ${errors.school ? "border-destructive" : ""}`} />
+                  <Input id="school" name="school" placeholder="School Name" value={formData.school} onChange={handleChange} className={`pl-10 h-12 ${errors.school ? "border-destructive" : ""}`} />
                 </div>
                 {errors.school && <p className="text-sm text-destructive">{errors.school}</p>}
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="age">Age</Label>
                   <div className="relative">
                     <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                    <Input id="age" name="age" placeholder="Age" value={formData.age} onChange={handleChange} className={`pl-10 ${errors.age ? "border-destructive" : ""}`} />
+                    <Input id="age" name="age" placeholder="Age" value={formData.age} onChange={handleChange} className={`pl-10 h-12 ${errors.age ? "border-destructive" : ""}`} />
                   </div>
                   {errors.age && <p className="text-sm text-destructive">{errors.age}</p>}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="studentClass">Class</Label>
                   <Select value={formData.studentClass} onValueChange={(v) => handleSelectChange('studentClass', v)}>
-                    <SelectTrigger className={errors.studentClass ? "border-destructive" : ""}><SelectValue placeholder="Select" /></SelectTrigger>
+                    <SelectTrigger className={`h-12 ${errors.studentClass ? "border-destructive" : ""}`}><SelectValue placeholder="Class" /></SelectTrigger>
                     <SelectContent>
                       {['Primary 4', 'Primary 5', 'Primary 6', 'JHS 1', 'JHS 2', 'JHS 3'].map(c => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                     </SelectContent>
@@ -306,31 +349,29 @@ export default function StudentAuth() {
                 </div>
               </div>
               <div className="space-y-2">
-                <Label htmlFor="password">Create Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Password" value={formData.password} onChange={handleChange} className={`pl-10 pr-10 ${errors.password ? "border-destructive" : ""}`} />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                  <Input id="password" name="password" type={showPassword ? "text" : "password"} placeholder="Password" value={formData.password} onChange={handleChange} className={`pl-10 h-12 pr-10 ${errors.password ? "border-destructive" : ""}`} />
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                 </div>
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className={`pl-10 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} />
-                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
+                  <Input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? "text" : "password"} placeholder="Confirm Password" value={formData.confirmPassword} onChange={handleChange} className={`pl-10 h-12 pr-10 ${errors.confirmPassword ? "border-destructive" : ""}`} />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground">{showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}</button>
                 </div>
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-6 text-lg font-semibold">
+
+              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold">
                 Next <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </form>
           )}
 
-          {/* OTP Step */}
-          {mode === 'register' && registerStep === 2 && (
+          {registerStep === 2 && (
             <form onSubmit={handleVerifyOtp} className="space-y-6">
               <div className="text-center">
                 <p className="text-sm text-muted-foreground mb-4">Enter the 6-digit code sent to {formData.phone}</p>
@@ -343,44 +384,64 @@ export default function StudentAuth() {
                 />
                 {errors.otp && <p className="text-sm text-destructive mt-2">{errors.otp}</p>}
               </div>
-              <Button type="submit" className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-6 text-lg font-semibold" disabled={isSubmitting}>
-                {isSubmitting ? "Verifying..." : "Verify & Create Account"}
-              </Button>
-              <Button type="button" variant="ghost" className="w-full" onClick={() => setRegisterStep(1)}>Back to Details</Button>
+
+              <div className="flex gap-3">
+                <Button type="button" variant="outline" className="flex-1 h-12" onClick={() => setRegisterStep(1)} disabled={isSubmitting}>
+                  Previous
+                </Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-12" disabled={isSubmitting}>
+                  {isSubmitting ? "Verifying..." : "Next"}
+                </Button>
+              </div>
             </form>
           )}
 
-          {/* Success Step */}
-          {mode === 'register' && registerStep === 3 && (
-            <div className="text-center space-y-6">
-              <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                <CheckCircle2 className="w-10 h-10 text-green-600" />
+          {registerStep === 3 && (
+            <div className="space-y-4">
+              <div className="rounded-xl border border-border p-4 bg-muted/30">
+                <p className="font-medium">Select Plan</p>
+                <p className="text-sm text-muted-foreground">Your student account will be created after payment.</p>
               </div>
-              <h2 className="text-xl font-bold">Registration Successful!</h2>
-              <p className="text-muted-foreground">Your student account is now active.</p>
-              <div className="bg-muted p-4 rounded-lg text-left">
-                <p className="font-semibold text-sm">Login with:</p>
-                <p className="text-sm text-muted-foreground">Phone: {formData.phone}</p>
-                <p className="text-sm text-muted-foreground">Password: *******</p>
-                <p className="text-xs text-yellow-600 mt-2 font-medium">Note: For now, please use email: {`${formData.phone}@edulearn.com`} to login.</p>
-              </div>
-              <Button onClick={() => { setMode('login'); setFormData(prev => ({ ...prev, email: `${formData.phone}@edulearn.com` })); setRegisterStep(1); }} className="w-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white py-6 text-lg font-semibold">
-                Log In Now
-              </Button>
-            </div>
-          )}
 
-          {/* Footer */}
-          {mode === 'login' && (
-            <div className="text-center mt-6 space-y-2">
-              <p className="text-muted-foreground text-sm">
-                Not a student?{" "}
-                <Link to="/login" className="text-primary hover:underline font-semibold">General Login</Link>
-              </p>
+              <div className="space-y-2">
+                <Label>Plan</Label>
+                <select
+                  className="flex h-12 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                  value={selectedPlanId}
+                  onChange={(e) => setSelectedPlanId(e.target.value)}
+                >
+                  {availablePlans.map((p: any) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name} - GHS {Number(p.price).toLocaleString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-12"
+                  onClick={() => setRegisterStep(2)}
+                  disabled={isSubmitting}
+                >
+                  Previous
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleStartStudentPayment}
+                  className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-12"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Starting...' : 'Next'}
+                  {!isSubmitting && <ArrowRight className="w-4 h-4 ml-2" />}
+                </Button>
+              </div>
             </div>
           )}
         </div>
-      </div>
-    </div>
+      )}
+    </AuthLayout>
   );
 }

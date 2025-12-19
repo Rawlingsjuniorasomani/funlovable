@@ -1,3 +1,11 @@
+// DEPRECATED: Shared data should be fetched from backend API
+// Backend endpoints:
+// GET /api/modules
+// GET /api/lessons
+// GET /api/assignments
+// GET /api/quizzes
+// This file is kept for reference but is no longer used
+
 // Shared Data Store - Central data management for teacher-student sync
 // Everything created by teachers automatically syncs to enrolled students
 

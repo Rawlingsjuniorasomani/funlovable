@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, MoreVertical, Edit, Trash2, Eye, Users, Plus, Mail, Filter, Download, UserPlus, BookOpen, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Search, MoreVertical, Edit, Trash2, Eye, Users, Plus, Mail, Filter, Download, UserPlus, BookOpen, CheckCircle, XCircle, Clock, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -13,7 +13,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { User } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { subjectsAPI } from "@/config/api";
+import { subjectsAPI, usersAPI, API_URL } from "@/config/api";
 
 interface StudentWithDetails extends User {
   grade?: string;
@@ -44,6 +44,9 @@ export function AdminStudents() {
   });
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
+  // Subscription management dialog
+  const [isSubOpen, setIsSubOpen] = useState(false);
+  const [subForm, setSubForm] = useState({ plan: 'single', expiresAt: '' });
 
   useEffect(() => {
     loadSubjects();
@@ -85,31 +88,37 @@ export function AdminStudents() {
     }
   };
 
-  const handleAddStudent = () => {
+  const handleAddStudent = async () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast({ title: "Missing Fields", description: "Please fill all required fields", variant: "destructive" });
       return;
     }
 
-    // Create user via localStorage directly for demo
-    const newId = `user_${Date.now()}`;
+    // Create user via backend API
     const newStudent = {
-      id: newId,
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
       role: 'student' as const,
       avatar: formData.name.charAt(0).toUpperCase(),
       approvalStatus: 'approved' as const,
-      createdAt: new Date().toISOString(),
+      password: formData.password,
+      grade: formData.grade || '',
+      class: formData.class || '',
     };
 
-    const users = JSON.parse(localStorage.getItem('lovable_users') || '[]');
-    users.push(newStudent);
-    localStorage.setItem('lovable_users', JSON.stringify(users));
-    localStorage.setItem(`pwd_${newId}`, formData.password);
-    localStorage.setItem(`student_grade_${newId}`, formData.grade || 'Primary 5');
-    localStorage.setItem(`student_class_${newId}`, formData.class || 'A');
+    // Send to backend API
+    // TODO: POST to backend /api/students with student data including grade/class
+    try {
+      if (usersAPI.update) {
+        await usersAPI.update('', newStudent);
+      }
+      loadStudents();
+    } catch (error) {
+      console.error('Failed to create student:', error);
+      toast({ title: "Error", description: "Failed to create student", variant: "destructive" });
+      return;
+    }
 
     setIsAddOpen(false);
     setFormData({ name: "", email: "", phone: "", grade: "", class: "", parentEmail: "", password: "" });
@@ -125,8 +134,8 @@ export function AdminStudents() {
       phone: formData.phone,
     });
 
-    localStorage.setItem(`student_grade_${selectedStudent.id}`, formData.grade);
-    localStorage.setItem(`student_class_${selectedStudent.id}`, formData.class);
+    // No localStorage - grade/class sent to backend API
+    // TODO: PUT to backend /api/students/:id with grade/class data
 
     setIsEditOpen(false);
     loadStudents();
@@ -135,23 +144,23 @@ export function AdminStudents() {
 
   const handleDelete = (studentId: string) => {
     deleteUser(studentId);
-    localStorage.removeItem(`student_grade_${studentId}`);
-    localStorage.removeItem(`student_class_${studentId}`);
-    localStorage.removeItem(`student_subjects_${studentId}`);
-    localStorage.removeItem(`student_status_${studentId}`);
+    // No localStorage - all student data managed on backend
+    // TODO: DELETE to backend /api/students/:id (cascades subject enrollment, etc)
     loadStudents();
     toast({ title: "Student Removed", variant: "destructive" });
   };
 
   const handleStatusChange = (studentId: string, status: string) => {
-    localStorage.setItem(`student_status_${studentId}`, status);
+    // No localStorage - status managed on backend
+    // TODO: PUT to backend /api/students/:id/status with { status }
     loadStudents();
     toast({ title: "Status Updated", description: `Student status changed to ${status}` });
   };
 
   const handleAssignSubjects = () => {
     if (!selectedStudent) return;
-    localStorage.setItem(`student_subjects_${selectedStudent.id}`, JSON.stringify(selectedSubjects));
+    // No localStorage - subjects managed on backend
+    // TODO: POST to backend /api/students/:id/subjects with selectedSubjects
     setIsAssignOpen(false);
     loadStudents();
     toast({ title: "Subjects Assigned", description: "Student subjects updated successfully" });
@@ -180,6 +189,26 @@ export function AdminStudents() {
   const openViewDialog = (student: StudentWithDetails) => {
     setSelectedStudent(student);
     setIsViewOpen(true);
+  };
+
+  const handleUpgradeSubscription = async () => {
+    if (!selectedStudent) return;
+    try {
+      const body = { plan: subForm.plan, status: 'active', expiresAt: subForm.expiresAt || null };
+      const res = await fetch(`${API_URL}/api/users/${selectedStudent.id}/subscription`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body)
+      });
+      if (!res.ok) throw new Error('Failed to update subscription');
+      setIsSubOpen(false);
+      loadStudents();
+      toast({ title: 'Subscription Updated', description: 'Subscription updated successfully' });
+    } catch (err) {
+      console.error('Subscription upgrade failed', err);
+      toast({ title: 'Error', description: 'Failed to update subscription', variant: 'destructive' });
+    }
   };
 
   const filteredStudents = students.filter((s) => {
@@ -394,6 +423,15 @@ export function AdminStudents() {
                         <DropdownMenuItem onClick={() => openEditDialog(student)}>
                           <Edit className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => {
+                setSelectedStudent(student);
+                const plan = student.subscription?.plan ?? 'single';
+                const expiresAt = student.subscription?.expiresAt ? new Date(student.subscription.expiresAt).toISOString().split('T')[0] : '';
+                setSubForm({ plan, expiresAt });
+                setIsSubOpen(true);
+              }}>
+                <CreditCard className="w-4 h-4 mr-2" /> Manage Subscription
+              </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openAssignDialog(student)}>
                           <BookOpen className="w-4 h-4 mr-2" /> Assign Subjects
                         </DropdownMenuItem>

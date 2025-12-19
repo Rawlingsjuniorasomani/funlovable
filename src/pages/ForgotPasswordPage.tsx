@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
             setSubmitted(true);
             toast({
                 title: "Code Sent",
-                description: res.devCode ? `Dev Mode: Your code is ${res.devCode}` : "Check your email for the reset code."
+                description: res.devCode ? `Dev Mode: Your code is ${res.devCode}` : "Check your phone (SMS) for the reset code."
             });
         } catch (error: any) {
             toast({
@@ -60,7 +60,7 @@ export default function ForgotPasswordPage() {
                         <CardHeader className="space-y-1">
                             <CardTitle className="text-2xl font-bold">Forgot Password</CardTitle>
                             <CardDescription>
-                                Enter your email address and we'll send you a code to reset your password.
+                                Enter your email address and we'll send you a code to reset your password via SMS.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

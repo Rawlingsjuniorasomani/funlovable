@@ -35,7 +35,7 @@ export function TeacherOverview() {
       const [subjectsData, quizzesData, lessonsData, liveClassesData, notificationsData] = await Promise.all([
         subjectsAPI.getTeacher(),
         quizzesAPI.getAll(),
-        lessonsAPI.getAll(),
+        lessonsAPI.getAll(user?.id ? { teacherId: user.id } : undefined),
         liveClassesAPI.getAll({ teacher_id: user?.id, status: 'scheduled' }),
         notificationsAPI.getMy()
       ]);
@@ -212,7 +212,7 @@ export function TeacherOverview() {
 
           {/* Recent Quizzes */}
           <div className="space-y-4">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <h2 className="text-xl font-display font-bold flex items-center gap-2">
                 <Award className="w-5 h-5 text-tertiary" />
                 Recent Quizzes
@@ -233,19 +233,19 @@ export function TeacherOverview() {
               <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
                 <div className="divide-y divide-border">
                   {recentQuizzes.map((quiz) => (
-                    <div key={quiz.id} className="p-4 hover:bg-muted/30 transition-colors flex items-center justify-between">
-                      <div className="flex items-center gap-4">
+                    <div key={quiz.id} className="p-4 hover:bg-muted/30 transition-colors flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="flex items-center gap-4 min-w-0">
                         <div className="h-10 w-10 rounded-full bg-tertiary/10 flex items-center justify-center text-tertiary font-bold">
                           Q
                         </div>
-                        <div>
+                        <div className="min-w-0">
                           <h4 className="font-semibold text-foreground">{quiz.title}</h4>
                           <p className="text-sm text-muted-foreground flex items-center gap-2">
                             {quiz.subject_name || "General"} • {quiz.questions || quiz.total_questions || 0} Questions
                           </p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-3 sm:justify-end">
                         <Badge variant={quiz.published || quiz.is_active ? "default" : "outline"}>
                           {quiz.published || quiz.is_active ? "Published" : "Draft"}
                         </Badge>

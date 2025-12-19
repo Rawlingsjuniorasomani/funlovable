@@ -39,6 +39,7 @@ export function AdminSidebar() {
 
   useEffect(() => {
     setMounted(true);
+    if (user?.role !== 'admin') return;
     loadNotifications();
     // Set up polling every minute
     const interval = setInterval(loadNotifications, 60000);

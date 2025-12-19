@@ -1,3 +1,11 @@
+// DEPRECATED: Parent data should be fetched from backend API
+// Backend endpoints:
+// GET /api/parents
+// GET /api/subscriptions
+// GET /api/payments
+// GET /api/parent-children
+// This file is kept for reference but is no longer used
+
 // Central data store for parent registrations, subscriptions, and linked accounts
 // This enables admin visibility of all parent activities
 

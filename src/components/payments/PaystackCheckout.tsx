@@ -21,12 +21,14 @@ export function PaystackCheckout({ amount, email, planName, onSuccess, onClose }
   const { toast } = useToast();
   const [isSuccess, setIsSuccess] = useState(false);
 
+  const publicKey = String((import.meta as any)['env']?.VITE_PAYSTACK_PUBLIC_KEY || '');
+
   const config: PaystackProps = {
     reference: `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     email: email,
     amount: amount * 100,
     currency: 'GHS',
-    publicKey: "pk_test_80bb43d7d72d46674060d9605602ba82cd523119",
+    publicKey,
   };
 
   const initializePayment = usePaystackPayment(config);
@@ -102,6 +104,14 @@ export function PaystackCheckout({ amount, email, planName, onSuccess, onClose }
 
         <Button
           onClick={() => {
+            if (!publicKey) {
+              toast({
+                title: "Payment not configured",
+                description: "Missing Paystack public key.",
+                variant: "destructive",
+              });
+              return;
+            }
             initializePayment({ onSuccess: handleSuccess, onClose: handleClose });
           }}
           className="w-full bg-primary hover:bg-primary/90"

@@ -9,97 +9,7 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { subjectsAPI } from "@/config/api";
 import { toast } from "sonner";
 
-const allSubjects = [
-  {
-    name: "Mathematics",
-    emoji: "🔢",
-    description: "Master numbers, algebra, geometry, and problem-solving skills through interactive lessons.",
-    lessons: 45,
-    duration: "30 hours",
-    students: 2500,
-    grades: ["Primary", "JHS"],
-    color: "from-primary to-primary/60",
-  },
-  {
-    name: "Science",
-    description: "Explore the wonders of biology, chemistry, and physics with hands-on experiments.",
-    lessons: 38,
-    duration: "25 hours",
-    students: 2200,
-    grades: ["Primary", "JHS"],
-    color: "from-secondary to-secondary/60",
-  },
-  {
-    name: "English Language",
-    emoji: "📖",
-    description: "Develop reading, writing, grammar, and communication skills for effective expression.",
-    lessons: 52,
-    duration: "35 hours",
-    students: 3000,
-    grades: ["Primary", "JHS"],
-    color: "from-tertiary to-tertiary/60",
-  },
-  {
-    name: "Social Studies",
-    emoji: "🌍",
-    description: "Understand history, geography, civics, and the world around us.",
-    lessons: 30,
-    duration: "20 hours",
-    students: 1800,
-    grades: ["Primary", "JHS"],
-    color: "from-quaternary to-quaternary/60",
-  },
-  {
-    name: "Creative Arts",
-    emoji: "🎨",
-    description: "Express creativity through art, music, drama, and design activities.",
-    lessons: 25,
-    duration: "18 hours",
-    students: 1500,
-    grades: ["Primary", "JHS"],
-    color: "from-accent to-accent/60",
-  },
-  {
-    name: "ICT",
-    emoji: "💻",
-    description: "Build computer skills and digital literacy for the modern world.",
-    lessons: 28,
-    duration: "22 hours",
-    students: 2000,
-    grades: ["Primary", "JHS"],
-    color: "from-primary to-tertiary",
-  },
-  {
-    name: "French",
-    emoji: "🇫🇷",
-    description: "Learn French language basics, vocabulary, and conversational skills.",
-    lessons: 35,
-    duration: "28 hours",
-    students: 1200,
-    grades: ["Primary", "JHS"],
-    color: "from-secondary to-tertiary",
-  },
-  {
-    name: "Religious & Moral Education",
-    emoji: "🙏",
-    description: "Explore values, ethics, and religious teachings for character development.",
-    lessons: 20,
-    duration: "15 hours",
-    students: 1400,
-    grades: ["Primary", "JHS"],
-    color: "from-tertiary to-quaternary",
-  },
-  {
-    name: "Physical Education",
-    emoji: "⚽",
-    description: "Stay active with sports, fitness activities, and health education.",
-    lessons: 22,
-    duration: "16 hours",
-    students: 1600,
-    grades: ["Primary", "JHS"],
-    color: "from-quaternary to-primary",
-  },
-];
+
 
 const gradeFilters = ["All", "Primary", "JHS"];
 
@@ -206,15 +116,11 @@ const Subjects = () => {
                     style={{ animationDelay: `${index * 0.05}s` }}
                   >
 
-                    <div className="p-6 flex flex-col flex-grow">
-                      <h3 className="font-display font-semibold text-xl mb-2">{subject.name}</h3>
-                      <p className="text-muted-foreground text-sm mb-4 line-clamp-2 flex-grow">
-                        {subject.description}
-                      </p>
+                    <div className="p-8 flex flex-col flex-grow items-center text-center">
+                      <h3 className="font-display font-semibold text-2xl mb-4">{subject.name}</h3>
 
-                      <div className="flex items-center justify-between text-sm text-muted-foreground mb-4">
-                        <span className="flex items-center gap-1">
-                          <BookOpen className="w-4 h-4" />
+                      <div className="flex items-center justify-center text-sm text-muted-foreground mb-6">
+                        <span className="flex items-center gap-1 bg-secondary/10 px-3 py-1 rounded-full">
                           {subject.lessons || 0} lessons
                         </span>
                       </div>

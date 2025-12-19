@@ -70,10 +70,6 @@ export function ParentSubscription() {
         <div className="space-y-8 animate-fade-in p-6">
             <div className="text-center max-w-2xl mx-auto">
                 <h2 className="text-3xl font-display font-bold mb-4">Choose Your Learning Plan</h2>
-                <p className="text-muted-foreground">
-                    Unlock the full potential of your child's education with our flexible subscription plans.
-                    Cancel anytime.
-                </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">

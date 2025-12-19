@@ -16,7 +16,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { subjectsAPI } from "@/config/api";
 import { useMessageStore } from "@/hooks/useMessageStore";
-import { usersAPI } from "@/config/api";
+import { usersAPI, teachersAPI } from "@/config/api";
 
 interface TeacherWithDetails extends User {
   assignedSubjects?: string[];
@@ -56,6 +56,12 @@ export function AdminTeachers() {
 
   const loadTeachers = async () => {
     try {
+      const subjectNameToId = new Map(
+        (Array.isArray(subjects) ? subjects : [])
+          .filter((s: any) => s?.name && s?.id)
+          .map((s: any) => [String(s.name).trim().toLowerCase(), String(s.id)])
+      );
+
       // Fetch teachers from backend API
       const teachers = await usersAPI.getAll({ role: 'teacher' });
       // Backend returns array directly, not wrapped in { users: [...] }
@@ -63,7 +69,11 @@ export function AdminTeachers() {
         ...t,
         approvalStatus: t.is_approved ? 'approved' as const : 'pending' as const,
         onboardingComplete: t.is_onboarded,
-        assignedSubjects: t.subjects_list ? t.subjects_list.split(', ') : [],
+        // Backend returns subjects_list as subject NAMES; map them to IDs using loaded subjects.
+        assignedSubjects: (t.subjects_list ? String(t.subjects_list).split(',') : [])
+          .map((name: string) => name.trim().toLowerCase())
+          .map((name: string) => subjectNameToId.get(name))
+          .filter(Boolean) as string[],
         studentsCount: (t as any).studentsCount || 0,
         classesCreated: (t as any).classesCreated || 0,
         lessonsCreated: (t as any).lessonsCreated || 0,
@@ -86,30 +96,36 @@ export function AdminTeachers() {
 
   useEffect(() => {
     loadTeachers();
-  }, []);
+  }, [subjects.length]);
 
-  const handleAddTeacher = () => {
+  const handleAddTeacher = async () => {
     if (!formData.name || !formData.email || !formData.password) {
       toast({ title: "Missing Fields", description: "Please fill all required fields", variant: "destructive" });
       return;
     }
 
-    const newId = `user_${Date.now()}`;
     const newTeacher = {
-      id: newId,
       name: formData.name,
       email: formData.email,
       phone: formData.phone,
       role: 'teacher' as const,
       avatar: formData.name.charAt(0).toUpperCase(),
       approvalStatus: 'approved' as const,
-      createdAt: new Date().toISOString(),
+      password: formData.password,
     };
 
-    const users = JSON.parse(localStorage.getItem('lovable_users') || '[]');
-    users.push(newTeacher);
-    localStorage.setItem('lovable_users', JSON.stringify(users));
-    localStorage.setItem(`pwd_${newId}`, formData.password);
+    // Send to backend API
+    // TODO: POST to backend /api/teachers with teacher data
+    try {
+      if (usersAPI.update) {
+        await usersAPI.update('', newTeacher);
+      }
+      loadTeachers();
+    } catch (error) {
+      console.error('Failed to create teacher:', error);
+      toast({ title: "Error", description: "Failed to create teacher", variant: "destructive" });
+      return;
+    }
 
     setIsAddOpen(false);
     setFormData({ name: "", email: "", phone: "", password: "" });
@@ -162,17 +178,23 @@ export function AdminTeachers() {
 
   const handleDelete = (teacherId: string) => {
     deleteUser(teacherId);
-    localStorage.removeItem(`teacher_subjects_${teacherId}`);
+    // No localStorage - subjects managed on backend
+    // TODO: DELETE to backend /api/teachers/:id/subjects
     loadTeachers();
     toast({ title: "Teacher Removed", variant: "destructive" });
   };
 
-  const handleAssignSubjects = () => {
+  const handleAssignSubjects = async () => {
     if (!selectedTeacher) return;
-    localStorage.setItem(`teacher_subjects_${selectedTeacher.id}`, JSON.stringify(selectedSubjects));
-    setIsAssignOpen(false);
-    loadTeachers();
-    toast({ title: "Subjects Assigned", description: "Teacher subjects updated successfully" });
+    try {
+      await teachersAPI.assignSubjects(selectedTeacher.id, selectedSubjects);
+      setIsAssignOpen(false);
+      await loadTeachers();
+      toast({ title: "Subjects Assigned", description: "Teacher subjects updated successfully" });
+    } catch (error) {
+      console.error('Failed to assign subjects:', error);
+      toast({ title: "Error", description: "Failed to assign subjects", variant: "destructive" });
+    }
   };
 
   const handleSendEmail = () => {

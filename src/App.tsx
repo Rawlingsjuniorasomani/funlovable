@@ -40,6 +40,8 @@ import HelpCenter from "./pages/HelpCenter";
 import TermsOfService from "./pages/TermsOfService";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
 import FAQ from "./pages/FAQ";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 
 const queryClient = new QueryClient();
 
@@ -69,11 +71,13 @@ const App = () => (
             <Route path="/login" element={<AuthSelector />} />
             <Route path="/register" element={<AuthSelector />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
             <Route path="/student/auth" element={<StudentAuth />} />
             <Route path="/teacher/auth" element={<TeacherAuth />} />
             <Route path="/parent/auth" element={<ParentAuth />} />
-            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/parent/register-flow" element={<ParentRegistrationFlow />} />
+            <Route path="/onboarding" element={<OnboardingPage />} />
             <Route path="/checkout" element={<Checkout />} />
             <Route path="/payment/verify" element={<PaymentVerify />} />
             <Route path="/student/*" element={

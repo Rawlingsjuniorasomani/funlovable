@@ -72,7 +72,7 @@ export default function ResetPasswordPage() {
                         <CardHeader className="space-y-1">
                             <CardTitle className="text-2xl font-bold">Reset Password</CardTitle>
                             <CardDescription>
-                                Enter the code sent to your email and your new password.
+                                Enter the code sent to your phone (SMS) and your new password.
                             </CardDescription>
                         </CardHeader>
                         <CardContent>

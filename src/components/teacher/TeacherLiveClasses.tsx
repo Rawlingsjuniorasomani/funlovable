@@ -71,7 +71,7 @@ export function TeacherLiveClasses() {
   const fetchData = async () => {
     try {
       const [subjectsData, classesData] = await Promise.all([
-        subjectsAPI.getAll(),
+        subjectsAPI.getTeacher(),
         liveClassesAPI.getAll({ teacher_id: user?.id })
       ]);
       setSubjects(subjectsData);

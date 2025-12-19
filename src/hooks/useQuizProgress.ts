@@ -23,19 +23,12 @@ const STORAGE_KEY = "lovable_quiz_progress";
 export function useQuizProgress(quizId: string) {
   const [progress, setProgress] = useState<QuizProgress | null>(null);
 
-  useEffect(() => {
-    const allProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    if (allProgress[quizId]) {
-      setProgress(allProgress[quizId]);
-    }
-  }, [quizId]);
+  // No localStorage persistence - quiz progress should be tracked on backend
 
   const saveProgress = useCallback((newProgress: QuizProgress) => {
-    const allProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    allProgress[quizId] = newProgress;
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allProgress));
+    // Store in memory only (not localStorage)
     setProgress(newProgress);
-  }, [quizId]);
+  }, []);
 
   const startQuiz = useCallback((totalQuestions: number) => {
     const newProgress: QuizProgress = {
@@ -83,11 +76,9 @@ export function useQuizProgress(quizId: string) {
   }, [progress, saveProgress]);
 
   const resetQuiz = useCallback(() => {
-    const allProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-    delete allProgress[quizId];
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allProgress));
+    // Clear in-memory progress
     setProgress(null);
-  }, [quizId]);
+  }, []);
 
   return {
     progress,
@@ -99,8 +90,10 @@ export function useQuizProgress(quizId: string) {
   };
 }
 
-// Get all quiz results
+// Get all quiz results - DEPRECATED
+// All quiz progress should come from backend API
 export function getAllQuizResults(): QuizProgress[] {
-  const allProgress = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
-  return Object.values(allProgress).filter((p: any) => p.completed) as QuizProgress[];
+  // No localStorage - return empty array
+  // TODO: Fetch from backend GET /api/quiz-progress
+  return [];
 }

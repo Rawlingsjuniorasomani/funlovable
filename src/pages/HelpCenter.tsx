@@ -37,10 +37,10 @@ const HelpCenter = () => {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div className="flex items-center gap-3 text-sm">
-                  <Mail className="w-4 h-4 text-muted-foreground" /> support@lovablelearn.com
+                  <Mail className="w-4 h-4 text-muted-foreground" /> info@funlovable.com
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <Phone className="w-4 h-4 text-muted-foreground" /> +233 (0) 55 555 5555
+                  <Phone className="w-4 h-4 text-muted-foreground" /> +233 59 939 5735
                 </div>
                 <Button variant="outline" className="w-full"><MessageSquare className="w-4 h-4 mr-2" /> Start Chat</Button>
               </CardContent>

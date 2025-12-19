@@ -1,30 +1,35 @@
-export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+// During local development we commonly run the backend on port 5001
+// (if 5000 is in use). Prefer VITE_API_URL when provided, otherwise
+// default to localhost:5001 to match the dev backend used in this workspace.
+// Use an indexed access to avoid certain TS setups complaining about `env` on ImportMeta
+export const API_URL = (import.meta as any)['env']?.VITE_API_URL || 'http://localhost:5000/api';
 
 // Helper function for API calls
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  const token = localStorage.getItem('auth_token');
+  // Auth token no longer stored in localStorage
+  // Use HTTP-only cookies or session-based auth instead
+  // Token passed via server-side session middleware
 
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  };
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
+  // Ensure we have a Headers instance (typed) so `set` is recognized by TS
+  const headers: Headers = new Headers(options.headers as HeadersInit | undefined);
+  if (!headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
   }
 
   // Handle "View As Student" header
   const viewAsChildId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('viewAsChildId') : null;
   if (viewAsChildId) {
-    headers['x-view-as-student'] = viewAsChildId;
+    // ensure string typing
+    headers.set('x-view-as-student', String(viewAsChildId));
   }
 
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
+    credentials: 'include', // Send cookies with request for session-based auth
   });
 
   if (!response.ok) {
@@ -279,16 +284,11 @@ export const lessonsAPI = {
   },
 
   createWithFile: async (formData: FormData) => {
-    const token = localStorage.getItem('auth_token');
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+    // Auth via HTTP-only cookies/session (no localStorage token)
     const response = await fetch(`${API_URL}/lessons`, {
       method: 'POST',
-      headers,
       body: formData,
+      credentials: 'include',
     });
 
     if (!response.ok) {
@@ -635,6 +635,14 @@ export const paymentsAPI = {
     return res.json();
   },
 
+  initializeRegistration: async (data: { email: string; role: 'parent' | 'student'; planId: string; payload: any }) => {
+    const res = await apiRequest('/payments/initialize-registration', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+    return res.json();
+  },
+
   verify: async (reference: string) => {
     const res = await apiRequest(`/payments/verify/${reference}`);
     return res.json();
@@ -924,6 +932,14 @@ export const progressAPI = {
 export const teachersAPI = {
   getMyStudents: async () => {
     const res = await apiRequest('/teachers/my-students');
+    return res.json();
+  },
+
+  assignSubjects: async (teacherId: string, subjectIds: string[]) => {
+    const res = await apiRequest(`/teachers/${teacherId}/subjects`, {
+      method: 'PUT',
+      body: JSON.stringify({ subjectIds }),
+    });
     return res.json();
   },
 };

@@ -267,7 +267,7 @@ export default function TeacherAuth() {
                 <input type="checkbox" id="remember" className="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4" />
                 <label htmlFor="remember" className="text-sm text-muted-foreground font-medium">Remember me</label>
               </div>
-              <a href="#" className="text-sm text-primary font-medium hover:underline">Forgot Password?</a>
+              <Link to="/forgot-password" className="text-sm text-primary font-medium hover:underline">Forgot Password?</Link>
             </div>
 
             <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 text-base font-semibold" disabled={isSubmitting}>
@@ -331,9 +331,14 @@ export default function TeacherAuth() {
                 {errors.confirmPassword && <p className="text-sm text-destructive">{errors.confirmPassword}</p>}
               </div>
 
-              <Button type="submit" className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold">
-                Continue <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
+              <div className="flex gap-4 pt-2">
+                <Button type="button" variant="outline" onClick={() => setView('login')} className="flex-1 h-12">
+                  Previous
+                </Button>
+                <Button type="submit" className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground h-12 font-semibold">
+                  Next <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
 
               <div className="text-center">
                 <button type="button" onClick={() => setView('login')} className="text-sm text-muted-foreground hover:text-foreground">

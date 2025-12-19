@@ -1,8 +1,13 @@
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Users, GraduationCap, UserCheck, BookOpen, Target, Video, CreditCard, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { StatsCard, StatsColor } from "@/components/dashboard/StatsCard";
-import { analyticsAPI } from "@/config/api";
+import { analyticsAPI, quizzesAPI, liveClassesAPI } from "@/config/api";
+import { Sparkline } from "@/components/charts/Sparkline";
+import { PieChart } from "@/components/charts/PieChart";
+
+// Small inline sparkline component (no external deps)
+// Charts moved to their own modules under src/components/charts
 
 export function AdminOverview() {
   const [statsData, setStatsData] = useState<any>({
@@ -19,11 +24,34 @@ export function AdminOverview() {
     const fetchStats = async () => {
       try {
         const data = await analyticsAPI.getAdmin();
+        // Also fetch counts for quizzes and live classes
+        const [quizzesRes, liveRes] = await Promise.all([quizzesAPI.getAll(), liveClassesAPI.getAll()]);
         const counts = Array.isArray(data.userCounts) ? data.userCounts : [];
         const getCount = (role: string) => {
           const found = counts.find((c: any) => c.role === role);
           return found ? parseInt(found.count) : 0;
         };
+        const quizzesCount = Array.isArray(quizzesRes) ? quizzesRes.length : (quizzesRes?.quizzes ? quizzesRes.quizzes.length : 0);
+        const liveClassesCount = Array.isArray(liveRes) ? liveRes.length : (liveRes?.classes ? liveRes.classes.length : 0);
+
+        // Calculate growth percent from dailyRevenue (compare last 7 days vs previous 7 days)
+        let growth = '0%';
+        try {
+          const daily = Array.isArray(data.dailyRevenue) ? data.dailyRevenue.map((d: any) => ({ date: d.date, revenue: parseFloat(d.revenue) || 0 })) : [];
+          if (daily.length >= 14) {
+            const sorted = daily.sort((a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime());
+            const last7 = sorted.slice(-7).reduce((s: number, x: any) => s + x.revenue, 0);
+            const prev7 = sorted.slice(-14, -7).reduce((s: number, x: any) => s + x.revenue, 0);
+            if (prev7 === 0) {
+              growth = last7 === 0 ? '0%' : '100%';
+            } else {
+              const pct = ((last7 - prev7) / prev7) * 100;
+              growth = `${pct >= 0 ? '+' : ''}${Math.round(pct)}%`;
+            }
+          }
+        } catch (e) {
+          growth = '0%';
+        }
         setStatsData({
           totalParents: getCount('parent'),
           totalStudents: getCount('student'),
@@ -31,7 +59,13 @@ export function AdminOverview() {
           totalSubjects: data.subjectsCount || 0,
           totalRevenue: data.paymentStats?.total_revenue?.toString?.() || "0.00",
           recentActivity: data.recentActivity || [],
-          systemAlerts: data.systemAlerts || []
+          systemAlerts: data.systemAlerts || [],
+          // Provide chart data so Sparkline and PieChart can render
+          dailyRevenue: Array.isArray(data.dailyRevenue) ? data.dailyRevenue : [],
+          subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
+          activeQuizzes: quizzesCount,
+          liveClasses: liveClassesCount,
+          growth
         });
       } catch (err) {
         console.error("Failed to fetch admin stats", err);
@@ -45,20 +79,20 @@ export function AdminOverview() {
     { label: "Total Students", value: statsData.totalStudents, icon: GraduationCap, color: "green" },
     { label: "Total Teachers", value: statsData.totalTeachers, icon: UserCheck, color: "purple" },
     { label: "Subjects", value: statsData.totalSubjects, icon: BookOpen, color: "orange" },
-    { label: "Active Quizzes", value: "0", icon: Target, color: "pink" },
-    { label: "Live Classes", value: "0", icon: Video, color: "red" },
+    { label: "Active Quizzes", value: statsData.activeQuizzes ?? 0, icon: Target, color: "pink" },
+    { label: "Live Classes", value: statsData.liveClasses ?? 0, icon: Video, color: "red" },
     { label: "Revenue (Total)", value: `GHS ${statsData.totalRevenue}`, icon: CreditCard, color: "teal" },
-    { label: "Growth", value: "0%", icon: TrendingUp, color: "indigo" },
+    { label: "Growth", value: statsData.growth ?? '0%', icon: TrendingUp, color: "indigo" },
   ];
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-display font-bold text-foreground">Admin Dashboard</h1>
+        <h1 className="text-xl sm:text-2xl font-display font-bold text-foreground">Admin Dashboard</h1>
         <p className="text-muted-foreground">Overview of platform performance and metrics</p>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {stats.map((stat, index) => (
           <StatsCard
             key={stat.label}
@@ -74,7 +108,7 @@ export function AdminOverview() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 text-primary" />
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
             Recent Activity
           </CardTitle>
         </CardHeader>
@@ -84,7 +118,7 @@ export function AdminOverview() {
               {statsData.recentActivity.map((activity: any, i: number) => (
                 <div key={i} className="flex items-center justify-between border-b border-border pb-2 last:border-0 last:pb-0">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${activity.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
+                    <div className={`p-1.5 sm:p-2 rounded-full ${activity.type === 'user' ? 'bg-blue-100 text-blue-600' : 'bg-green-100 text-green-600'}`}>
                       {activity.type === 'user' ? <Users className="w-4 h-4" /> : <CreditCard className="w-4 h-4" />}
                     </div>
                     <div>
@@ -107,7 +141,7 @@ export function AdminOverview() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Target className="w-5 h-5 text-red-500" />
+            <Target className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
             System Alerts
           </CardTitle>
         </CardHeader>
@@ -134,6 +168,66 @@ export function AdminOverview() {
           )}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Revenue (Last 30 days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-muted-foreground">Total Revenue</p>
+                <h3 className="text-2xl font-bold">GHS {statsData.totalRevenue}</h3>
+              </div>
+              <div>
+                <Sparkline values={Array.isArray((statsData as any).dailyRevenue) ? (statsData as any).dailyRevenue.map((d: any) => parseFloat(d.revenue || 0)) : []} />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Subscriptions</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-6">
+              <div>
+                {
+                  (() => {
+                    const subsRaw = Array.isArray((statsData as any).subscriptions) ? (statsData as any).subscriptions : [];
+                    const palette = ['#06b6d4','#3b82f6','#f97316','#8b5cf6','#ec4899','#10b981'];
+                    const subs = subsRaw.map((s: any, i: number) => ({ label: s.plan || String(i), value: parseInt(s.count || 0), color: palette[i % palette.length] }));
+                    return <PieChart data={subs} />;
+                  })()
+                }
+              </div>
+              <div>
+                {Array.isArray((statsData as any).subscriptions) && (statsData as any).subscriptions.length > 0 ? (
+                  <div className="space-y-2">
+                    {((statsData as any).subscriptions.map as any ? (statsData as any).subscriptions : []).map((s: any, i: number) => {
+                      const palette = ['#06b6d4','#3b82f6','#f97316','#8b5cf6','#ec4899','#10b981'];
+                      const color = palette[i % palette.length];
+                      return (
+                        <div key={s.plan || i} className="flex items-center gap-2">
+                          <span style={{ background: color }} className="w-3 h-3 rounded-full block" />
+                          <div className="text-sm">
+                            <div className="font-medium">{s.plan || 'None'}</div>
+                            <div className="text-xs text-muted-foreground">{s.count} subscribers</div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No subscription data</p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

@@ -21,8 +21,6 @@ export interface GamificationState {
   achievements: string[];
 }
 
-const STORAGE_KEY = "lovable_gamification";
-
 const XP_PER_LEVEL = 500;
 const XP_REWARDS = {
   quizComplete: 50,
@@ -63,15 +61,11 @@ export function useGamification() {
   const [state, setState] = useState<GamificationState>(defaultState);
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
 
-  useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      setState(JSON.parse(saved));
-    }
-  }, []);
+  // No localStorage persistence - state resets on page reload
+  // In production, gamification data should come from backend API
 
   const saveState = useCallback((newState: GamificationState) => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newState));
+    // Store in memory only (not localStorage)
     setState(newState);
   }, []);
 

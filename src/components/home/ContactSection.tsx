@@ -160,7 +160,7 @@ export function ContactSection() {
                 </div>
                 <div>
                   <h4 className="font-semibold text-slate-900">Email</h4>
-                  <p className="text-slate-600">contact@lovablelearning.com</p>
+                  <p className="text-slate-600">info@funlovable.com</p>
                 </div>
               </div>
 

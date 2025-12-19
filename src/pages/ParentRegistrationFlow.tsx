@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -6,11 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { parentsAPI } from "@/config/api";
-import { useParentData } from "@/data/parentDataStore";
-import { useAdminNotifications } from "@/hooks/useAdminNotifications";
-import { PaystackCheckout } from "@/components/payments/PaystackCheckout";
-import { sendWelcomeSMS, sendSubscriptionSMS, sendPaymentConfirmationSMS, sendChildAddedSMS } from "@/utils/smsService";
+import { plansAPI, paymentsAPI, subjectsAPI } from "@/config/api";
 import { Check, ChevronRight, CreditCard, User, Sparkles, Lock, Mail, Phone } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { z } from "zod";
@@ -27,10 +23,11 @@ const registerSchema = z.object({
 });
 
 const steps = [
-    { id: 1, name: 'Create Account', icon: User },
-    { id: 2, name: 'Add Child', icon: User },
-    { id: 3, name: 'Payment', icon: CreditCard },
-    { id: 4, name: 'Complete', icon: Sparkles },
+    { id: 1, name: 'Select Plan', icon: CreditCard },
+    { id: 2, name: 'Create Account', icon: User },
+    { id: 3, name: 'Add Child', icon: User },
+    { id: 4, name: 'Payment', icon: CreditCard },
+    { id: 5, name: 'Complete', icon: Sparkles },
 ];
 
 const grades = [
@@ -39,7 +36,7 @@ const grades = [
     'JHS 1', 'JHS 2', 'JHS 3',
 ];
 
-const allSubjects = [
+const fallbackSubjects = [
     { id: 'math', name: 'Mathematics', emoji: '🔢' },
     { id: 'english', name: 'English', emoji: '📖' },
     { id: 'science', name: 'Science', emoji: '🔬' },
@@ -50,20 +47,69 @@ const allSubjects = [
     { id: 'rme', name: 'RME', emoji: '📿' },
 ];
 
+function dedupeSubjectsByName(subjects: any[]) {
+    const seen = new Set<string>();
+    const out: any[] = [];
+    for (const s of Array.isArray(subjects) ? subjects : []) {
+        const key = String(s?.name || '').trim().toLowerCase();
+        if (!key) continue;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        out.push(s);
+    }
+    return out;
+}
+
 export default function ParentRegistrationFlow() {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
-    const { user, register, addChild, updateSubscription, completeOnboarding, logout } = useAuthContext();
-    const { registerParent, createSubscription, addPayment, linkChild } = useParentData();
-    const { addNotification } = useAdminNotifications();
+    const { completeOnboarding } = useAuthContext();
 
     // Get plan from Pricing page navigation state
     const preSelectedPlan = location.state?.selectedPlan;
 
     const [currentStep, setCurrentStep] = useState(1);
-    const [showPaystack, setShowPaystack] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const [resolvedPlanId, setResolvedPlanId] = useState<string | null>(null);
+    const [availablePlans, setAvailablePlans] = useState<any[]>([]);
+    const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+    const [subjectOptions, setSubjectOptions] = useState<any[]>(fallbackSubjects);
+
+    useEffect(() => {
+        const loadInitial = async () => {
+            try {
+                const [plans, subjects] = await Promise.all([
+                    plansAPI.getAll(),
+                    subjectsAPI.getAll(),
+                ]);
+
+                const p = Array.isArray(plans) ? plans : [];
+                setAvailablePlans(p);
+
+                // Preselect based on Pricing navigation state if present (by price)
+                const selectedPrice = preSelectedPlan?.priceVal;
+                if (selectedPrice != null) {
+                    const match = p.find((x: any) => Number(x.price) === Number(selectedPrice));
+                    if (match?.id) setSelectedPlanId(match.id);
+                } else if (p[0]?.id) {
+                    setSelectedPlanId(p[0].id);
+                }
+
+                const s = Array.isArray(subjects) ? subjects : [];
+                // If backend returns real subjects, prefer them. Otherwise fallback.
+                if (s.length > 0) {
+                    setSubjectOptions(dedupeSubjectsByName(s));
+                }
+            } catch (e) {
+                // Non-blocking: keep fallbacks
+            }
+        };
+
+        loadInitial();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     // Step 1: Registration State
     const [regData, setRegData] = useState({
@@ -98,7 +144,7 @@ export default function ParentRegistrationFlow() {
             registerSchema.parse(regData);
             // Move to next step without creating account yet
             toast({ title: "Details Saved", description: "Now let's add your child." });
-            setCurrentStep(2);
+            setCurrentStep(3);
         } catch (error) {
             if (error instanceof z.ZodError) {
                 const fieldErrors: Record<string, string> = {};
@@ -128,130 +174,59 @@ export default function ParentRegistrationFlow() {
         }
         // Just move to next step, data is already in state
         toast({ title: "Child Details Saved", description: "Proceeding to payment." });
-        setCurrentStep(3);
+        setCurrentStep(4);
     };
 
-    const handlePaymentSuccess = async (reference: string) => {
+    const resolvePlanIdIfNeeded = async () => {
+        if (resolvedPlanId) return resolvedPlanId;
+        if (selectedPlanId) {
+            setResolvedPlanId(selectedPlanId);
+            return selectedPlanId;
+        }
+
+        const selectedPrice = preSelectedPlan?.priceVal || 300;
+        const plans = availablePlans.length > 0 ? availablePlans : await plansAPI.getAll();
+        const match = Array.isArray(plans) ? plans.find((p: any) => Number(p.price) === Number(selectedPrice)) : null;
+        if (!match?.id) throw new Error('Failed to resolve plan ID');
+        setResolvedPlanId(match.id);
+        return match.id;
+    };
+
+    const handleStartPayment = async () => {
         setIsSubmitting(true);
         try {
-            // 1. Create User Account
-            const regResult = await register({
+            const planId = await resolvePlanIdIfNeeded();
+
+            const payload = {
                 name: regData.name,
                 email: regData.email,
-                password: regData.password,
-                role: 'parent',
                 phone: regData.phone || undefined,
+                password: regData.password,
+                child: {
+                    name: childData.name,
+                    age: parseInt(childData.age),
+                    grade: childData.grade,
+                    studentClass: childData.grade,
+                    subjects: childData.subjects,
+                }
+            };
+
+            const response = await paymentsAPI.initializeRegistration({
+                email: regData.email,
+                role: 'parent',
+                planId,
+                payload
             });
 
-            if (!regResult.success || !regResult.user) {
-                toast({ title: "Registration Failed", description: regResult.error, variant: "destructive" });
-                setIsSubmitting(false);
+            if (response.authorization_url) {
+                window.location.href = response.authorization_url;
                 return;
             }
 
-            const newUser = regResult.user;
-
-            // 2. Register Parent Profile
-            registerParent({
-                name: regData.name,
-                email: regData.email,
-                phone: regData.phone || undefined,
-            });
-
-            addNotification({
-                type: 'new_parent',
-                title: 'New Parent Registration',
-                description: `${regData.name} registered via onboarding flow`,
-                relatedId: newUser.id,
-            });
-
-            if (regData.phone) await sendWelcomeSMS(regData.phone, regData.name);
-
-            // 3. Add Child
-            const childPayload = {
-                name: childData.name,
-                email: `${childData.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
-                age: parseInt(childData.age),
-                grade: childData.grade,
-                subjects: childData.subjects
-            };
-
-            // @ts-ignore - API types might be partial but backend accepts full payload
-            const response = await parentsAPI.addChild(childPayload);
-            const newChild = response.child;
-
-            if (newChild) {
-                linkChild({
-                    parentId: newUser.id,
-                    childId: newChild.id,
-                    childName: newChild.name,
-                    childEmail: response.studentCredentials?.email || `${newChild.name.toLowerCase().replace(/\s/g, '.')}@student.edu`,
-                    role: 'student',
-                    grade: childData.grade,
-                    class: 'A',
-                });
-
-                addNotification({
-                    type: 'new_student',
-                    title: 'New Student Added',
-                    description: `${newUser.name} added ${newChild.name}`,
-                    relatedId: newChild.id,
-                });
-
-                if (newUser.phone) await sendChildAddedSMS(newUser.phone, newUser.name, newChild.name);
-            }
-
-            // 4. Create Subscription & Payment
-            const planName = preSelectedPlan?.name || "Single Child";
-            const planId = preSelectedPlan?.id || "single";
-            const planPrice = preSelectedPlan?.priceVal || 300;
-
-            const now = new Date();
-            const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
-
-            createSubscription({
-                parentId: newUser.id,
-                parentName: newUser.name,
-                parentEmail: newUser.email,
-                plan: planId,
-                planName: planName,
-                amount: planPrice,
-                status: 'active',
-                startDate: now.toISOString().split('T')[0],
-                expiresAt: expiresAt.toISOString().split('T')[0],
-                paymentMethod: 'Paystack',
-                autoRenew: true,
-            });
-
-            addPayment({
-                parentId: newUser.id,
-                parentName: newUser.name,
-                parentEmail: newUser.email,
-                plan: planName,
-                amount: planPrice,
-                status: 'completed',
-                date: now.toISOString(),
-                paymentMethod: 'Paystack',
-            });
-
-            updateSubscription(planId, 'active');
-
-            addNotification({
-                type: 'new_payment',
-                title: 'Payment Received',
-                description: `GHS ${planPrice} from ${newUser.name}`,
-            });
-
-            if (newUser.phone) {
-                await sendSubscriptionSMS(newUser.phone, newUser.name, planName);
-                await sendPaymentConfirmationSMS(newUser.phone, newUser.name, planPrice, reference);
-            }
-
-            setShowPaystack(false);
-            setCurrentStep(4);
-        } catch (error) {
-            console.error("Error during completion:", error);
-            toast({ title: "Error", description: "Something went wrong during account creation.", variant: "destructive" });
+            toast({ title: 'Payment Error', description: 'Failed to initialize payment.', variant: 'destructive' });
+        } catch (error: any) {
+            console.error(error);
+            toast({ title: 'Payment Error', description: error?.message || 'Failed to start payment.', variant: 'destructive' });
         } finally {
             setIsSubmitting(false);
         }
@@ -313,8 +288,37 @@ export default function ParentRegistrationFlow() {
                     </div>
 
                     <div className="max-w-2xl mx-auto">
-                        {/* Step 1: Create Account */}
+                        {/* Step 1: Select Plan */}
                         {currentStep === 1 && (
+                            <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
+                                <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose a Plan</h2>
+                                <p className="text-muted-foreground text-center mb-8">Select the plan you want before creating your account.</p>
+
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Label>Plan</Label>
+                                        <select
+                                            className="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                                            value={selectedPlanId || ''}
+                                            onChange={(e) => setSelectedPlanId(e.target.value)}
+                                        >
+                                            {availablePlans.map((p: any) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.plan_name || p.name} - GHS {Number(p.price).toLocaleString()}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    <Button type="button" className="w-full py-6 text-lg" onClick={() => setCurrentStep(2)} disabled={!selectedPlanId}>
+                                        Continue <ChevronRight className="ml-2 w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Step 1: Create Account */}
+                        {currentStep === 2 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Create Parent Account</h2>
                                 <p className="text-muted-foreground text-center mb-8">First, let's create your account to manage everything.</p>
@@ -364,15 +368,20 @@ export default function ParentRegistrationFlow() {
                                         {regErrors.confirmPassword && <p className="text-sm text-destructive">{regErrors.confirmPassword}</p>}
                                     </div>
 
-                                    <Button type="submit" className="w-full py-6 text-lg mt-4" disabled={isSubmitting}>
-                                        {isSubmitting ? "Creating Account..." : "Create Account & Continue"}
-                                    </Button>
+                                    <div className="flex gap-3 pt-2">
+                                        <Button type="button" variant="outline" className="flex-1 py-6 text-lg" onClick={() => setCurrentStep(1)} disabled={isSubmitting}>
+                                            Previous
+                                        </Button>
+                                        <Button type="submit" className="flex-1 py-6 text-lg" disabled={isSubmitting}>
+                                            {isSubmitting ? "Saving..." : "Next"}
+                                        </Button>
+                                    </div>
                                 </form>
                             </div>
                         )}
 
                         {/* Step 2: Add Child */}
-                        {currentStep === 2 && (
+                        {currentStep === 3 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your First Child</h2>
                                 <p className="text-muted-foreground text-center mb-8">You must add at least one child before payment.</p>
@@ -418,21 +427,23 @@ export default function ParentRegistrationFlow() {
                                                 }}
                                             >
                                                 <option value="" disabled>Add a Subject...</option>
-                                                {allSubjects.filter(s => !childData.subjects.includes(s.id)).map((s) => (
-                                                    <option key={s.id} value={s.id}>
-                                                        {s.emoji} {s.name}
-                                                    </option>
-                                                ))}
+                                                {subjectOptions
+                                                    .filter((s: any) => !childData.subjects.includes(s.id))
+                                                    .map((s: any) => (
+                                                        <option key={s.id} value={s.id}>
+                                                            {(s.emoji ? `${s.emoji} ` : '')}{s.name}
+                                                        </option>
+                                                    ))}
                                             </select>
 
                                             <div className="flex flex-wrap gap-2 min-h-[40px] p-2 rounded-md border border-dashed border-border bg-muted/30">
                                                 {childData.subjects.length === 0 && <span className="text-sm text-muted-foreground p-1">No subjects selected</span>}
                                                 {childData.subjects.map(sid => {
-                                                    const s = allSubjects.find(sub => sub.id === sid);
+                                                    const s = subjectOptions.find((sub: any) => sub.id === sid);
                                                     if (!s) return null;
                                                     return (
                                                         <span key={s.id} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-secondary/10 text-secondary border border-secondary/20 text-sm">
-                                                            {s.emoji} {s.name}
+                                                            {(s.emoji ? `${s.emoji} ` : '')}{s.name}
                                                             <button type="button" onClick={() => handleSubjectToggle(s.id)} className="ml-1 hover:text-destructive">×</button>
                                                         </span>
                                                     );
@@ -441,44 +452,42 @@ export default function ParentRegistrationFlow() {
                                         </div>
                                     </div>
 
-                                    <Button onClick={handleAddChild} className="w-full py-6 text-lg bg-gradient-to-r from-primary to-tertiary">
-                                        Add Child & Proceed to Payment <ChevronRight className="ml-2 w-4 h-4" />
-                                    </Button>
+                                    <div className="flex gap-3 pt-2">
+                                        <Button type="button" variant="outline" className="flex-1 py-6 text-lg" onClick={() => setCurrentStep(2)}>
+                                            Previous
+                                        </Button>
+                                        <Button type="button" onClick={handleAddChild} className="flex-1 py-6 text-lg bg-gradient-to-r from-primary to-tertiary">
+                                            Next <ChevronRight className="ml-2 w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </div>
                             </div>
                         )}
 
                         {/* Step 3: Payment */}
-                        {currentStep === 3 && (
+                        {currentStep === 4 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in text-center">
-                                {!showPaystack ? (
-                                    <>
-                                        <h2 className="font-display text-2xl font-bold mb-4">Confirm Payment</h2>
-                                        <div className="bg-muted p-6 rounded-xl mb-6">
-                                            <p className="text-lg font-medium">{preSelectedPlan?.name || "Subscription Plan"}</p>
-                                            <p className="text-3xl font-bold text-primary my-2">GHS {preSelectedPlan?.priceVal || 400}</p>
-                                            <p className="text-sm text-muted-foreground">Includes full access for {childData.name}</p>
-                                        </div>
-                                        <Button onClick={() => setShowPaystack(true)} className="w-full py-6 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90">
-                                            Pay Now with Paystack
-                                        </Button>
-                                    </>
-                                ) : (
-                                    (
-                                        <PaystackCheckout
-                                            amount={preSelectedPlan?.priceVal || 400}
-                                            email={regData.email}
-                                            planName={preSelectedPlan?.name || "Subscription"}
-                                            onSuccess={handlePaymentSuccess}
-                                            onClose={() => setShowPaystack(false)}
-                                        />
-                                    )
-                                )}
+                                <h2 className="font-display text-2xl font-bold mb-4">Confirm Payment</h2>
+                                <div className="bg-muted p-6 rounded-xl mb-6">
+                                    <p className="text-lg font-medium">Subscription Plan</p>
+                                    <p className="text-3xl font-bold text-primary my-2">
+                                        GHS {Number(availablePlans.find((p: any) => p.id === (resolvedPlanId || selectedPlanId))?.price || preSelectedPlan?.priceVal || 400).toLocaleString()}
+                                    </p>
+                                    <p className="text-sm text-muted-foreground">Your parent & student accounts will be created after payment.</p>
+                                </div>
+                                <div className="flex gap-3">
+                                    <Button type="button" variant="outline" className="flex-1 py-6 text-lg" onClick={() => setCurrentStep(3)} disabled={isSubmitting}>
+                                        Previous
+                                    </Button>
+                                    <Button onClick={handleStartPayment} className="flex-1 py-6 text-lg bg-secondary text-secondary-foreground hover:bg-secondary/90" disabled={isSubmitting}>
+                                        {isSubmitting ? 'Starting...' : 'Next'}
+                                    </Button>
+                                </div>
                             </div>
                         )}
 
                         {/* Step 4: Complete */}
-                        {currentStep === 4 && (
+                        {currentStep === 5 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in text-center">
                                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
                                     <Sparkles className="w-10 h-10 text-green-600" />

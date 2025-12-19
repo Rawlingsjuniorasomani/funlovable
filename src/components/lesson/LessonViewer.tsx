@@ -42,28 +42,18 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
   const overallProgress = (completedSections.size / lesson.sections.length) * 100;
   const totalDuration = lesson.sections.reduce((acc, s) => acc + s.duration, 0);
 
-  // Load saved progress
+  // Load saved progress - DEPRECATED
+  // Lesson progress should be tracked on backend API
   useEffect(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) {
-      const allProgress = JSON.parse(saved);
-      if (allProgress[lesson.id]) {
-        setCompletedSections(new Set(allProgress[lesson.id].completed));
-        setCurrentSectionIndex(allProgress[lesson.id].currentSection || 0);
-      }
-    }
+    // No localStorage persistence
+    // TODO: Fetch from backend GET /api/lessons/:id/progress
   }, [lesson.id]);
 
-  // Save progress
+  // Save progress - DEPRECATED
+  // Lesson progress should be saved to backend API
   const saveProgress = (completed: Set<string>, sectionIndex: number) => {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    const allProgress = saved ? JSON.parse(saved) : {};
-    allProgress[lesson.id] = {
-      completed: Array.from(completed),
-      currentSection: sectionIndex,
-      lastAccessed: new Date().toISOString(),
-    };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(allProgress));
+    // No localStorage persistence
+    // TODO: POST to backend /api/lessons/:id/progress
   };
 
   // Simulate content playback/reading

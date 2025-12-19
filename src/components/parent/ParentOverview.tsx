@@ -26,7 +26,8 @@ export function ParentOverview() {
 
   useEffect(() => {
     loadData();
-  }, [user?.id, user?.children?.length]); // Refetch when user or children count changes
+    // Refetch whenever user or their children list changes
+  }, [user?.id, user?.children?.length]);
 
   if (loading) {
     return (

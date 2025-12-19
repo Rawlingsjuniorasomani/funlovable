@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { SidebarProvider } from "@/components/ui/sidebar";
 import { StudentSidebar } from "@/components/student/StudentSidebar";
@@ -18,18 +18,48 @@ import { StudentSettings } from "@/components/student/StudentSettings";
 import { StudentAnalytics } from "@/components/student/StudentAnalytics";
 import { StudentLessonsPage } from "@/components/student/StudentLessonsPage";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
+import { useAuthContext } from "@/contexts/AuthContext";
+import { subjectsAPI } from "@/config/api";
 
 export default function StudentDashboard() {
-  // Get student ID and enrolled subjects (in real app, from auth context)
-  const studentId = localStorage.getItem('current_user_id') || 'student_1';
-  const enrolledSubjects = JSON.parse(localStorage.getItem(`student_subjects_${studentId}`) || '["math", "science", "english"]');
+  const { user } = useAuthContext();
+  const [enrolledSubjectIds, setEnrolledSubjectIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    const loadEnrolled = async () => {
+      try {
+        const data = await subjectsAPI.getEnrolled();
+        const subjectIds = Array.isArray(data) ? data.map((s: any) => s.id).filter(Boolean) : [];
+        setEnrolledSubjectIds(subjectIds);
+      } catch {
+        setEnrolledSubjectIds([]);
+      }
+    };
+
+    if (user?.id) {
+      loadEnrolled();
+    }
+  }, [user?.id]);
 
   // Connect real-time notifications for teacher content
-  useContentNotifications(studentId, enrolledSubjects);
+  useContentNotifications(user?.id || '', enrolledSubjectIds);
 
   return (
     <SidebarProvider>
-      <div className="h-screen flex w-full bg-background overflow-hidden">
+      <div
+        className="h-screen flex w-full bg-background overflow-hidden"
+        style={
+          {
+            ['--sidebar-background' as any]: '262 83% 34%',
+            ['--sidebar-foreground' as any]: '0 0% 100%',
+            ['--sidebar-accent' as any]: '262 75% 28%',
+            ['--sidebar-accent-foreground' as any]: '0 0% 100%',
+            ['--sidebar-border' as any]: '262 60% 24%',
+            ['--sidebar-primary' as any]: '0 0% 100%',
+            ['--sidebar-primary-foreground' as any]: '262 83% 34%',
+          } as React.CSSProperties
+        }
+      >
         <StudentSidebar />
 
         <main className="flex-1 flex flex-col h-full overflow-hidden">

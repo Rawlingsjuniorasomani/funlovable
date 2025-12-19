@@ -58,13 +58,13 @@ export function StudentSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary via-tertiary to-secondary flex items-center justify-center text-primary-foreground font-bold">
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-sidebar-foreground font-bold">
             {user?.avatar || 'S'}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
-              <p className="font-semibold text-foreground truncate">{user?.name || 'Student'}</p>
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <p className="font-semibold text-sidebar-foreground truncate">{user?.name || 'Student'}</p>
+              <div className="flex items-center gap-1 text-xs text-sidebar-foreground/80">
                 <Flame className="w-3 h-3 text-orange-500" />
                 <span>0 day streak</span>
               </div>
@@ -153,7 +153,10 @@ export function StudentSidebar() {
       <SidebarFooter className="p-4">
         <Button
           variant="ghost"
-          className={cn("w-full justify-start text-destructive hover:text-destructive hover:bg-destructive/10", collapsed && "justify-center")}
+          className={cn(
+            "w-full justify-start text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-white/15",
+            collapsed && "justify-center"
+          )}
           onClick={logout}
         >
           <LogOut className="w-4 h-4" />

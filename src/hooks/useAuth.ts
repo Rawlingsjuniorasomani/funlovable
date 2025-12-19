@@ -24,10 +24,11 @@ export interface User {
   name: string;
   role: UserRole;
   phone?: string;
+  school?: string;
   avatar?: string;
   children?: Child[];
   subscription?: {
-    plan: 'single' | 'family' | null;
+    plan: string | null;
     status: 'active' | 'pending' | 'expired';
     expiresAt?: string;
   };
@@ -260,7 +261,7 @@ export function useAuth() {
     }
   }, []);
 
-  const updateSubscription = useCallback((plan: 'single' | 'family', status: 'active' | 'pending' | 'expired') => {
+  const updateSubscription = useCallback((plan: string, status: 'active' | 'pending' | 'expired') => {
     updateUser({
       subscription: {
         plan,

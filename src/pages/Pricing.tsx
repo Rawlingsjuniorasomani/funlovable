@@ -166,8 +166,8 @@ const Pricing = () => {
                   <Link to="/parent/register-flow" state={{
                     selectedPlan: {
                       name: plan.name,
-                      id: plan.name === "Single Child" ? "single" : "family",
-                      priceVal: plan.name === "Single Child" ? 300 : 1300
+                      id: plan.name === "Single Plan" ? "single" : "family",
+                      priceVal: plan.name === "Single Plan" ? 300 : 1300
                     }
                   }}>
                     <Button

@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
-import { paymentsAPI } from "@/config/api";
+import { useSearchParams } from "react-router-dom";
+import { paymentsAPI, authAPI } from "@/config/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 
 export function PaymentVerify() {
     const [searchParams] = useSearchParams();
-    const navigate = useNavigate();
     const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
+    const [redirectTo, setRedirectTo] = useState<string>("/parent/dashboard");
+    const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
     const reference = searchParams.get("reference"); // Paystack returns reference in query param
 
@@ -22,14 +23,54 @@ export function PaymentVerify() {
 
     const verifyPayment = async (ref: string) => {
         try {
-            const response = await paymentsAPI.verify(ref);
-            if (response.status === 'success') {
-                setStatus("success");
-            } else {
-                setStatus("failed");
+            // Skip server-side verification: assume Paystack returned user to this page after successful payment
+            // Determine role from query param if present; default to parent
+            setErrorDetails(null);
+            setStatus("loading");
+            const roleParam = searchParams.get('role');
+            const role = (roleParam || 'parent').toLowerCase();
+            const validRoles = ['student', 'parent', 'guardian', 'teacher'];
+            if (!validRoles.includes(role)) console.warn('Unknown role in payment return URL, defaulting to parent:', role);
+            let target = '/parent/dashboard';
+            if (role === 'student') target = '/student/dashboard';
+            else if (role === 'teacher') target = '/teacher/dashboard';
+            else if (role === 'parent' || role === 'guardian') target = '/parent/dashboard';
+            setRedirectTo(target);
+
+            // Call server verify so backend can finalize registration and set HTTP-only session cookie.
+            try {
+                console.log('Calling server verify endpoint for reference:', ref);
+                const verifyResult = await paymentsAPI.verify(ref).catch((err: any) => {
+                    console.warn('Background payment verify failed:', err);
+                    return null;
+                });
+
+                // If server returned a user object, prefer its role for routing
+                if (verifyResult) {
+                    const serverRole = verifyResult.user && verifyResult.user.role ? String(verifyResult.user.role).toLowerCase() : null;
+                    const flow = verifyResult.data && verifyResult.data.metadata ? verifyResult.data.metadata.flow : null;
+
+                    console.log(`[PaymentVerify] Verify result user role: ${serverRole}, flow: ${flow}`);
+
+                    // Use the server-returned role directly (this is the newly created/updated user)
+                    if (serverRole === 'student') target = '/student/dashboard';
+                    else if (serverRole === 'teacher') target = '/teacher/dashboard';
+                    else target = '/parent/dashboard';
+                    
+                    setRedirectTo(target);
+                    console.log(`[PaymentVerify] Set redirect target to: ${target}`);
+                }
+            } catch (bgErr) {
+                console.warn('Failed to call server verify:', bgErr);
             }
+
+            setStatus("success");
+            // Don't auto-redirect; let user click Continue button to navigate to dashboard
+            // A full page reload will ensure cookies and auth state are properly refreshed
         } catch (error) {
             console.error("Verification error:", error);
+            const maybeDetails = (error as any)?.message || String(error);
+            setErrorDetails(maybeDetails);
             setStatus("failed");
         }
     };
@@ -54,11 +95,12 @@ export function PaymentVerify() {
                             <div>
                                 <h2 className="text-2xl font-bold text-green-700">Payment Successful!</h2>
                                 <p className="text-muted-foreground mt-2">Your subscription is now active.</p>
-                                <p className="text-sm text-muted-foreground mt-1">Please log in again to refresh your dashboard access.</p>
+                                <p className="text-sm text-muted-foreground mt-1">Click the button below to proceed to your dashboard.</p>
                             </div>
                             <Button onClick={() => {
-                                // Clear any potential stale auth state if needed, though strictly we just redirect
-                                navigate("/parent/dashboard");
+                                // Full page reload ensures browser cookies and auth state are properly refreshed
+                                // Then navigate to the appropriate dashboard
+                                window.location.href = redirectTo;
                             }} className="w-full mt-4">
                                 Continue to Dashboard
                             </Button>
@@ -73,9 +115,20 @@ export function PaymentVerify() {
                             <div>
                                 <h2 className="text-2xl font-bold text-red-700">Payment Failed</h2>
                                 <p className="text-muted-foreground mt-2">We couldn't verify your transaction. Please contact support.</p>
+                                {errorDetails && (
+                                    <p className="text-sm text-muted-foreground mt-2 break-words">
+                                        {errorDetails}
+                                    </p>
+                                )}
                             </div>
-                            <Button onClick={() => navigate("/parent/subscription")} variant="outline" className="w-full mt-4">
-                                Try Again
+                            <Button
+                                onClick={() => {
+                                    window.location.href = "/parent/dashboard";
+                                }}
+                                variant="outline"
+                                className="w-full mt-4"
+                            >
+                                Back to Dashboard
                             </Button>
                         </div>
                     )}

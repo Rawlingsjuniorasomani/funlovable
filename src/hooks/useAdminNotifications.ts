@@ -33,9 +33,7 @@ export const useAdminNotifications = create<AdminNotificationState>()(
 
       loadNotifications: async () => {
         try {
-          const token = localStorage.getItem('auth_token');
-          if (!token) return;
-
+          // Auth handled via HTTP-only cookies/session (no localStorage token)
           const data = await notificationsAPI.getAll();
 
           if (!Array.isArray(data)) return;
@@ -54,6 +52,9 @@ export const useAdminNotifications = create<AdminNotificationState>()(
           }));
           set({ notifications: mapped });
         } catch (error) {
+          const status = (error as any)?.response?.status;
+          // Admin-only endpoint: do not spam console for non-admin sessions
+          if (status === 401 || status === 403) return;
           console.error('Failed to load notifications:', error);
         }
       },
@@ -102,12 +103,7 @@ export const useAdminNotifications = create<AdminNotificationState>()(
     }),
     {
       name: 'admin-notifications-storage',
-      onRehydrateStorage: () => (state) => {
-        // Auto-load on hydration
-        if (state && (state as any).loadNotifications) {
-          (state as any).loadNotifications();
-        }
-      }
+      // Do not auto-load on hydration; AdminSidebar will load when appropriate.
     }
   ) as any
 );

@@ -78,10 +78,9 @@ export default function AuthPage() {
         
         if (result.success) {
           toast({ title: "Welcome back!", description: "Login successful." });
-          // Get user from localStorage to determine redirect
-          const storedUser = localStorage.getItem('lovable_auth');
-          if (storedUser) {
-            const user = JSON.parse(storedUser);
+          // Use user from login result to determine redirect (no localStorage)
+          if (result.user) {
+            const user = result.user;
             const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
 
             if (user.role === 'parent' && !isOnboarded) {
@@ -339,9 +338,9 @@ export default function AuthPage() {
                     <input type="checkbox" className="rounded border-border" />
                     <span className="text-sm text-muted-foreground">Remember me</span>
                   </label>
-                  <a href="#" className="text-sm text-primary hover:underline">
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
                     Forgot password?
-                  </a>
+                  </Link>
                 </div>
               )}
 

@@ -67,13 +67,13 @@ export function TeacherSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-tertiary to-quaternary flex items-center justify-center shrink-0">
-            <GraduationCap className="w-6 h-6 text-primary-foreground" />
+          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+            <GraduationCap className="w-6 h-6 text-sidebar-foreground" />
           </div>
           {!collapsed && (
             <div className="flex flex-col">
-              <span className="font-display font-bold text-foreground">{BRANDING.schoolShortName}</span>
-              <span className="text-xs text-muted-foreground">Teacher Portal</span>
+              <span className="font-display font-bold text-sidebar-foreground">{BRANDING.schoolShortName}</span>
+              <span className="text-xs text-sidebar-foreground/80">Teacher Portal</span>
             </div>
           )}
         </div>
@@ -89,17 +89,11 @@ export function TeacherSidebar() {
                   (item.path !== "/teacher" && location.pathname.startsWith(item.path));
                 return (
                   <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton asChild isActive={isActive}>
                       <NavLink
                         to={item.path}
-                        className={cn(
-                          "flex items-center gap-3 px-3 py-2 rounded-lg transition-colors relative",
-                          isActive
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        )}
                       >
-                        <item.icon className="w-5 h-5 shrink-0" />
+                        <item.icon className="w-4 h-4" />
                         {!collapsed && <span>{item.title}</span>}
                       </NavLink>
                     </SidebarMenuButton>
@@ -113,24 +107,24 @@ export function TeacherSidebar() {
 
       <SidebarFooter className="p-4">
         {!collapsed && (
-          <div className="flex items-center gap-3 p-3 rounded-lg bg-muted/50">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-r from-tertiary to-quaternary flex items-center justify-center text-primary-foreground font-bold">
+          <div className="flex items-center gap-3 p-3 rounded-lg bg-white/10">
+            <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center text-sidebar-foreground font-bold">
               {user?.name?.charAt(0) || 'T'}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium truncate">{user?.name || 'Teacher'}</p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-sm font-medium truncate text-sidebar-foreground">{user?.name || 'Teacher'}</p>
+              <p className="text-xs text-sidebar-foreground/80 truncate">{user?.email}</p>
             </div>
           </div>
         )}
         <button
           onClick={handleLogout}
           className={cn(
-            "flex items-center gap-3 px-3 py-2 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors w-full mt-2",
+            "flex items-center gap-3 px-3 py-2 rounded-lg text-sidebar-foreground/90 hover:bg-white/15 hover:text-sidebar-foreground transition-colors w-full mt-2",
             collapsed && "justify-center"
           )}
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          <LogOut className="w-4 h-4" />
           {!collapsed && <span>Logout</span>}
         </button>
       </SidebarFooter>

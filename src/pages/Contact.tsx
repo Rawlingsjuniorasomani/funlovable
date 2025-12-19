@@ -72,12 +72,12 @@ const Contact = () => {
     try {
       contactSchema.parse(formData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       toast({
         title: "Message Sent!",
         description: "We'll get back to you as soon as possible.",
       });
-      
+
       setFormData({ name: "", email: "", subject: "", message: "" });
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -199,8 +199,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg">Email</h4>
-                      <p className="text-muted-foreground">contact@lovablelearning.com</p>
-                      <p className="text-muted-foreground">support@lovablelearning.com</p>
+                      <p className="text-muted-foreground">info@funlovable.com</p>
+                      <p className="text-muted-foreground">support@funlovable.com</p>
                     </div>
                   </div>
 
@@ -210,8 +210,8 @@ const Contact = () => {
                     </div>
                     <div>
                       <h4 className="font-semibold text-lg">Phone</h4>
-                      <p className="text-muted-foreground">+233 XX XXX XXXX</p>
-                      <p className="text-muted-foreground">+233 XX XXX XXXX</p>
+                      <p className="text-muted-foreground">+233 59 939 5735</p>
+                      <p className="text-muted-foreground"></p>
                     </div>
                   </div>
 

@@ -24,7 +24,20 @@ import { ParentSubscription } from "@/components/parent/ParentSubscription";
 export default function ParentDashboard() {
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div
+        className="min-h-screen flex w-full bg-background"
+        style={
+          {
+            ['--sidebar-background' as any]: '25 95% 53%', // Orange
+            ['--sidebar-foreground' as any]: '0 0% 100%',
+            ['--sidebar-accent' as any]: '25 90% 48%', // Darker Orange
+            ['--sidebar-accent-foreground' as any]: '0 0% 100%',
+            ['--sidebar-border' as any]: '25 85% 45%',
+            ['--sidebar-primary' as any]: '0 0% 100%',
+            ['--sidebar-primary-foreground' as any]: '25 95% 53%',
+          } as React.CSSProperties
+        }
+      >
         <ParentSidebar />
 
         <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
