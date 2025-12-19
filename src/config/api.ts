@@ -2,19 +2,22 @@
 // (if 5000 is in use). Prefer VITE_API_URL when provided, otherwise
 // use production URL for deployed environments
 const vite_env = import.meta.env.MODE;
-export const API_URL = vite_env === 'development' ? 'http://localhost:5000' : 'https://funlovable.onrender.com';
+export const API_URL = vite_env === 'development' ? 'http://localhost:5000' : 'https://funlovable-backends.onrender.com';
 
 // Helper function for API calls
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  // Auth token no longer stored in localStorage
-  // Use HTTP-only cookies or session-based auth instead
-  // Token passed via server-side session middleware
-
   // Ensure we have a Headers instance (typed) so `set` is recognized by TS
   const headers: Headers = new Headers(options.headers as HeadersInit | undefined);
+
+  // Add Authorization header if token exists
+  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
+  if (token) {
+    headers.set('Authorization', `Bearer ${token}`);
+  }
+
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
@@ -62,7 +65,14 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    return res.json();
+    const data = await res.json();
+
+    // Store token in localStorage
+    if (data.token && typeof localStorage !== 'undefined') {
+      localStorage.setItem('auth_token', data.token);
+    }
+
+    return data;
   },
 
   register: async (data: { name: string; email: string; password: string; role: string; phone?: string }) => {
@@ -70,7 +80,14 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify(data),
     });
-    return res.json();
+    const responseData = await res.json();
+
+    // Store token in localStorage
+    if (responseData.token && typeof localStorage !== 'undefined') {
+      localStorage.setItem('auth_token', responseData.token);
+    }
+
+    return responseData;
   },
 
   adminLogin: async (email: string, password: string) => {
@@ -78,7 +95,20 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    return res.json();
+    const data = await res.json();
+
+    // Store token in localStorage
+    if (data.token && typeof localStorage !== 'undefined') {
+      localStorage.setItem('auth_token', data.token);
+    }
+
+    return data;
+  },
+
+  logout: () => {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.removeItem('auth_token');
+    }
   },
 
   getCurrentUser: async () => {

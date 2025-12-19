@@ -133,7 +133,9 @@ export function useAuth() {
   }, []);
 
   const logout = useCallback(() => {
-    // Clear auth state (no localStorage to clear)
+    // Clear token from localStorage
+    authAPI.logout();
+    // Clear auth state
     setAuthState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
