@@ -17,6 +17,7 @@ import { StudentNotifications } from "@/components/student/StudentNotifications"
 import { StudentSettings } from "@/components/student/StudentSettings";
 import { StudentAnalytics } from "@/components/student/StudentAnalytics";
 import { StudentLessonsPage } from "@/components/student/StudentLessonsPage";
+import { StudentSubscription } from "@/components/student/StudentSubscription";
 import { useContentNotifications } from "@/hooks/useContentNotifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { subjectsAPI } from "@/config/api";
@@ -79,6 +80,7 @@ export default function StudentDashboard() {
               <Route path="leaderboard" element={<StudentLeaderboard />} />
               <Route path="messages" element={<StudentMessages />} />
               <Route path="notifications" element={<StudentNotifications />} />
+              <Route path="subscription" element={<StudentSubscription />} />
               <Route path="analytics" element={<StudentAnalytics />} />
               <Route path="settings" element={<StudentSettings />} />
             </Routes>

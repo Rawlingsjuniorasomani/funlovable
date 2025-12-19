@@ -1,6 +1,6 @@
 import {
   Home, BookOpen, Brain, Trophy, Video, TrendingUp,
-  Award, MessageSquare, Bell, Settings, LogOut, Flame, Target, BarChart3
+  Award, MessageSquare, Bell, Settings, LogOut, Flame, Target, BarChart3, CreditCard
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/contexts/AuthContext";
@@ -137,6 +137,14 @@ export function StudentSidebar() {
           <SidebarGroupLabel>Account</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild isActive={isActive("/student/subscription")}>
+                  <NavLink to="/student/subscription">
+                    <CreditCard className="w-4 h-4" />
+                    <span>Subscription</span>
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/student/settings")}>
                   <NavLink to="/student/settings">

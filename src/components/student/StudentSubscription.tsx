@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, CreditCard, Shield, Clock, AlertCircle, Calendar, Users } from "lucide-react";
+import { Check, CreditCard, Shield, Clock, AlertCircle, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import { paymentsAPI, plansAPI, subscriptionsAPI } from "@/config/api";
 import { useAuthContext } from "@/contexts/AuthContext";
-import { useNavigate } from "react-router-dom";
 
 interface Plan {
     id: string;
@@ -29,17 +28,10 @@ interface Subscription {
 
 interface SubscriptionData {
     subscription: Subscription | null;
-    limits: {
-        maxChildren: number;
-    };
-    usage: {
-        childrenCount: number;
-    };
 }
 
-export function ParentSubscription() {
+export function StudentSubscription() {
     const { user } = useAuthContext();
-    const navigate = useNavigate();
     const [plans, setPlans] = useState<Plan[]>([]);
     const [currentSubscription, setCurrentSubscription] = useState<SubscriptionData | null>(null);
     const [loading, setLoading] = useState<string | null>(null);
@@ -128,8 +120,8 @@ export function ParentSubscription() {
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>
-                        <h2 className="text-2xl font-bold mb-1">Current Subscription</h2>
-                        <p className="text-muted-foreground">Manage your plan and billing details</p>
+                        <h2 className="text-2xl font-bold mb-1">My Subscription</h2>
+                        <p className="text-muted-foreground">Manage your learning plan</p>
                     </div>
                     {activeSub && (
                         <div className={`px-4 py-1.5 rounded-full text-sm font-semibold ${activeSub.status === 'active' && !isExpired
@@ -142,7 +134,7 @@ export function ParentSubscription() {
                 </div>
 
                 {activeSub ? (
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
                             <div className="flex items-center gap-3 mb-2">
                                 <Shield className="w-5 h-5 text-primary" />
@@ -164,36 +156,12 @@ export function ParentSubscription() {
                                 {daysRemaining > 0 ? `${daysRemaining} days remaining` : 'Expired'}
                             </p>
                         </div>
-
-                        <div className="p-4 bg-muted/30 rounded-lg border border-border/50">
-                            <div className="flex items-center gap-3 mb-2">
-                                <Users className="w-5 h-5 text-indigo-500" />
-                                <span className="font-medium">Children</span>
-                            </div>
-                            <p className="text-xl font-bold">
-                                {currentSubscription?.usage.childrenCount} / {currentSubscription?.limits.maxChildren}
-                            </p>
-                            <div className="mt-2">
-                                {currentSubscription && currentSubscription.usage.childrenCount < currentSubscription.limits.maxChildren ? (
-                                    <Button
-                                        variant="outline"
-                                        size="sm"
-                                        className="h-8 text-xs w-full"
-                                        onClick={() => navigate('/parent/children')}
-                                    >
-                                        Add Child
-                                    </Button>
-                                ) : (
-                                    <p className="text-xs text-amber-600">Limit reached. Upgrade to add more.</p>
-                                )}
-                            </div>
-                        </div>
                     </div>
                 ) : (
                     <div className="text-center py-8 bg-muted/20 rounded-lg border border-dashed">
                         <AlertCircle className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                         <h3 className="text-lg font-medium">No Active Subscription</h3>
-                        <p className="text-muted-foreground mb-4">Subscribe to a plan to unlock features for your children.</p>
+                        <p className="text-muted-foreground mb-4">Subscribe to a plan to unlock full access.</p>
                     </div>
                 )}
             </div>
@@ -203,7 +171,7 @@ export function ParentSubscription() {
                     {activeSub ? 'Upgrade or Renew Plan' : 'Choose Your Learning Plan'}
                 </h2>
                 <p className="text-muted-foreground">
-                    {activeSub ? 'Switch to a different plan or renew your current one.' : 'Select the best plan for your children\'s education.'}
+                    {activeSub ? 'Switch to a different plan or renew your current one.' : 'Select the best plan for your education.'}
                 </p>
             </div>
 

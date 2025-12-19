@@ -3,6 +3,9 @@
 // default to localhost:5001 to match the dev backend used in this workspace.
 // Use an indexed access to avoid certain TS setups complaining about `env` on ImportMeta
 export const API_URL = (import.meta as any)['env']?.VITE_API_URL || 'http://localhost:5000/api';
+const apiUrl = import.meta.env.VITE_API_URL
+const vite_env = import.meta.env.VITE_ENV
+const api = vite_env === 'development' ? 'http://localhost:5000/api' : 'https://funlovable.onrender.com/api';
 
 // Helper function for API calls
 export const apiRequest = async (
@@ -799,6 +802,23 @@ export const attendanceAPI = {
     return res.json();
   },
 };
+
+// Subscriptions API helpers
+export const subscriptionsAPI = {
+  getMySubscription: async () => {
+    const res = await apiRequest('/subscriptions/me');
+    return res.json();
+  },
+
+  upgrade: async (planId: string) => {
+    const res = await apiRequest('/subscriptions/upgrade', {
+      method: 'POST',
+      body: JSON.stringify({ planId }),
+    });
+    return res.json();
+  },
+};
+
 
 // Grades API helpers
 export const gradesAPI = {

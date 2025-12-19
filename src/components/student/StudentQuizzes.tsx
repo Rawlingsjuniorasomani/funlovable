@@ -25,7 +25,7 @@ export function StudentQuizzes() {
   const loadQuizzes = async () => {
     try {
       setLoading(true);
-      const data = await quizzesAPI.getAll();
+      const data = await quizzesAPI.getAvailable();
       // Map backend data to Quiz interface
       // Note: Backend might not return full questions in list view, but we need to match structure or use partial
       // For now, we assume basic fields map, and we might need to fetch questions separately or map defaults
