@@ -51,9 +51,20 @@ export function PaymentVerify() {
                 // Token storage removed per user request (relying on server-side cookies)
 
 
-                if (serverRole === 'student') target = '/student/dashboard';
-                else if (serverRole === 'teacher') target = '/teacher/dashboard';
-                else target = '/parent/dashboard';
+                // Fix 5: Hard stop admin redirect - Safety Net
+                console.log(`[PaymentVerify] Server returned role: ${serverRole}`);
+
+                if (serverRole === 'admin') {
+                    console.warn("[PaymentVerify] Security Alert: Admin role returned during payment flow. Forcing redirect to parent dashboard.");
+                    target = '/parent/dashboard';
+                } else if (serverRole === 'student') {
+                    target = '/student/dashboard';
+                } else if (serverRole === 'teacher') {
+                    target = '/teacher/dashboard';
+                } else {
+                    // Default to parent
+                    target = '/parent/dashboard';
+                }
 
                 setRedirectTo(target);
             }
