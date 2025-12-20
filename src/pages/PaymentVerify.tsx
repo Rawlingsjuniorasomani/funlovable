@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { paymentsAPI, authAPI } from "@/config/api";
+import { paymentsAPI } from "@/config/api";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
@@ -22,15 +22,11 @@ export function PaymentVerify() {
     }, [reference]);
 
     const verifyPayment = async (ref: string) => {
-
-        // Skip server-side verification: assume Paystack returned user to this page after successful payment
-        // Determine role from query param if present; default to parent
+        // Assume Paystack returned user to this page after successful payment
         setErrorDetails(null);
         setStatus("loading");
         const roleParam = searchParams.get('role');
         const role = (roleParam || 'parent').toLowerCase();
-        const validRoles = ['student', 'parent', 'guardian', 'teacher'];
-        if (!validRoles.includes(role)) console.warn('Unknown role in payment return URL, defaulting to parent:', role);
         let target = '/parent/dashboard';
         if (role === 'student') target = '/student/dashboard';
         else if (role === 'teacher') target = '/teacher/dashboard';
@@ -48,28 +44,20 @@ export function PaymentVerify() {
             // If server returned a user object, prefer its role for routing
             if (verifyResult) {
                 const serverRole = verifyResult.user && verifyResult.user.role ? String(verifyResult.user.role).toLowerCase() : null;
-                const flow = verifyResult.data && verifyResult.data.metadata ? verifyResult.data.metadata.flow : null;
                 const token = verifyResult.token;
 
-                console.log(`[PaymentVerify] Verify result user role: ${serverRole}, flow: ${flow}, hasToken: ${!!token}`);
+                console.log(`[PaymentVerify] Verify result user role: ${serverRole}, hasToken: ${!!token}`);
 
-                // CRITICAL: Store token so we are authenticated
-                if (token && typeof localStorage !== 'undefined') {
-                    console.log(`[PaymentVerify] Storing auth_token in localStorage`);
-                    localStorage.setItem('auth_token', token);
-                    // Force a storage event or just rely on full reload
-                } else {
-                    console.warn('[PaymentVerify] No token returned from verification!');
-                }
+                // Token storage removed per user request (relying on server-side cookies)
 
-                // Use the server-returned role directly (this is the newly created/updated user)
+
                 if (serverRole === 'student') target = '/student/dashboard';
                 else if (serverRole === 'teacher') target = '/teacher/dashboard';
                 else target = '/parent/dashboard';
 
                 setRedirectTo(target);
-                console.log(`[PaymentVerify] Set redirect target to: ${target}`);
             }
+            setStatus("success");
         } catch (error) {
             console.error("Verification error:", error);
             const maybeDetails = (error as any)?.message || String(error);
@@ -98,15 +86,12 @@ export function PaymentVerify() {
                             <div>
                                 <h2 className="text-2xl font-bold text-green-700">Payment Successful!</h2>
                                 <p className="text-muted-foreground mt-2">Your subscription is now active.</p>
-                                <p className="text-sm text-muted-foreground mt-1">Click the button below to proceed to your dashboard.</p>
+                                <Button onClick={() => {
+                                    window.location.href = redirectTo;
+                                }} className="w-full mt-4">
+                                    Continue to Dashboard
+                                </Button>
                             </div>
-                            <Button onClick={() => {
-                                // Full page reload ensures browser cookies and auth state are properly refreshed
-                                // Then navigate to the appropriate dashboard
-                                window.location.href = redirectTo;
-                            }} className="w-full mt-4">
-                                Continue to Dashboard
-                            </Button>
                         </div>
                     )}
 
@@ -117,22 +102,12 @@ export function PaymentVerify() {
                             </div>
                             <div>
                                 <h2 className="text-2xl font-bold text-red-700">Payment Failed</h2>
-                                <p className="text-muted-foreground mt-2">We couldn't verify your transaction. Please contact support.</p>
-                                {errorDetails && (
-                                    <p className="text-sm text-muted-foreground mt-2 break-words">
-                                        {errorDetails}
-                                    </p>
-                                )}
+                                <p className="text-muted-foreground mt-2">We couldn't verify your transaction.</p>
+                                {errorDetails && <p className="text-sm text-muted-foreground mt-2 break-words">{errorDetails}</p>}
+                                <Button onClick={() => window.location.href = "/parent/dashboard"} variant="outline" className="w-full mt-4">
+                                    Back to Dashboard
+                                </Button>
                             </div>
-                            <Button
-                                onClick={() => {
-                                    window.location.href = "/parent/dashboard";
-                                }}
-                                variant="outline"
-                                className="w-full mt-4"
-                            >
-                                Back to Dashboard
-                            </Button>
                         </div>
                     )}
                 </CardContent>
