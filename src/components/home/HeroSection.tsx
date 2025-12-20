@@ -58,7 +58,7 @@ export function HeroSection() {
           </p>
 
           <div className="flex flex-wrap gap-4 justify-center">
-            <Link to="/parent/register-flow">
+            <Link to="/register">
               <Button
                 size="lg"
                 className="h-14 px-8 text-base bg-orange-600 hover:bg-orange-700 text-white border-0 rounded-md transition-transform duration-200 hover:-translate-y-0.5 active:translate-y-0"

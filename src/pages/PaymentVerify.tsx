@@ -49,91 +49,94 @@ export function PaymentVerify() {
                 if (verifyResult) {
                     const serverRole = verifyResult.user && verifyResult.user.role ? String(verifyResult.user.role).toLowerCase() : null;
                     const flow = verifyResult.data && verifyResult.data.metadata ? verifyResult.data.metadata.flow : null;
+                    const token = verifyResult.token;
 
-                    console.log(`[PaymentVerify] Verify result user role: ${serverRole}, flow: ${flow}`);
+                    console.log(`[PaymentVerify] Verify result user role: ${serverRole}, flow: ${flow}, hasToken: ${!!token}`);
+
+                    // CRITICAL: Store token so we are authenticated
+                    if (token && typeof localStorage !== 'undefined') {
+                        console.log(`[PaymentVerify] Storing auth_token in localStorage`);
+                        localStorage.setItem('auth_token', token);
+                        // Force a storage event or just rely on full reload
+                    } else {
+                        console.warn('[PaymentVerify] No token returned from verification!');
+                    }
 
                     // Use the server-returned role directly (this is the newly created/updated user)
                     if (serverRole === 'student') target = '/student/dashboard';
                     else if (serverRole === 'teacher') target = '/teacher/dashboard';
                     else target = '/parent/dashboard';
-                    
+
                     setRedirectTo(target);
                     console.log(`[PaymentVerify] Set redirect target to: ${target}`);
                 }
-            } catch (bgErr) {
-                console.warn('Failed to call server verify:', bgErr);
+            } catch (error) {
+                console.error("Verification error:", error);
+                const maybeDetails = (error as any)?.message || String(error);
+                setErrorDetails(maybeDetails);
+                setStatus("failed");
             }
+        };
 
-            setStatus("success");
-            // Don't auto-redirect; let user click Continue button to navigate to dashboard
-            // A full page reload will ensure cookies and auth state are properly refreshed
-        } catch (error) {
-            console.error("Verification error:", error);
-            const maybeDetails = (error as any)?.message || String(error);
-            setErrorDetails(maybeDetails);
-            setStatus("failed");
-        }
-    };
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                <Card className="w-full max-w-md text-center">
+                    <CardContent className="pt-6 pb-8 space-y-6">
+                        {status === "loading" && (
+                            <div className="flex flex-col items-center gap-4">
+                                <Loader2 className="w-12 h-12 text-primary animate-spin" />
+                                <h2 className="text-xl font-semibold">Verifying Payment...</h2>
+                                <p className="text-muted-foreground">Please wait while we confirm your transaction.</p>
+                            </div>
+                        )}
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-background p-4">
-            <Card className="w-full max-w-md text-center">
-                <CardContent className="pt-6 pb-8 space-y-6">
-                    {status === "loading" && (
-                        <div className="flex flex-col items-center gap-4">
-                            <Loader2 className="w-12 h-12 text-primary animate-spin" />
-                            <h2 className="text-xl font-semibold">Verifying Payment...</h2>
-                            <p className="text-muted-foreground">Please wait while we confirm your transaction.</p>
-                        </div>
-                    )}
+                        {status === "success" && (
+                            <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                    <CheckCircle2 className="w-10 h-10 text-green-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-green-700">Payment Successful!</h2>
+                                    <p className="text-muted-foreground mt-2">Your subscription is now active.</p>
+                                    <p className="text-sm text-muted-foreground mt-1">Click the button below to proceed to your dashboard.</p>
+                                </div>
+                                <Button onClick={() => {
+                                    // Full page reload ensures browser cookies and auth state are properly refreshed
+                                    // Then navigate to the appropriate dashboard
+                                    window.location.href = redirectTo;
+                                }} className="w-full mt-4">
+                                    Continue to Dashboard
+                                </Button>
+                            </div>
+                        )}
 
-                    {status === "success" && (
-                        <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
-                            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                                <CheckCircle2 className="w-10 h-10 text-green-600" />
+                        {status === "failed" && (
+                            <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
+                                <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
+                                    <XCircle className="w-10 h-10 text-red-600" />
+                                </div>
+                                <div>
+                                    <h2 className="text-2xl font-bold text-red-700">Payment Failed</h2>
+                                    <p className="text-muted-foreground mt-2">We couldn't verify your transaction. Please contact support.</p>
+                                    {errorDetails && (
+                                        <p className="text-sm text-muted-foreground mt-2 break-words">
+                                            {errorDetails}
+                                        </p>
+                                    )}
+                                </div>
+                                <Button
+                                    onClick={() => {
+                                        window.location.href = "/parent/dashboard";
+                                    }}
+                                    variant="outline"
+                                    className="w-full mt-4"
+                                >
+                                    Back to Dashboard
+                                </Button>
                             </div>
-                            <div>
-                                <h2 className="text-2xl font-bold text-green-700">Payment Successful!</h2>
-                                <p className="text-muted-foreground mt-2">Your subscription is now active.</p>
-                                <p className="text-sm text-muted-foreground mt-1">Click the button below to proceed to your dashboard.</p>
-                            </div>
-                            <Button onClick={() => {
-                                // Full page reload ensures browser cookies and auth state are properly refreshed
-                                // Then navigate to the appropriate dashboard
-                                window.location.href = redirectTo;
-                            }} className="w-full mt-4">
-                                Continue to Dashboard
-                            </Button>
-                        </div>
-                    )}
-
-                    {status === "failed" && (
-                        <div className="flex flex-col items-center gap-4 animate-in fade-in zoom-in duration-300">
-                            <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center">
-                                <XCircle className="w-10 h-10 text-red-600" />
-                            </div>
-                            <div>
-                                <h2 className="text-2xl font-bold text-red-700">Payment Failed</h2>
-                                <p className="text-muted-foreground mt-2">We couldn't verify your transaction. Please contact support.</p>
-                                {errorDetails && (
-                                    <p className="text-sm text-muted-foreground mt-2 break-words">
-                                        {errorDetails}
-                                    </p>
-                                )}
-                            </div>
-                            <Button
-                                onClick={() => {
-                                    window.location.href = "/parent/dashboard";
-                                }}
-                                variant="outline"
-                                className="w-full mt-4"
-                            >
-                                Back to Dashboard
-                            </Button>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
-        </div>
-    );
-}
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+        );
+    }

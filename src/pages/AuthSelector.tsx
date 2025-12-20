@@ -26,7 +26,7 @@ const authOptions = [
     title: 'Parent',
     description: 'Monitor your children\'s learning progress',
     icon: Users,
-    href: '/parent/auth',
+    href: '/parent/register-flow',
     gradient: 'from-violet-500 via-purple-500 to-fuchsia-500',
     bgGradient: 'from-violet-50 to-purple-50 dark:from-violet-950/20 dark:to-purple-950/20',
   },
