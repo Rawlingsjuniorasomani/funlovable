@@ -122,7 +122,7 @@ export function BreakoutRooms({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-primary" />
@@ -144,7 +144,7 @@ export function BreakoutRooms({
       </div>
 
       <ScrollArea className="flex-1 p-4">
-        {/* Create Room */}
+        { }
         {isHost && !hasActiveRooms && (
           <div className="flex gap-2 mb-4">
             <Input
@@ -159,7 +159,7 @@ export function BreakoutRooms({
           </div>
         )}
 
-        {/* Unassigned Participants */}
+        { }
         {isHost && !hasActiveRooms && unassigned.length > 0 && (
           <Card className="mb-4">
             <CardHeader className="py-3">
@@ -192,7 +192,7 @@ export function BreakoutRooms({
           </Card>
         )}
 
-        {/* Duration Setting */}
+        { }
         {isHost && rooms.length > 0 && !hasActiveRooms && (
           <div className="flex items-center gap-2 mb-4 p-3 bg-muted rounded-lg">
             <Clock className="w-4 h-4" />
@@ -209,7 +209,7 @@ export function BreakoutRooms({
           </div>
         )}
 
-        {/* Rooms */}
+        { }
         <div className="space-y-3">
           {rooms.map(room => (
             <Card

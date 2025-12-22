@@ -33,8 +33,8 @@ export function generateProgressReport(data: ChildReportData): void {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   
-  // Header
-  doc.setFillColor(99, 102, 241); // Primary color
+  
+  doc.setFillColor(99, 102, 241); 
   doc.rect(0, 0, pageWidth, 40, 'F');
   
   doc.setTextColor(255, 255, 255);
@@ -46,7 +46,7 @@ export function generateProgressReport(data: ChildReportData): void {
   doc.setFont('helvetica', 'normal');
   doc.text('Student Progress Report', 20, 32);
   
-  // Student Info Section
+  
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(18);
   doc.setFont('helvetica', 'bold');
@@ -57,7 +57,7 @@ export function generateProgressReport(data: ChildReportData): void {
   doc.setTextColor(100, 100, 100);
   doc.text(`Grade: ${data.grade} | Generated: ${data.generatedDate}`, 20, 63);
   
-  // Stats Box
+  
   const statsY = 75;
   doc.setFillColor(249, 250, 251);
   doc.roundedRect(20, statsY, pageWidth - 40, 30, 3, 3, 'F');
@@ -80,7 +80,7 @@ export function generateProgressReport(data: ChildReportData): void {
     doc.setFontSize(10);
   });
   
-  // Subject Performance Table
+  
   doc.setTextColor(0, 0, 0);
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -116,7 +116,7 @@ export function generateProgressReport(data: ChildReportData): void {
     }
   });
   
-  // Recent Quiz Results
+  
   const quizStartY = (doc as any).lastAutoTable.finalY + 15;
   doc.setFontSize(14);
   doc.setFont('helvetica', 'bold');
@@ -151,13 +151,13 @@ export function generateProgressReport(data: ChildReportData): void {
     }
   });
   
-  // Footer
+  
   const footerY = doc.internal.pageSize.getHeight() - 15;
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(150, 150, 150);
   doc.text('© Lovable Learning - This report was automatically generated', pageWidth / 2, footerY, { align: 'center' });
   
-  // Save the PDF
+  
   doc.save(`${data.childName.replace(' ', '_')}_Progress_Report_${data.generatedDate.replace(/\//g, '-')}.pdf`);
 }

@@ -39,7 +39,7 @@ export function TeacherTopbar({
   return (
     <header className="sticky top-0 z-10 bg-background border-b border-border">
       <div className="flex items-center justify-between px-4 md:px-6 h-16">
-        {/* Mobile Menu Button */}
+        { }
         <Button
           variant="ghost"
           size="icon"
@@ -49,7 +49,7 @@ export function TeacherTopbar({
           {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
         </Button>
 
-        {/* Title */}
+        { }
         <div className="flex items-center gap-3">
           <div className="hidden md:flex w-8 h-8 rounded-lg bg-gradient-to-br from-tertiary to-quaternary items-center justify-center">
             <GraduationCap className="w-5 h-5 text-primary-foreground" />
@@ -57,7 +57,7 @@ export function TeacherTopbar({
           <h1 className="text-lg font-semibold text-foreground">{title}</h1>
         </div>
 
-        {/* Search Bar */}
+        { }
         {showSearch && (
           <div className="hidden lg:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
@@ -73,7 +73,7 @@ export function TeacherTopbar({
           </div>
         )}
 
-        {/* Right Actions */}
+        { }
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

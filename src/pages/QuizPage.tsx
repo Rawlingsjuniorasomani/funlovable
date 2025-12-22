@@ -3,7 +3,7 @@ import { QuizPlayer, QuizQuestion } from "@/components/quiz/QuizPlayer";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
-// Sample quiz data
+
 const sampleQuiz: QuizQuestion[] = [
   {
     id: "q1",

@@ -97,7 +97,7 @@ export function LivePolls({ isHost = true }: LivePollsProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <BarChart3 className="w-5 h-5 text-primary" />
@@ -110,9 +110,9 @@ export function LivePolls({ isHost = true }: LivePollsProps) {
         )}
       </div>
 
-      {/* Content */}
+      { }
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Create Poll Form */}
+        { }
         {isCreating && isHost && (
           <Card className="border-primary">
             <CardHeader className="pb-3">
@@ -146,7 +146,7 @@ export function LivePolls({ isHost = true }: LivePollsProps) {
           </Card>
         )}
 
-        {/* Polls List */}
+        { }
         {polls.map(poll => (
           <Card key={poll.id} className={cn(
             poll.status === 'active' && "border-secondary animate-pulse-subtle"

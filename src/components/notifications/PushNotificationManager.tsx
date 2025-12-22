@@ -38,18 +38,18 @@ export function usePushNotifications() {
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
   useEffect(() => {
-    // No localStorage persistence for notification prefs
-    // Notification permissions are browser-managed, not persisted locally
+    
+    
 
-    // Check notification permission
+    
     if ("Notification" in window) {
       setPermission(Notification.permission);
     }
   }, []);
 
   const savePrefs = (newPrefs: NotificationPrefs) => {
-    // Store in memory only (not localStorage)
-    // TODO: POST to backend /api/user/notification-preferences with newPrefs
+    
+    
     setPrefs(newPrefs);
   };
 

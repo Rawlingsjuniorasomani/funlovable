@@ -30,7 +30,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
         startQuiz();
     }, [quizId]);
 
-    // Timer countdown
+    
     useEffect(() => {
         if (timeLeft <= 0) return;
 
@@ -47,12 +47,12 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
         return () => clearInterval(timer);
     }, [timeLeft]);
 
-    // Track tab visibility for anti-cheat
+    
     useEffect(() => {
         const handleVisibilityChange = () => {
             if (document.hidden && attempt) {
                 console.log("Student left the tab");
-                // Could log this event or warn the student
+                
             }
         };
 
@@ -64,19 +64,19 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
         try {
             setLoading(true);
 
-            // Get quiz details
+            
             const quizData = await quizzesAPI.getById(quizId!);
             setQuiz(quizData);
 
-            // Start attempt
+            
             const attemptData = await quizzesAPI.startAttempt(quizId!);
             setAttempt(attemptData);
 
-            // Get questions (randomized if enabled)
+            
             const questionsData = await quizzesAPI.getQuestions(quizId!, quizData.randomize_questions);
             setQuestions(questionsData);
 
-            // Set timer
+            
             setTimeLeft(quizData.duration_minutes * 60);
 
             toast.success("Quiz started! Good luck!");
@@ -91,7 +91,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
     const handleAnswerChange = async (questionId: string, answer: string) => {
         setAnswers((prev) => ({ ...prev, [questionId]: answer }));
 
-        // Auto-save answer
+        
         try {
             await quizzesAPI.saveAnswer(attempt.id, { question_id: questionId, answer });
         } catch (error) {
@@ -140,7 +140,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
 
     return (
         <div className="max-w-4xl mx-auto space-y-6 pb-10">
-            {/* Header with Timer */}
+            { }
             <Card className="border-2">
                 <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
@@ -162,7 +162,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                 </CardHeader>
             </Card>
 
-            {/* Question Card */}
+            { }
             <Card>
                 <CardHeader>
                     <div className="flex items-start justify-between">
@@ -175,7 +175,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                     </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                    {/* MCQ */}
+                    { }
                     {currentQuestion.question_type === "mcq" && (
                         <RadioGroup
                             value={answers[currentQuestion.id] || ""}
@@ -192,7 +192,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                         </RadioGroup>
                     )}
 
-                    {/* True/False */}
+                    { }
                     {currentQuestion.question_type === "true_false" && (
                         <RadioGroup
                             value={answers[currentQuestion.id] || ""}
@@ -209,7 +209,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                         </RadioGroup>
                     )}
 
-                    {/* Short Answer */}
+                    { }
                     {currentQuestion.question_type === "short_answer" && (
                         <Textarea
                             value={answers[currentQuestion.id] || ""}
@@ -222,7 +222,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                 </CardContent>
             </Card>
 
-            {/* Navigation */}
+            { }
             <div className="flex items-center justify-between">
                 <Button
                     variant="outline"
@@ -256,7 +256,7 @@ export function StudentQuizAttempt({ quizId: propQuizId, onBack }: { quizId?: st
                 )}
             </div>
 
-            {/* Submit Confirmation Dialog */}
+            { }
             <AlertDialog open={showSubmitDialog} onOpenChange={setShowSubmitDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

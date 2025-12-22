@@ -38,12 +38,12 @@ export function HandRaiseQueue({
 
   const raiseHand = () => {
     if (isHandRaised) {
-      // Lower hand
+      
       setQueue(queue.filter(e => e.participantId !== currentUserId));
       setIsHandRaised(false);
       toast.info('Hand lowered');
     } else {
-      // Raise hand
+      
       const newEntry: HandRaiseEntry = {
         id: Date.now().toString(),
         participantId: currentUserId,
@@ -108,7 +108,7 @@ export function HandRaiseQueue({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Hand className="w-5 h-5 text-primary" />
@@ -119,7 +119,7 @@ export function HandRaiseQueue({
         </div>
       </div>
 
-      {/* Student's raise hand button */}
+      { }
       {!isHost && (
         <div className="p-4 border-b border-border">
           <Button 
@@ -138,7 +138,7 @@ export function HandRaiseQueue({
         </div>
       )}
 
-      {/* Queue List */}
+      { }
       <ScrollArea className="flex-1 p-4">
         {queue.length === 0 ? (
           <div className="text-center text-muted-foreground py-8">
@@ -158,19 +158,19 @@ export function HandRaiseQueue({
                   entry.status === 'answered' && "bg-secondary/5 border-secondary/20 opacity-60"
                 )}
               >
-                {/* Position */}
+                { }
                 <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center text-xs font-bold">
                   {index + 1}
                 </div>
 
-                {/* Avatar */}
+                { }
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="text-xs bg-primary text-primary-foreground">
                     {entry.avatar}
                   </AvatarFallback>
                 </Avatar>
 
-                {/* Info */}
+                { }
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <p className="font-medium text-sm truncate">{entry.participantName}</p>
@@ -194,7 +194,7 @@ export function HandRaiseQueue({
                   </div>
                 </div>
 
-                {/* Host Actions */}
+                { }
                 {isHost && (
                   <div className="flex items-center gap-1">
                     <Button 
@@ -249,7 +249,7 @@ export function HandRaiseQueue({
         )}
       </ScrollArea>
 
-      {/* Stats for host */}
+      { }
       {isHost && queue.length > 0 && (
         <div className="p-3 border-t border-border bg-muted/30">
           <div className="flex items-center justify-between text-sm">

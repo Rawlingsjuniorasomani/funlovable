@@ -77,7 +77,7 @@ export function HomepageChatbot() {
     setInput("");
     setIsTyping(true);
 
-    // Simulate bot response delay
+    
     setTimeout(() => {
       const botResponse: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -114,7 +114,7 @@ export function HomepageChatbot() {
       )}
     >
       <div className="bg-card rounded-2xl shadow-2xl border border-border overflow-hidden">
-        {/* Header */}
+        { }
         <div className="bg-gradient-to-r from-primary to-secondary p-4 text-primary-foreground">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -149,7 +149,7 @@ export function HomepageChatbot() {
 
         {!isMinimized && (
           <>
-            {/* Messages */}
+            { }
             <ScrollArea className="h-80 p-4" ref={scrollRef}>
               <div className="space-y-4">
                 {messages.map((msg) => (
@@ -213,7 +213,7 @@ export function HomepageChatbot() {
               </div>
             </ScrollArea>
 
-            {/* Input */}
+            { }
             <div className="p-4 border-t border-border">
               <div className="flex gap-2">
                 <Input

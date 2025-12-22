@@ -8,7 +8,7 @@ export interface FillInBlankQuestionData {
   id: string;
   type: "fill-blank";
   question: string;
-  blanks: string[]; // Correct answers for each blank
+  blanks: string[]; 
   explanation?: string;
 }
 

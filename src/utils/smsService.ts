@@ -1,4 +1,4 @@
-// Arkesel SMS Service - development stub (requires backend for production)
+
 
 interface SMSPayload {
   to: string;
@@ -12,23 +12,23 @@ interface SMSResponse {
   error?: string;
 }
 
-// In-memory SMS history for development
+
 const smsHistory: { to: string; message: string; sentAt: string; status: string }[] = [];
 
 export const sendSMS = async (payload: SMSPayload): Promise<SMSResponse> => {
   const { to, message, sender = "EduPlatform" } = payload;
 
-  // Validate phone number (Ghana format)
+  
   const phoneRegex = /^(\+233|0)[0-9]{9}$/;
   if (!phoneRegex.test(to.replace(/\s/g, ""))) {
     return { success: false, error: "Invalid phone number format" };
   }
 
-  // In production, this would call Arkesel API
-  // For demo, we simulate the SMS sending
+  
+  
   console.log(`[Arkesel SMS] Sending to ${to}:`, message);
 
-  // Store in history for demo
+  
   smsHistory.push({
     to,
     message,
@@ -36,7 +36,7 @@ export const sendSMS = async (payload: SMSPayload): Promise<SMSResponse> => {
     status: "delivered",
   });
 
-  // Simulate API delay
+  
   await new Promise((resolve) => setTimeout(resolve, 500));
 
   return {

@@ -24,7 +24,7 @@ interface MessageStore {
 export const useMessageStore = create<MessageStore>()(
     persist(
         (set, get: () => MessageStore) => ({
-            messages: [], // Initialize with empty array
+            messages: [], 
 
             sendMessage: (messageData) => {
                 const newMessage: Message = {

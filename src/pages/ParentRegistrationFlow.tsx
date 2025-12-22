@@ -66,7 +66,7 @@ export default function ParentRegistrationFlow() {
     const { toast } = useToast();
     const { completeOnboarding } = useAuthContext();
 
-    // Get plan from Pricing page navigation state
+
     const preSelectedPlan = location.state?.selectedPlan;
 
     const [currentStep, setCurrentStep] = useState(1);
@@ -88,7 +88,7 @@ export default function ParentRegistrationFlow() {
                 const p = Array.isArray(plans) ? plans : [];
                 setAvailablePlans(p);
 
-                // Preselect based on Pricing navigation state if present (by price)
+
                 const selectedPrice = preSelectedPlan?.priceVal;
                 if (selectedPrice != null) {
                     const match = p.find((x: any) => Number(x.price) === Number(selectedPrice));
@@ -98,20 +98,20 @@ export default function ParentRegistrationFlow() {
                 }
 
                 const s = Array.isArray(subjects) ? subjects : [];
-                // If backend returns real subjects, prefer them. Otherwise fallback.
+
                 if (s.length > 0) {
                     setSubjectOptions(dedupeSubjectsByName(s));
                 }
             } catch (e) {
-                // Non-blocking: keep fallbacks
+
             }
         };
 
         loadInitial();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+
     }, []);
 
-    // Step 1: Registration State
+
     const [regData, setRegData] = useState({
         name: "",
         email: "",
@@ -121,11 +121,12 @@ export default function ParentRegistrationFlow() {
     });
     const [regErrors, setRegErrors] = useState<Record<string, string>>({});
 
-    // Step 2: Child State
+
     const [childData, setChildData] = useState({
         name: '',
         age: '',
         grade: '',
+        school: '',
         subjects: [] as string[],
     });
 
@@ -142,7 +143,7 @@ export default function ParentRegistrationFlow() {
 
         try {
             registerSchema.parse(regData);
-            // Move to next step without creating account yet
+
             toast({ title: "Details Saved", description: "Now let's add your child." });
             setCurrentStep(3);
         } catch (error) {
@@ -168,11 +169,11 @@ export default function ParentRegistrationFlow() {
     };
 
     const handleAddChild = async () => {
-        if (!childData.name || !childData.age || !childData.grade || childData.subjects.length === 0) {
-            toast({ title: "Missing fields", description: "Please fill in all child details.", variant: "destructive" });
+        if (!childData.name || !childData.age || !childData.grade || !childData.school || childData.subjects.length === 0) {
+            toast({ title: "Missing fields", description: "Please fill in all child details, including school.", variant: "destructive" });
             return;
         }
-        // Just move to next step, data is already in state
+
         toast({ title: "Child Details Saved", description: "Proceeding to payment." });
         setCurrentStep(4);
     };
@@ -207,6 +208,7 @@ export default function ParentRegistrationFlow() {
                     age: parseInt(childData.age),
                     grade: childData.grade,
                     studentClass: childData.grade,
+                    school: childData.school,
                     subjects: childData.subjects,
                 }
             };
@@ -233,7 +235,7 @@ export default function ParentRegistrationFlow() {
     };
 
     const handleComplete = async () => {
-        // Mark onboarding complete and navigate to parent dashboard
+
         try {
             await completeOnboarding();
             toast({ title: "Registration Complete", description: "Welcome! Redirecting to your dashboard." });
@@ -250,7 +252,7 @@ export default function ParentRegistrationFlow() {
             <main className="pt-20 min-h-screen">
                 <div className="container mx-auto px-4 py-8">
 
-                    {/* Progress Steps */}
+                    { }
                     <div className="max-w-3xl mx-auto mb-8">
                         <div className="flex items-center justify-between">
                             {steps.map((step, index) => {
@@ -288,7 +290,7 @@ export default function ParentRegistrationFlow() {
                     </div>
 
                     <div className="max-w-2xl mx-auto">
-                        {/* Step 1: Select Plan */}
+                        { }
                         {currentStep === 1 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Choose a Plan</h2>
@@ -317,7 +319,7 @@ export default function ParentRegistrationFlow() {
                             </div>
                         )}
 
-                        {/* Step 1: Create Account */}
+                        { }
                         {currentStep === 2 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                                 <h2 className="font-display text-2xl font-bold mb-2 text-center">Create Parent Account</h2>
@@ -399,6 +401,13 @@ export default function ParentRegistrationFlow() {
                                     </div>
 
                                     <div className="space-y-2">
+                                        <Label>School Name</Label>
+                                        <div className="relative">
+                                            <Input value={childData.school} onChange={(e) => setChildData({ ...childData, school: e.target.value })} placeholder="Enter School Name" />
+                                        </div>
+                                    </div>
+
+                                    <div className="space-y-2">
                                         <Label>Class</Label>
                                         <div className="relative">
                                             <select
@@ -464,7 +473,7 @@ export default function ParentRegistrationFlow() {
                             </div>
                         )}
 
-                        {/* Step 3: Payment */}
+                        { }
                         {currentStep === 4 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in text-center">
                                 <h2 className="font-display text-2xl font-bold mb-4">Confirm Payment</h2>
@@ -486,7 +495,7 @@ export default function ParentRegistrationFlow() {
                             </div>
                         )}
 
-                        {/* Step 4: Complete */}
+                        { }
                         {currentStep === 5 && (
                             <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in text-center">
                                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">

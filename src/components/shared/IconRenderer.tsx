@@ -9,7 +9,7 @@ export const iconMap: Record<string, any> = {
     "Beaker": Beaker,
     "Globe": Globe,
     "Monitor": Monitor,
-    "Computer": Monitor, // Alias
+    "Computer": Monitor, 
     "Music": Music,
     "Palette": Palette,
     "Dna": Dna,
@@ -19,7 +19,7 @@ export const iconMap: Record<string, any> = {
     "FileText": FileText,
     "Video": Video,
     "Layers": Layers,
-    // Add more as needed based on seed data
+    
 };
 
 export const IconRenderer = ({ iconName, className }: { iconName: string; className?: string }) => {
@@ -29,7 +29,7 @@ export const IconRenderer = ({ iconName, className }: { iconName: string; classN
         return <IconComponent className={className} />;
     }
 
-    // If map fails, try to see if it's an emoji (simple length check or regex, usually length 1-2)
-    // Or just render text if it's not a known icon
+    
+    
     return <span className={className}>{iconName}</span>;
 };

@@ -38,7 +38,7 @@ export function Sparkline({ values, width = 220, height = 48 }: SparklineProps) 
           </linearGradient>
         </defs>
         <polyline points={points} fill="none" stroke="#10b981" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-        {/* area under line */}
+        { }
         <polygon points={`${0},${height} ${points} ${(values.length - 1) * step},${height}`} fill="url(#spark-gradient)" />
         <circle cx={(values.length - 1) * step} cy={height - ((last - min) / range) * height} r={3} fill="#059669" />
       </svg>

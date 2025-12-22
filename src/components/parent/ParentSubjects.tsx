@@ -10,7 +10,7 @@ export function ParentSubjects() {
         <p className="text-muted-foreground">Track progress across all enrolled subjects</p>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <BookOpen className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Enrolled Subjects</h3>

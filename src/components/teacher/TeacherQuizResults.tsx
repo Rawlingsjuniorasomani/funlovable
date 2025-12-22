@@ -54,7 +54,7 @@ export function TeacherQuizResults() {
                 <p className="text-muted-foreground">Quiz Results & Analytics</p>
             </div>
 
-            {/* Summary Stats */}
+            { }
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <Card>
                     <CardContent className="pt-6">
@@ -105,7 +105,7 @@ export function TeacherQuizResults() {
                 </Card>
             </div>
 
-            {/* Student Results Table */}
+            { }
             <Card>
                 <CardHeader>
                     <CardTitle>Student Results</CardTitle>

@@ -44,7 +44,7 @@ export function StudentSettings() {
       toast({ title: "Error", description: "New passwords do not match.", variant: "destructive" });
       return;
     }
-    // Simulate API call
+    
     toast({ title: "Password updated", description: "Your password has been changed." });
     setPasswordData({ currentPassword: '', newPassword: '', confirmPassword: '' });
   };
@@ -57,7 +57,7 @@ export function StudentSettings() {
   return (
     <div className="container max-w-5xl mx-auto space-y-8 animate-fade-in pb-10">
 
-      {/* Header Profile Card */}
+      { }
       <div className="bg-gradient-to-r from-primary/10 via-purple-500/5 to-secondary/10 p-8 rounded-3xl border border-primary/10 flex flex-col md:flex-row items-center gap-6 shadow-sm">
         <div className="relative group">
           <Avatar className="w-24 h-24 md:w-32 md:h-32 border-4 border-background shadow-xl">
@@ -90,7 +90,7 @@ export function StudentSettings() {
         </div>
       </div>
 
-      {/* Main Settings Tabs */}
+      { }
       <Tabs defaultValue="profile" className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:w-[400px] bg-muted/50 p-1 mb-8">
           <TabsTrigger value="profile">Profile</TabsTrigger>
@@ -98,7 +98,7 @@ export function StudentSettings() {
           <TabsTrigger value="security">Security</TabsTrigger>
         </TabsList>
 
-        {/* Profile Content */}
+        { }
         <TabsContent value="profile" className="space-y-6">
           <Card>
             <CardHeader>
@@ -156,7 +156,7 @@ export function StudentSettings() {
           </Card>
         </TabsContent>
 
-        {/* Notifications Content */}
+        { }
         <TabsContent value="notifications" className="space-y-6">
           <Card>
             <CardHeader>
@@ -198,7 +198,7 @@ export function StudentSettings() {
           </Card>
         </TabsContent>
 
-        {/* Security Content */}
+        { }
         <TabsContent value="security" className="space-y-6">
           <Card>
             <CardHeader>

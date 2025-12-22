@@ -43,7 +43,7 @@ export function TeacherMessages() {
   const { user } = useAuthContext();
   const [allMessages, setAllMessages] = useState<Message[]>([]);
 
-  // Load inbox from backend
+  
   useEffect(() => {
     const loadMessages = async () => {
       if (!user) return;
@@ -51,20 +51,20 @@ export function TeacherMessages() {
       try {
         const [inbox, sent, announcements] = await Promise.all([
           messagingAPI.getInbox(),
-          messagingAPI.getSent ? messagingAPI.getSent() : Promise.resolve([]), // Check if getSent exists in API
+          messagingAPI.getSent ? messagingAPI.getSent() : Promise.resolve([]), 
           messagingAPI.getAnnouncements ? messagingAPI.getAnnouncements() : Promise.resolve([])
         ]);
 
         const mapMessage = (m: any, source: 'inbox' | 'sent' | 'announcement') => ({
           id: String(m.id),
-          from: String(m.sender_id || m.teacher_id), // sender_id for msg, teacher_id for announcement
+          from: String(m.sender_id || m.teacher_id), 
           fromName: m.sender_name || m.teacher_name || (source === 'sent' ? 'Me' : 'Unknown'),
           to: String(m.recipient_id || (m.class_name ? `Class: ${m.class_name}` : 'all')),
           subject: m.subject || m.title || "(No subject)",
           content: m.message || m.content || "",
           type: (m.type || (source === 'announcement' ? 'announcement' : 'message')) as Message["type"],
           sentAt: m.created_at || new Date().toISOString(),
-          read: !!m.is_read || (source === 'sent'), // Sent msgs read by default
+          read: !!m.is_read || (source === 'sent'), 
         });
 
         const mappedInbox = (Array.isArray(inbox) ? inbox : []).map(m => mapMessage(m, 'inbox'));
@@ -73,7 +73,7 @@ export function TeacherMessages() {
 
         const combined = [...mappedInbox, ...mappedSent, ...mappedAnnouncements];
 
-        // Sort newest first
+        
         combined.sort((a, b) => new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime());
         setAllMessages(combined);
       } catch (error) {
@@ -85,7 +85,7 @@ export function TeacherMessages() {
     loadMessages();
   }, [user, toast]);
 
-  // Filter messages for current user
+  
   const messages = allMessages.filter(m =>
     m.to === user?.id ||
     m.to === 'all' ||
@@ -102,7 +102,7 @@ export function TeacherMessages() {
     type: "message" as Message["type"],
   });
 
-  const unreadCount = messages.filter(m => !m.read && m.to === user?.id).length; // Use dynamic user ID
+  const unreadCount = messages.filter(m => !m.read && m.to === user?.id).length; 
   const sentMessages = messages.filter(m => m.from === user?.id);
   const receivedMessages = messages.filter(m => m.to === user?.id || m.to === 'all');
 
@@ -124,17 +124,17 @@ export function TeacherMessages() {
     };
 
     try {
-      // For announcements / broadcasts, prefer the announcements endpoint
+      
       if (composeForm.type !== "message" || composeForm.to === "all" || composeForm.to === "parents") {
         await messagingAPI.createAnnouncement({
-          subject_id: undefined, // could be wired to a subject filter later
+          subject_id: undefined, 
           class_name: undefined,
           title: baseMessage.subject,
           content: baseMessage.content,
           priority: composeForm.type === "alert" ? "high" : "normal",
         });
       } else {
-        // Direct message to a specific recipient
+        
         await messagingAPI.send({
           recipient_id: baseMessage.to,
           subject: baseMessage.subject,
@@ -142,7 +142,7 @@ export function TeacherMessages() {
         });
       }
 
-      // Optimistically add to local list
+      
       const newMessage: Message = {
         ...baseMessage,
         id: `msg_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -173,7 +173,7 @@ export function TeacherMessages() {
   };
 
   const handleDelete = (id: string) => {
-    // No backend delete endpoint yet; perform local delete only
+    
     setAllMessages(prev => prev.filter(m => m.id !== id));
     setSelectedMessage(null);
     toast({ title: "Message deleted", variant: "destructive" });
@@ -260,7 +260,7 @@ export function TeacherMessages() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
-        {/* Message List */}
+        { }
         <div className="lg:col-span-1 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           <div className="p-4 border-b border-border">
             <div className="relative">
@@ -352,7 +352,7 @@ export function TeacherMessages() {
           </Tabs>
         </div>
 
-        {/* Message Detail */}
+        { }
         <div className="lg:col-span-2 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           {selectedMessage ? (
             <>

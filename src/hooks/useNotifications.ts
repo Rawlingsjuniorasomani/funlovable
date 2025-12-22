@@ -13,10 +13,10 @@ export interface Notification {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
-  // No localStorage persistence - notifications should come from backend API
+  
 
   const saveNotifications = useCallback((newNotifications: Notification[]) => {
-    // Store in memory only (not localStorage)
+    
     setNotifications(newNotifications);
   }, []);
 

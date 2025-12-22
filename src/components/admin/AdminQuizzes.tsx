@@ -39,7 +39,7 @@ export function AdminQuizzes() {
         quizzesAPI.getAll()
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
-      // Normalize modules so we always have subjectId available
+      
       const normalizedModules = (Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
         ...m,
         subjectId: m.subject_id || m.subjectId,
@@ -47,11 +47,11 @@ export function AdminQuizzes() {
       setModules(normalizedModules);
       setQuizzes((Array.isArray(quizzesData) ? quizzesData : []).map((q: any) => ({
         ...q,
-        subjectId: q.subject_id || q.subjectId, // Ensure subjectId is resolved if part of module or direct
+        subjectId: q.subject_id || q.subjectId, 
         moduleId: q.module_id || q.moduleId,
-        questionCount: q.questions_count || 10, // Placeholder if not in DB
+        questionCount: q.questions_count || 10, 
         duration: q.time_limit_minutes || q.duration || 15,
-        status: q.is_active ? 'active' : 'draft', // Map boolean to status
+        status: q.is_active ? 'active' : 'draft', 
         attempts: q.attempts_count || 0,
         avgScore: q.avg_score || 0,
       })));

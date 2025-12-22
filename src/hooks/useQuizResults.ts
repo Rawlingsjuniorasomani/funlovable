@@ -7,15 +7,15 @@ export interface QuizResult {
   percentage: number;
   xpEarned: number;
   completedAt: string;
-  timeSpent: number; // in seconds
+  timeSpent: number; 
 }
 
-const STORAGE_KEY = 'quiz_results';
+
 
 export function useQuizResults() {
   const [results, setResults] = useState<QuizResult[]>([]);
 
-  // No localStorage persistence - quiz results should come from backend API
+  
 
   const saveResult = useCallback((result: Omit<QuizResult, 'completedAt'>) => {
     const newResult: QuizResult = {
@@ -24,7 +24,7 @@ export function useQuizResults() {
     };
 
     setResults(prev => {
-      // Store in memory only (not localStorage)
+      
       return [...prev, newResult];
     });
 
@@ -38,7 +38,7 @@ export function useQuizResults() {
   const getBestResult = useCallback((quizId: string) => {
     const quizResults = results.filter(r => r.quizId === quizId);
     if (quizResults.length === 0) return null;
-    return quizResults.reduce((best, current) => 
+    return quizResults.reduce((best, current) =>
       current.percentage > best.percentage ? current : best
     );
   }, [results]);
@@ -47,14 +47,14 @@ export function useQuizResults() {
     const completed = results.length;
     const uniqueQuizzes = new Set(results.map(r => r.quizId)).size;
     const totalXP = results.reduce((sum, r) => sum + r.xpEarned, 0);
-    const avgScore = completed > 0 
+    const avgScore = completed > 0
       ? Math.round(results.reduce((sum, r) => sum + r.percentage, 0) / completed)
       : 0;
     return { completed, uniqueQuizzes, totalXP, avgScore };
   }, [results]);
 
   const clearResults = useCallback(() => {
-    // Clear in-memory results
+    
     setResults([]);
   }, []);
 

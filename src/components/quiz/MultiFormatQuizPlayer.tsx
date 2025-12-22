@@ -17,10 +17,10 @@ interface MultiFormatQuizPlayerProps {
 }
 
 export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormatQuizPlayerProps) {
-  const { progress, startQuiz, answerQuestion, completeQuiz, resetQuiz } = useQuizProgress(quiz.id);
+  const { progress, startQuiz, answerQuestion, completeQuiz, resetQuiz, loading } = useQuizProgress(quiz.id);
   const { completeQuiz: awardXP } = useGamification();
   const { addNotification } = useNotifications();
-  
+
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showResult, setShowResult] = useState(false);
   const [timeLeft, setTimeLeft] = useState(quiz.duration * 60);
@@ -33,7 +33,15 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
   const currentQuestion = quiz.questions[currentIndex];
   const timeLimit = quiz.duration * 60;
 
-  // Initialize quiz
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+
   useEffect(() => {
     if (!progress && !quizStarted) {
       startQuiz(quiz.questions.length);
@@ -47,7 +55,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
     }
   }, [progress, quiz.questions.length, startQuiz, timeLimit, quizStarted]);
 
-  // Timer
+
   useEffect(() => {
     if (!quizStarted || quizEnded || showResult) return;
 
@@ -64,14 +72,14 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
     return () => clearInterval(timer);
   }, [quizStarted, quizEnded, showResult]);
 
-  const handleQuizEnd = useCallback(() => {
-    const result = completeQuiz();
+  const handleQuizEnd = useCallback(async () => {
+    const result = await completeQuiz();
     setQuizEnded(true);
-    
+
     if (result) {
       const earned = awardXP(result.score, result.totalQuestions);
       setXpEarned(earned);
-      
+
       const percentage = Math.round((result.score / result.totalQuestions) * 100);
       addNotification({
         type: "quiz",
@@ -130,11 +138,11 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Quiz Results Screen
+
   if (quizEnded && progress) {
     const percentage = Math.round((progress.score / progress.totalQuestions) * 100);
     const grade = percentage >= 90 ? "A+" : percentage >= 80 ? "A" : percentage >= 70 ? "B" : percentage >= 60 ? "C" : percentage >= 50 ? "D" : "F";
-    
+
     return (
       <div className="bg-card rounded-2xl border border-border p-8 max-w-2xl mx-auto animate-scale-in">
         <div className="text-center mb-8">
@@ -166,7 +174,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
           </div>
         </div>
 
-        {/* XP Earned */}
+        { }
         <div className="bg-gradient-to-r from-accent/20 to-primary/20 rounded-xl p-4 mb-8 text-center">
           <div className="flex items-center justify-center gap-2 mb-1">
             <Zap className="w-6 h-6 text-accent" />
@@ -192,7 +200,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden max-w-3xl mx-auto">
-      {/* Header */}
+      { }
       <div className="bg-gradient-to-r from-primary to-tertiary p-6 text-primary-foreground">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -207,7 +215,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
             <span className="font-mono font-bold">{formatTime(timeLeft)}</span>
           </div>
         </div>
-        
+
         <div className="flex items-center gap-4">
           <Progress value={((currentIndex + (showResult ? 1 : 0)) / quiz.questions.length) * 100} className="h-2 flex-1 [&>div]:bg-white/80" />
           <span className="text-sm font-medium">
@@ -216,7 +224,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
         </div>
       </div>
 
-      {/* Question */}
+      { }
       <div className="p-8">
         <div className="mb-6 animate-fade-in" key={currentIndex}>
           <div className="flex items-center gap-2 mb-4">
@@ -228,7 +236,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
           </div>
         </div>
 
-        {/* Render question based on type */}
+        { }
         {questionType === "fill-blank" && (
           <FillInBlankQuestion
             question={currentQuestion as FillInBlankQuestionData}
@@ -255,7 +263,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
           />
         )}
 
-        {/* Next Button */}
+        { }
         {showResult && (
           <div className="flex justify-end mt-6">
             <Button onClick={handleNextQuestion} className="btn-bounce">
@@ -275,7 +283,7 @@ export function MultiFormatQuizPlayer({ quiz, onComplete, onClose }: MultiFormat
   );
 }
 
-// Multiple choice renderer component
+
 function MultipleChoiceRenderer({
   question,
   selectedAnswer,
@@ -292,12 +300,12 @@ function MultipleChoiceRenderer({
   return (
     <div className="animate-fade-in">
       <h3 className="text-xl font-semibold text-foreground mb-6">{question.question}</h3>
-      
+
       <div className="space-y-3 mb-6">
         {question.options.map((option, index) => {
           const isSelected = selectedAnswer === index;
           const isCorrectAnswer = index === question.correctAnswer;
-          
+
           let optionStyle = "border-border hover:border-primary/50 hover:bg-primary/5";
           if (showResult) {
             if (isCorrectAnswer) {

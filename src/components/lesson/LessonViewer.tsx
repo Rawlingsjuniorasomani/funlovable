@@ -10,7 +10,7 @@ export interface LessonSection {
   title: string;
   type: "video" | "text" | "interactive";
   content: string;
-  duration: number; // in seconds
+  duration: number; 
 }
 
 export interface LessonData {
@@ -28,7 +28,7 @@ interface LessonViewerProps {
   onClose?: () => void;
 }
 
-const STORAGE_KEY = "lovable_lesson_progress";
+
 
 export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps) {
   const { addNotification } = useNotifications();
@@ -42,21 +42,21 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
   const overallProgress = (completedSections.size / lesson.sections.length) * 100;
   const totalDuration = lesson.sections.reduce((acc, s) => acc + s.duration, 0);
 
-  // Load saved progress - DEPRECATED
-  // Lesson progress should be tracked on backend API
+  
+  
   useEffect(() => {
-    // No localStorage persistence
-    // TODO: Fetch from backend GET /api/lessons/:id/progress
+    
+    
   }, [lesson.id]);
 
-  // Save progress - DEPRECATED
-  // Lesson progress should be saved to backend API
+  
+  
   const saveProgress = (completed: Set<string>, sectionIndex: number) => {
-    // No localStorage persistence
-    // TODO: POST to backend /api/lessons/:id/progress
+    
+    
   };
 
-  // Simulate content playback/reading
+  
   useEffect(() => {
     if (!isPlaying || completedSections.has(currentSection.id)) return;
 
@@ -81,7 +81,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
     setCompletedSections(newCompleted);
     saveProgress(newCompleted, currentSectionIndex);
 
-    // Check if all sections complete
+    
     if (newCompleted.size === lesson.sections.length) {
       setShowCompletion(true);
       addNotification({
@@ -116,7 +116,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
     return mins > 0 ? `${mins}m ${secs}s` : `${secs}s`;
   };
 
-  // Completion Screen
+  
   if (showCompletion) {
     return (
       <div className="bg-card rounded-2xl border border-border p-8 max-w-2xl mx-auto animate-scale-in text-center">
@@ -127,7 +127,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
           Lesson Complete! 🎉
         </h2>
         <p className="text-muted-foreground mb-6">{lesson.title}</p>
-        
+
         <div className="bg-muted/50 rounded-xl p-6 mb-8">
           <h3 className="font-semibold text-foreground mb-4">What you learned:</h3>
           <ul className="space-y-2 text-left">
@@ -154,7 +154,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
 
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden max-w-4xl mx-auto">
-      {/* Header */}
+      { }
       <div className="bg-gradient-to-r from-tertiary to-primary p-6 text-primary-foreground">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -166,8 +166,8 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
             <span className="text-sm font-medium">{formatDuration(totalDuration)}</span>
           </div>
         </div>
-        
-        {/* Overall Progress */}
+
+        { }
         <div className="flex items-center gap-4">
           <Progress value={overallProgress} className="h-2 flex-1 [&>div]:bg-white/80" />
           <span className="text-sm font-medium">{Math.round(overallProgress)}% complete</span>
@@ -175,14 +175,14 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
       </div>
 
       <div className="flex">
-        {/* Sidebar - Section List */}
+        { }
         <div className="w-64 border-r border-border bg-muted/30 p-4 hidden md:block">
           <h3 className="text-sm font-semibold text-foreground mb-4">Sections</h3>
           <div className="space-y-2">
             {lesson.sections.map((section, index) => {
               const isComplete = completedSections.has(section.id);
               const isCurrent = index === currentSectionIndex;
-              
+
               return (
                 <button
                   key={section.id}
@@ -224,10 +224,10 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
           </div>
         </div>
 
-        {/* Main Content */}
+        { }
         <div className="flex-1 p-8">
           <div className="animate-fade-in" key={currentSection.id}>
-            {/* Section Header */}
+            { }
             <div className="flex items-center gap-3 mb-6">
               <div className="p-2 rounded-lg bg-primary/10 text-primary">
                 <BookOpen className="w-5 h-5" />
@@ -238,7 +238,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
               </div>
             </div>
 
-            {/* Content Area */}
+            { }
             <div className="bg-muted/30 rounded-xl p-6 mb-6 min-h-[300px]">
               {currentSection.type === "video" && (
                 <div className="aspect-video bg-background rounded-lg flex items-center justify-center mb-4">
@@ -254,13 +254,13 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
                   </div>
                 </div>
               )}
-              
+
               <div className="prose prose-sm max-w-none text-foreground">
                 <p>{currentSection.content}</p>
               </div>
             </div>
 
-            {/* Section Progress */}
+            { }
             {!completedSections.has(currentSection.id) && (
               <div className="mb-6">
                 <div className="flex items-center justify-between text-sm mb-2">
@@ -271,7 +271,7 @@ export function LessonViewer({ lesson, onComplete, onClose }: LessonViewerProps)
               </div>
             )}
 
-            {/* Controls */}
+            { }
             <div className="flex items-center justify-between">
               <Button
                 variant="outline"

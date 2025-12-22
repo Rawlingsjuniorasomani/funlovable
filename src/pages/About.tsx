@@ -34,7 +34,7 @@ const About = () => {
     <div className="min-h-screen">
       <Header />
       <main className="pt-20">
-        {/* Hero */}
+        { }
         <section className="py-20 bg-gradient-to-br from-primary/5 via-tertiary/5 to-secondary/5">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
@@ -49,7 +49,7 @@ const About = () => {
           </div>
         </section>
 
-        {/* Story */}
+        { }
         <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -80,19 +80,19 @@ const About = () => {
                     alt="Mom and daughter learning together"
                     className="w-full h-full object-cover"
                   />
-                  {/* Floating badge */}
+                  { }
                   <div className="absolute bottom-6 left-6 right-6 bg-white/90 backdrop-blur-sm p-4 rounded-xl shadow-lg border border-white/20">
                     <p className="font-display font-bold text-center text-primary">Learning Together</p>
                   </div>
                 </div>
-                {/* Decorative elements */}
+                { }
                 <div className="absolute -z-10 top-[-20px] right-[-20px] w-full h-full rounded-3xl border-2 border-dashed border-primary/20" />
               </div>
             </div>
           </div>
         </section>
 
-        {/* Mission & Vision */}
+        { }
         <section className="py-20 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8">
@@ -122,7 +122,7 @@ const About = () => {
           </div>
         </section>
 
-        {/* Values */}
+        { }
         <section className="py-20">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">

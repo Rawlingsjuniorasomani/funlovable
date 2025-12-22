@@ -14,15 +14,21 @@ const navLinks = [
   { href: "/contact", label: "Contact" },
 ];
 
-export function Header() {
+interface HeaderProps {
+  className?: string;
+  transparent?: boolean;
+}
+
+export function Header({ className, transparent }: HeaderProps) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const location = useLocation();
 
   return (
     <header
       className={cn(
-        "sticky top-0 left-0 right-0 z-40",
-        "bg-slate-900 text-white"
+        "fixed top-0 left-0 right-0 z-40 transition-all duration-300",
+        transparent ? "bg-transparent" : "bg-slate-900",
+        className
       )}
     >
       <motion.div
@@ -32,7 +38,7 @@ export function Header() {
         transition={{ duration: 0.4, ease: "easeOut" }}
       >
         <div className="flex items-center justify-between gap-4">
-          {/* Logo & Brand */}
+          { }
           <Link to="/" className="flex items-center gap-3 group relative z-10">
             <div className="relative">
               <div className="absolute inset-0 bg-orange-500/20 rounded-full blur-xl group-hover:bg-orange-500/30 transition-all" />
@@ -47,7 +53,7 @@ export function Header() {
             </span>
           </Link>
 
-          {/* Desktop Navigation */}
+          { }
           <nav className="hidden lg:flex items-center gap-2">
             {navLinks.map((link) => (
               <Link
@@ -65,7 +71,7 @@ export function Header() {
             ))}
           </nav>
 
-          {/* Desktop Actions */}
+          { }
           <div className="hidden lg:flex items-center gap-2">
             <Link to="/login">
               <Button variant="ghost" size="sm" className="text-white/90 hover:text-white hover:bg-white/10">
@@ -79,7 +85,7 @@ export function Header() {
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
+          { }
           <div className="flex lg:hidden items-center gap-3">
             <Button
               variant="ghost"
@@ -90,7 +96,7 @@ export function Header() {
             </Button>
           </div>
         </div>
-        {/* Mobile Menu */}
+        { }
         {isMobileMenuOpen && (
           <motion.nav
             className="mt-6 lg:hidden flex flex-col gap-4"

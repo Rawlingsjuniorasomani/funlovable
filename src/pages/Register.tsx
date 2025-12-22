@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -23,6 +23,7 @@ const registerSchema = z.object({
 const Register = () => {
   const { toast } = useToast();
   const [showPassword, setShowPassword] = useState(false);
+
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -53,7 +54,7 @@ const Register = () => {
     try {
       registerSchema.parse(formData);
       await new Promise((resolve) => setTimeout(resolve, 1000));
-      
+
       toast({
         title: "Account Created!",
         description: "Welcome to Lovable Learning Platform. You can now sign in.",
@@ -79,7 +80,7 @@ const Register = () => {
       <main className="pt-20 min-h-screen flex items-center justify-center px-4 py-12">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-3xl p-8 border border-border shadow-lg">
-            {/* Logo */}
+            { }
             <div className="text-center mb-8">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-tertiary to-secondary flex items-center justify-center mx-auto mb-4">
                 <GraduationCap className="w-8 h-8 text-primary-foreground" />
@@ -88,7 +89,7 @@ const Register = () => {
               <p className="text-muted-foreground">Join Lovable Learning today</p>
             </div>
 
-            {/* Form */}
+            { }
             <form onSubmit={handleSubmit} className="space-y-5">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
@@ -201,7 +202,7 @@ const Register = () => {
               </Button>
             </form>
 
-            {/* Login Link */}
+            { }
             <div className="text-center mt-6">
               <p className="text-muted-foreground">
                 Already have an account?{" "}

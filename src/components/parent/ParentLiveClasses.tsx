@@ -10,7 +10,7 @@ export function ParentLiveClasses() {
         <p className="text-muted-foreground">View schedule and attendance for live sessions</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <Video className="w-6 h-6 mx-auto text-primary mb-2" />
@@ -27,7 +27,7 @@ export function ParentLiveClasses() {
         </div>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <Video className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Scheduled Classes</h3>

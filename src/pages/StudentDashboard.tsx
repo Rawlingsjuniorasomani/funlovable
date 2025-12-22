@@ -42,7 +42,7 @@ export default function StudentDashboard() {
     }
   }, [user?.id]);
 
-  // Connect real-time notifications for teacher content
+
   useContentNotifications(user?.id || '', enrolledSubjectIds);
 
   return (
@@ -51,13 +51,13 @@ export default function StudentDashboard() {
         className="h-screen flex w-full bg-background overflow-hidden"
         style={
           {
-            ['--sidebar-background' as any]: '262 83% 34%',
+            ['--sidebar-background' as any]: '24 95% 53%',
             ['--sidebar-foreground' as any]: '0 0% 100%',
-            ['--sidebar-accent' as any]: '262 75% 28%',
+            ['--sidebar-accent' as any]: '24 90% 45%',
             ['--sidebar-accent-foreground' as any]: '0 0% 100%',
-            ['--sidebar-border' as any]: '262 60% 24%',
+            ['--sidebar-border' as any]: '24 90% 48%',
             ['--sidebar-primary' as any]: '0 0% 100%',
-            ['--sidebar-primary-foreground' as any]: '262 83% 34%',
+            ['--sidebar-primary-foreground' as any]: '24 95% 53%',
           } as React.CSSProperties
         }
       >

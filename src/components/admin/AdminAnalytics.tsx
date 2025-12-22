@@ -37,24 +37,24 @@ export function AdminAnalytics() {
     return <AnalyticsSkeleton />;
   }
 
-  // Transform User Counts for Pie Chart
+  
   const userTypeData = (data.userCounts || []).map((item: any) => ({
     name: item.role.charAt(0).toUpperCase() + item.role.slice(1) + 's',
     value: parseInt(item.count)
   }));
 
 
-  // Merge Dates for Trends (Revenue & Registrations)
-  // Create a map of last 14 days
+  
+  
   const last14DaysMap = new Map();
   for (let i = 13; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
-    const dateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+    const dateStr = d.toISOString().split('T')[0]; 
     last14DaysMap.set(dateStr, { date: dateStr, registrations: 0, revenue: 0 });
   }
 
-  // Fill Registrations
+  
   (data.newUsers || []).forEach((item: any) => {
     const key = new Date(item.date).toISOString().split('T')[0];
     if (last14DaysMap.has(key)) {
@@ -62,7 +62,7 @@ export function AdminAnalytics() {
     }
   });
 
-  // Fill Revenue
+  
   (data.dailyRevenue || []).forEach((item: any) => {
     const key = new Date(item.date).toISOString().split('T')[0];
     if (last14DaysMap.has(key)) {
@@ -82,7 +82,7 @@ export function AdminAnalytics() {
 
   const formatCurrency = (value: number) => `GH₵${value}`;
 
-  // Calculate totals for cards
+  
   const totalRegistrationsLast7 = last7Days.reduce((acc, curr) => acc + curr.registrations, 0);
   const totalRevenueLast7 = last7Days.reduce((acc, curr) => acc + curr.revenue, 0);
 
@@ -99,7 +99,7 @@ export function AdminAnalytics() {
         </Button>
       </div>
 
-      {/* Key Metrics */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -144,9 +144,9 @@ export function AdminAnalytics() {
         </Card>
       </div>
 
-      {/* Charts Row */}
+      { }
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Registration Trends */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -171,7 +171,7 @@ export function AdminAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Revenue Chart */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -192,7 +192,7 @@ export function AdminAnalytics() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-6">
-        {/* User Distribution */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -231,7 +231,7 @@ export function AdminAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Activity Chart */}
+        { }
         <Card className="md:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -253,7 +253,7 @@ export function AdminAnalytics() {
         </Card>
       </div>
 
-      {/* Top Performing Content */}
+      { }
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

@@ -15,14 +15,14 @@ interface Props {
     onBack: () => void;
 }
 
-// Exporting component for use in StudentAssignments list
+
 export function StudentAssignmentDetails({ assignment: propAssignment, assignmentId, onBack }: Props) {
     const [assignment, setAssignment] = useState<any>(propAssignment);
     const [content, setContent] = useState("");
     const [submitting, setSubmitting] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    // Question Wizard State
+    
     const [questions, setQuestions] = useState<any[]>([]);
     const [answers, setAnswers] = useState<Record<string, string>>({});
     const [answerDetails, setAnswerDetails] = useState<Record<string, any>>({});
@@ -47,10 +47,10 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
             const data = await assignmentsAPI.getById(assignmentId!);
             setAssignment({
                 ...data,
-                // Ensure fields match what component expects
+                
                 due_date: data.due_date || data.dueDate,
                 max_score: data.total_points || data.totalPoints || 100,
-                // derive stats if needed
+                
                 submissions: data.submission_count || 0
             });
         } catch (error) {
@@ -92,7 +92,7 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
                 }
             }
         } catch (error) {
-            // Ignore 404
+            
         }
     };
 
@@ -114,19 +114,19 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
         return <div className="p-8 text-center">Loading assignment details...</div>;
     }
 
-    // Parse resources if JSON string
+    
     const resources = typeof assignment.resources === 'string'
         ? JSON.parse(assignment.resources)
         : assignment.resources || [];
 
     const handleStart = async () => {
-        // If already submitted, just go to review/read-only
+        
         if (isSubmitted || isGraded) {
             setWizardStep('review');
             return;
         }
 
-        // Create draft submission to get ID
+        
         if (!submissionId) {
             try {
                 const res = await assignmentsAPI.submit(assignment.id, {
@@ -152,10 +152,10 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
             toast.success(status === 'draft' ? "Draft saved" : "Assignment submitted successfully");
 
             if (status === 'submitted') {
-                // Update local state with the returned submission
-                setAssignment(prev => ({ ...prev, ...res, submissions: 1 })); // Assuming res contains updated status/score
+                
+                setAssignment(prev => ({ ...prev, ...res, submissions: 1 })); 
                 setSubmissionId(res.id);
-                // Refresh submission details (answers with correctness)
+                
                 await loadSubmission();
                 setWizardStep('success');
             }
@@ -169,7 +169,7 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
     const handleAnswerSave = async (questionId: string, answer: string) => {
         setAnswers(prev => ({ ...prev, [questionId]: answer }));
 
-        if (!submissionId) return; // Should not happen if flow is correct
+        if (!submissionId) return; 
 
         try {
             await assignmentsAPI.saveAnswer({
@@ -239,8 +239,8 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
                         </CardContent>
                     </Card>
 
-                    {/* Submission Area */}
-                    {/* Submission / Wizard Area */}
+                    { }
+                    { }
                     {!isGraded && !isSubmitted && (
                         <Card>
                             <CardContent className="p-6 space-y-4">
@@ -453,12 +453,12 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
                                 )}
 
                                 {(wizardStep === 'review' || (!hasQuestions && wizardStep !== 'success')) && (
-                                    // Fallback for non-question assignments (file upload etc) - though we might want to unify this into 'review' too?
-                                    // For now keeping 'completed' logic for non-question types if any.
-                                    // Actually, mixed types use wizard. 
-                                    // Let's just redirect 'completed' to 'review' logic for simplicity or keep generic submission form.
+                                    
+                                    
+                                    
+                                    
                                     <div className="space-y-4 animate-in fade-in">
-                                        {/* Existing logic for generic content submission if needed */}
+                                        { }
                                         {assignment.submission_type !== 'questions' && (
                                             <>
                                                 <Textarea
@@ -483,7 +483,7 @@ export function StudentAssignmentDetails({ assignment: propAssignment, assignmen
                         </Card>
                     )}
 
-                    {/* Feedback Display */}
+                    { }
                     {isGraded && (
                         <Card className="border-green-500/50 bg-green-500/5">
                             <CardContent className="p-6">

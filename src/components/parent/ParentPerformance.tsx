@@ -17,7 +17,7 @@ export function ParentPerformance() {
         </Button>
       </div>
 
-      {/* Overview Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-4 rounded-xl border border-primary/20">
           <TrendingUp className="w-6 h-6 text-primary mb-2" />
@@ -38,7 +38,7 @@ export function ParentPerformance() {
         </div>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <TrendingUp className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Performance Data</h3>

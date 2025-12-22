@@ -58,13 +58,13 @@ export function EnhancedStudentProgress() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div>
         <h2 className="text-2xl font-display font-bold text-foreground">My Progress</h2>
         <p className="text-muted-foreground">Track your learning journey and achievements</p>
       </div>
 
-      {/* Overview Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
           <CardContent className="p-4">
@@ -124,7 +124,7 @@ export function EnhancedStudentProgress() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Subject Progress */}
+        { }
         <div className="lg:col-span-2 space-y-4">
           <h3 className="text-lg font-semibold flex items-center gap-2">
             <TrendingUp className="w-5 h-5 text-primary" />
@@ -181,9 +181,9 @@ export function EnhancedStudentProgress() {
           </div>
         </div>
 
-        {/* Right Sidebar */}
+        { }
         <div className="space-y-6">
-          {/* Weekly Activity */}
+          { }
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -222,7 +222,7 @@ export function EnhancedStudentProgress() {
             </CardContent>
           </Card>
 
-          {/* Recent Achievements */}
+          { }
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">
@@ -263,7 +263,7 @@ export function EnhancedStudentProgress() {
             </CardContent>
           </Card>
 
-          {/* Goals */}
+          { }
           <Card>
             <CardHeader className="pb-3">
               <CardTitle className="text-base flex items-center gap-2">

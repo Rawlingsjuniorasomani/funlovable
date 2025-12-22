@@ -58,8 +58,8 @@ export function StudentSidebar() {
     <Sidebar collapsible="icon" className="border-r border-border">
       <SidebarHeader className="p-4">
         <div className={cn("flex items-center gap-3", collapsed && "justify-center")}>
-          <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center text-sidebar-foreground font-bold">
-            {user?.avatar || 'S'}
+          <div className="w-10 h-10 rounded-xl bg-sidebar-primary text-sidebar-primary-foreground flex items-center justify-center font-bold shadow-sm">
+            {user?.avatar || (user?.name?.[0] || 'S').toUpperCase()}
           </div>
           {!collapsed && (
             <div className="overflow-hidden">
@@ -162,7 +162,7 @@ export function StudentSidebar() {
         <Button
           variant="ghost"
           className={cn(
-            "w-full justify-start text-sidebar-foreground/90 hover:text-sidebar-foreground hover:bg-white/15",
+            "w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground transition-colors",
             collapsed && "justify-center"
           )}
           onClick={logout}

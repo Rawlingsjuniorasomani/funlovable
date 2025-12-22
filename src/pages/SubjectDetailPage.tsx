@@ -53,18 +53,18 @@ export default function SubjectDetailPage() {
         <div className="min-h-screen bg-gray-50">
             <Header />
             <main className="container mx-auto px-4 py-8 pt-24 space-y-8">
-                {/* Back Button */}
+                { }
                 <div>
                     <Button variant="ghost" onClick={() => navigate(-1)} className="mb-4">
                         <ArrowLeft className="w-4 h-4 mr-2" /> Back
                     </Button>
                 </div>
 
-                {/* Hero Section */}
+                { }
                 <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 grid md:grid-cols-2 gap-8 items-center">
                     <div className="space-y-4">
                         <div className={`inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-${subject.color || "primary"}/10`}>
-                            {/* Dynamically load icon if possible, defaulting to BookOpen for now since icon string handling varies */}
+                            { }
                             <BookOpen className={`w-8 h-8 text-${subject.color || "primary"}`} />
                         </div>
                         <h1 className="text-3xl md:text-4xl font-bold text-gray-900">{subject.name}</h1>
@@ -81,9 +81,9 @@ export default function SubjectDetailPage() {
                             </div>
                         </div>
 
-                        {/* Action Buttons for non-enrolled logic or simple view */}
-                        {/* If the user is a student, we might want to show 'Continue Learning' if enrolled, or 'Enroll' */}
-                        {/* For now, just a generic view as requested */}
+                        { }
+                        { }
+                        { }
                     </div>
                     <div className="relative aspect-video rounded-2xl overflow-hidden bg-gray-200">
                         <img
@@ -94,7 +94,7 @@ export default function SubjectDetailPage() {
                     </div>
                 </div>
 
-                {/* Modules List */}
+                { }
                 <section>
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                         <BookOpen className="w-6 h-6 text-primary" />
@@ -111,10 +111,10 @@ export default function SubjectDetailPage() {
                                         </CardTitle>
                                         {module.description && <CardDescription>{module.description}</CardDescription>}
                                     </CardHeader>
-                                    {/* Could list lessons here if we fetched them */}
+                                    { }
                                     <CardContent>
                                         <div className="flex items-center text-sm text-muted-foreground">
-                                            {/* Placeholder for lesson count if available in module object */}
+                                            { }
                                             <FileText className="w-4 h-4 mr-2" />
                                             Content Available
                                         </div>

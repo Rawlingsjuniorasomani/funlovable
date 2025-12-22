@@ -54,7 +54,7 @@ export function DashboardSidebar({ userType, userName, userAvatar }: DashboardSi
 
   return (
     <aside className="w-64 bg-card border-r border-border h-screen sticky top-0 flex flex-col">
-      {/* Profile Section */}
+      { }
       <div className={cn("p-6 bg-gradient-to-r text-primary-foreground", roleColors[userType])}>
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-background/20 flex items-center justify-center text-xl font-bold">
@@ -71,7 +71,7 @@ export function DashboardSidebar({ userType, userName, userAvatar }: DashboardSi
         </div>
       </div>
 
-      {/* Navigation */}
+      { }
       <nav className="flex-1 p-4 space-y-1">
         {navItems.map((item) => {
           const isActive = location.pathname === item.href;
@@ -94,7 +94,7 @@ export function DashboardSidebar({ userType, userName, userAvatar }: DashboardSi
         })}
       </nav>
 
-      {/* Logout */}
+      { }
       <div className="p-4 border-t border-border">
         <Link
           to="/login"

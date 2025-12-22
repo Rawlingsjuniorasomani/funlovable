@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { User, Bell, Lock, Palette, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,19 +17,52 @@ import { toast } from "sonner";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 export function TeacherSettings() {
-  const { user } = useAuthContext();
+  const { user, updateUser } = useAuthContext();
   const [isSaving, setIsSaving] = useState(false);
 
-  // Split name into first and last name for display, fallback to empty strings
-  const nameParts = user?.name ? user.name.split(' ') : ['', ''];
-  const firstName = nameParts[0] || '';
-  const lastName = nameParts.slice(1).join(' ') || '';
+  // Form State
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [bio, setBio] = useState("");
+  const [employeeId, setEmployeeId] = useState("");
+  const [department, setDepartment] = useState("");
+  const [subjectsTaught, setSubjectsTaught] = useState("");
+
+  useEffect(() => {
+    if (user) {
+      const nameParts = user.name ? user.name.split(' ') : ['', ''];
+      setFirstName(nameParts[0] || '');
+      setLastName(nameParts.slice(1).join(' ') || '');
+      setPhone(user.phone || "");
+      setBio(user.bio || "");
+      setEmployeeId(user.employee_id || "");
+      setDepartment(user.department || "");
+      setSubjectsTaught(user.subjects_taught || "");
+    }
+  }, [user]);
 
   const handleSave = async () => {
     setIsSaving(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    setIsSaving(false);
-    toast.success("Settings saved successfully!");
+    try {
+      const fullName = `${firstName} ${lastName}`.trim();
+
+      await updateUser({
+        name: fullName,
+        phone,
+        bio,
+        employee_id: employeeId,
+        department,
+        subjects_taught: subjectsTaught
+      });
+
+      toast.success("Profile updated successfully!");
+    } catch (error) {
+      console.error(error);
+      toast.error("Failed to update profile.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -75,11 +108,11 @@ export function TeacherSettings() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>First Name</Label>
-                  <Input defaultValue={firstName} />
+                  <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} />
                 </div>
                 <div className="grid gap-2">
                   <Label>Last Name</Label>
-                  <Input defaultValue={lastName} />
+                  <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
                 </div>
               </div>
               <div className="grid gap-2">
@@ -88,13 +121,14 @@ export function TeacherSettings() {
               </div>
               <div className="grid gap-2">
                 <Label>Phone Number</Label>
-                <Input type="tel" defaultValue={user?.phone || ''} placeholder="+233 XX XXX XXXX" />
+                <Input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="+233 XX XXX XXXX" />
               </div>
               <div className="grid gap-2">
                 <Label>Bio</Label>
                 <Textarea
                   placeholder="Tell students about yourself..."
-                  defaultValue=""
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
                 />
               </div>
             </div>
@@ -106,11 +140,11 @@ export function TeacherSettings() {
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>Employee ID</Label>
-                  <Input defaultValue="" placeholder="e.g. TCH-2024-001" />
+                  <Input value={employeeId} onChange={(e) => setEmployeeId(e.target.value)} placeholder="e.g. TCH-2024-001" />
                 </div>
                 <div className="grid gap-2">
                   <Label>Department</Label>
-                  <Select>
+                  <Select value={department} onValueChange={setDepartment}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select Department" />
                     </SelectTrigger>
@@ -125,7 +159,7 @@ export function TeacherSettings() {
               </div>
               <div className="grid gap-2">
                 <Label>Subjects Taught</Label>
-                <Input defaultValue="" placeholder="e.g. Mathematics, Science" />
+                <Input value={subjectsTaught} onChange={(e) => setSubjectsTaught(e.target.value)} placeholder="e.g. Mathematics, Science" />
               </div>
             </div>
           </div>

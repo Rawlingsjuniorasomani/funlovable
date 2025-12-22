@@ -35,9 +35,9 @@ export function AdminAdmins() {
     const [generatedOtp, setGeneratedOtp] = useState<string | null>(null);
 
     const hasSuperAdmin = admins.some(a => a.is_super_admin);
-    // Allow promotion for everyone (as requested: Admin should create super admin)
+    
     const canPromote = true;
-    // Any admin can create other admins
+    
     const canCreate = true;
 
     useEffect(() => {
@@ -91,7 +91,7 @@ export function AdminAdmins() {
             await usersAPI.promoteAdmin(admin.id);
             toast({ title: "Updated", description: "Granted Super Admin privileges" });
             loadAdmins();
-            // If we promoted ourselves (bootstrap check), force reload
+            
             if (admin.id === user?.id) {
                 window.location.reload();
             }

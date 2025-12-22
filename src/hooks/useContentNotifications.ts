@@ -1,4 +1,4 @@
-// Real-time notification system for teacher-student content sync
+
 import { useEffect, useRef } from 'react';
 import { useSharedData } from '@/data/sharedDataStore';
 import { useNotifications } from '@/hooks/useNotifications';
@@ -15,7 +15,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
   const prevRewardsRef = useRef(rewards.filter(r => r.studentId === studentId).length);
   const prevMessagesRef = useRef(messages.filter(m => m.to === studentId || m.to === 'all').length);
 
-  // Watch for new modules
+  
   useEffect(() => {
     if (modules.length > prevModulesRef.current) {
       const newModules = modules.filter(m => 
@@ -33,7 +33,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevModulesRef.current = modules.length;
   }, [modules, enrolledSubjects, addNotification]);
 
-  // Watch for new lessons
+  
   useEffect(() => {
     if (lessons.length > prevLessonsRef.current) {
       const newLessons = lessons.filter(l => 
@@ -51,7 +51,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevLessonsRef.current = lessons.length;
   }, [lessons, enrolledSubjects, addNotification]);
 
-  // Watch for new assignments
+  
   useEffect(() => {
     if (assignments.length > prevAssignmentsRef.current) {
       const newAssignments = assignments.filter(a => 
@@ -69,7 +69,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevAssignmentsRef.current = assignments.length;
   }, [assignments, enrolledSubjects, addNotification]);
 
-  // Watch for new quizzes
+  
   useEffect(() => {
     if (quizzes.length > prevQuizzesRef.current) {
       const newQuizzes = quizzes.filter(q => 
@@ -87,7 +87,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevQuizzesRef.current = quizzes.length;
   }, [quizzes, enrolledSubjects, addNotification]);
 
-  // Watch for new live classes
+  
   useEffect(() => {
     if (liveClasses.length > prevLiveClassesRef.current) {
       const newClasses = liveClasses.filter(c => 
@@ -105,7 +105,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevLiveClassesRef.current = liveClasses.length;
   }, [liveClasses, enrolledSubjects, addNotification]);
 
-  // Watch for new rewards
+  
   useEffect(() => {
     const studentRewards = rewards.filter(r => r.studentId === studentId);
     if (studentRewards.length > prevRewardsRef.current) {
@@ -122,7 +122,7 @@ export function useContentNotifications(studentId: string, enrolledSubjects: str
     prevRewardsRef.current = studentRewards.length;
   }, [rewards, studentId, addNotification]);
 
-  // Watch for new messages
+  
   useEffect(() => {
     const studentMessages = messages.filter(m => m.to === studentId || m.to === 'all');
     if (studentMessages.length > prevMessagesRef.current) {

@@ -34,7 +34,7 @@ export function StudentLiveClasses() {
         <p className="text-muted-foreground">Join interactive live sessions for your enrolled subjects</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <p className="text-2xl font-bold text-foreground">{upcomingCount}</p>
@@ -50,7 +50,7 @@ export function StudentLiveClasses() {
         </div>
       </div>
 
-      {/* Class List */}
+      { }
       <div className="space-y-4">
         {loading ? (
           <p className="text-center text-muted-foreground">Loading classes...</p>

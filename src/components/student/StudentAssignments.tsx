@@ -18,7 +18,7 @@ import {
 import { assignmentsAPI, subjectsAPI } from "@/config/api";
 import { StudentAssignmentDetails } from "@/components/student/StudentAssignmentDetails";
 
-// Main component for listing student assignments
+
 export function StudentAssignments() {
   const [assignments, setAssignments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -98,7 +98,7 @@ export function StudentAssignments() {
 
       <div className="grid gap-4">
         {filteredAssignments.map((assignment) => {
-          // Helper to determine status badge
+          
           let statusBadge = <Badge variant="outline">Pending</Badge>;
 
           if (assignment.submission_status === 'graded') {

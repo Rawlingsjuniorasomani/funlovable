@@ -163,7 +163,7 @@ export function TeacherQuizQuestions() {
                 </div>
             </div>
 
-            {/* Questions List */}
+            { }
             <Card>
                 <CardHeader>
                     <div className="flex items-center justify-between">
@@ -226,7 +226,7 @@ export function TeacherQuizQuestions() {
                 </CardContent>
             </Card>
 
-            {/* Add/Edit Question Form */}
+            { }
             {showAddForm && (
                 <Card className="border-2 border-primary">
                     <CardHeader>
@@ -348,7 +348,7 @@ export function TeacherQuizQuestions() {
                 </Card>
             )}
 
-            {/* Delete Confirmation */}
+            { }
             <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
                 <AlertDialogContent>
                     <AlertDialogHeader>

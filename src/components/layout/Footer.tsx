@@ -31,7 +31,7 @@ export function Footer() {
     <footer className="bg-slate-950 border-t border-slate-800 pt-16 pb-8">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 mb-12">
-          {/* Brand Column (4 cols) */}
+          { }
           <div className="lg:col-span-4 space-y-6">
             <Link to="/" className="block">
               <div className="bg-white p-2 rounded-xl inline-block w-auto">
@@ -65,7 +65,7 @@ export function Footer() {
             </div>
           </div>
 
-          {/* Quick Links (2 cols) */}
+          { }
           <div className="lg:col-span-2">
             <h4 className="font-display font-bold text-lg text-white mb-6">Quick Links</h4>
             <ul className="space-y-3">
@@ -83,7 +83,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Support Links (2 cols) */}
+          { }
           <div className="lg:col-span-2">
             <h4 className="font-display font-bold text-lg text-white mb-6">Support</h4>
             <ul className="space-y-3">
@@ -101,7 +101,7 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact & Newsletter (4 cols) */}
+          { }
           <div className="lg:col-span-4 space-y-8">
             <div>
               <h4 className="font-display font-bold text-lg text-white mb-6">Contact Us</h4>
@@ -142,7 +142,7 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
+        { }
         <div className="pt-8 border-t border-slate-800 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-slate-500">
             © {new Date().getFullYear()} {BRANDING.schoolName}. All rights reserved.

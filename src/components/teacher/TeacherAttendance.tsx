@@ -43,7 +43,7 @@ export function TeacherAttendance() {
     const loadStudents = async () => {
         try {
             setLoading(true);
-            // Get all students (in real app, filter by class/subject enrollment)
+            
             const data = await usersAPI.getAll({ role: 'student' });
             setStudents(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -58,14 +58,14 @@ export function TeacherAttendance() {
             const dateStr = format(selectedDate, 'yyyy-MM-dd');
             const data = await attendanceAPI.getClassAttendance(selectedSubject, dateStr);
 
-            // Convert to attendance map
+            
             const attendanceMap: Record<string, string> = {};
             data.forEach((record: any) => {
                 attendanceMap[record.student_id] = record.status;
             });
             setAttendance(attendanceMap);
         } catch (error) {
-            // No existing attendance for this date
+            
             setAttendance({});
         }
     };

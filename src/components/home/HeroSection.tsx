@@ -17,14 +17,13 @@ export function HeroSection() {
   }, []);
   return (
     <motion.section
-      className="relative pt-0 pb-48 overflow-hidden"
+      className="relative pt-12 pb-20 md:pt-32 md:pb-48 overflow-hidden min-h-[85vh] flex items-center"
       initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.3 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      {/* Background Image with Overlay */}
-      {/* Background Image with Overlay */}
+      { }
       <div className="absolute inset-0 z-0">
         {[
           '/hero-1.jpg',
@@ -49,7 +48,7 @@ export function HeroSection() {
       <div className="container relative z-10 mx-auto px-4 text-center">
         <div className="max-w-4xl mx-auto">
           <span className="text-orange-400 font-semibold tracking-wider uppercase mb-4 block"></span>
-          <h1 className="font-display text-5xl md:text-7xl font-bold text-white mb-6 leading-tight">
+          <h1 className="font-display text-4xl md:text-7xl font-bold text-white mb-6 leading-tight">
             Online Education <br />
             Academy
           </h1>
@@ -79,7 +78,7 @@ export function HeroSection() {
         </div>
       </div>
 
-      {/* Overlapping Search Box */}
+      { }
     </motion.section>
   );
 }

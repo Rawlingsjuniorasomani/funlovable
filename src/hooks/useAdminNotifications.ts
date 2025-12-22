@@ -1,6 +1,6 @@
-// Admin notifications hook for tracking new registrations, payments, and activities
+
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+
 import { notificationsAPI } from '@/config/api';
 
 export interface AdminNotification {
@@ -27,83 +27,77 @@ interface AdminNotificationState {
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 export const useAdminNotifications = create<AdminNotificationState>()(
-  persist(
-    (set, get: () => AdminNotificationState) => ({
-      notifications: [],
+  (set, get: () => AdminNotificationState) => ({
+    notifications: [],
 
-      loadNotifications: async () => {
-        try {
-          // Auth handled via HTTP-only cookies/session (no localStorage token)
-          const data = await notificationsAPI.getAll();
+    loadNotifications: async () => {
+      try {
+        
+        const data = await notificationsAPI.getAll();
 
-          if (!Array.isArray(data)) return;
+        if (!Array.isArray(data)) return;
 
-          // Backend returns snake_caseDB fields? Need to map if so.
-          // NotificationModel returns: id, type, title, description, is_read, created_at
-          // Frontend expects: id, type, title, description, read, createdAt
-          const mapped = data.map((n: any) => ({
-            id: n.id,
-            type: n.type,
-            title: n.title,
-            description: n.description,
-            read: n.is_read,
-            createdAt: n.created_at,
-            relatedId: n.related_id
-          }));
-          set({ notifications: mapped });
-        } catch (error) {
-          const status = (error as any)?.response?.status;
-          // Admin-only endpoint: do not spam console for non-admin sessions
-          if (status === 401 || status === 403) return;
-          console.error('Failed to load notifications:', error);
-        }
-      },
+        
+        
+        
+        const mapped = data.map((n: any) => ({
+          id: n.id,
+          type: n.type,
+          title: n.title,
+          description: n.description,
+          read: n.is_read,
+          createdAt: n.created_at,
+          relatedId: n.related_id
+        }));
+        set({ notifications: mapped });
+      } catch (error) {
+        const status = (error as any)?.response?.status;
+        
+        if (status === 401 || status === 403) return;
+        console.error('Failed to load notifications:', error);
+      }
+    },
 
-      addNotification: (notification) => {
-        // Optimistic update for local actions, but backend handles real creation
-        // Ideally we just reload
-      },
+    addNotification: (notification) => {
+      
+      
+    },
 
-      markAsRead: async (id) => {
-        try {
-          await notificationsAPI.markAsRead(id);
-          // Update local state
-          set((state) => ({
-            notifications: state.notifications.map((n) =>
-              n.id === id ? { ...n, read: true } : n
-            ),
-          }));
-        } catch (e) {
-          console.error(e);
-        }
-      },
+    markAsRead: async (id) => {
+      try {
+        await notificationsAPI.markAsRead(id);
+        
+        set((state) => ({
+          notifications: state.notifications.map((n) =>
+            n.id === id ? { ...n, read: true } : n
+          ),
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    },
 
-      markAllAsRead: async () => {
-        try {
-          await notificationsAPI.markAllAsRead();
-          set((state) => ({
-            notifications: state.notifications.map((n) => ({ ...n, read: true })),
-          }));
-        } catch (e) {
-          console.error(e);
-        }
-      },
+    markAllAsRead: async () => {
+      try {
+        await notificationsAPI.markAllAsRead();
+        set((state) => ({
+          notifications: state.notifications.map((n) => ({ ...n, read: true })),
+        }));
+      } catch (e) {
+        console.error(e);
+      }
+    },
 
-      getUnreadCount: () => {
-        return get().notifications.filter((n) => !n.read).length;
-      },
+    getUnreadCount: () => {
+      return get().notifications.filter((n) => !n.read).length;
+    },
 
-      getUnreadByType: (type) => {
-        return get().notifications.filter((n) => !n.read && n.type === type).length;
-      },
+    getUnreadByType: (type) => {
+      return get().notifications.filter((n) => !n.read && n.type === type).length;
+    },
 
-      clearNotifications: () => {
-        set({ notifications: [] });
-      },
-    }),
-    {
-      name: 'admin-notifications-storage',
-      // Do not auto-load on hydration; AdminSidebar will load when appropriate.
-    }
-  ) as any
+    clearNotifications: () => {
+      set({ notifications: [] });
+    },
+  })
 );

@@ -72,18 +72,18 @@ export default function AchievementsPage() {
       <Header />
       <main className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-4xl">
-          {/* Header */}
+          { }
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-display font-bold text-foreground mb-2">Achievements</h1>
             <p className="text-muted-foreground">Track your learning milestones and unlock badges!</p>
           </div>
 
-          {/* XP Display */}
+          { }
           <div className="mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <XPDisplay />
           </div>
 
-          {/* Stats Overview */}
+          { }
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             {[
               { label: "Quizzes Completed", value: quizzesCompleted, icon: Target, color: "text-primary" },
@@ -103,7 +103,7 @@ export default function AchievementsPage() {
             ))}
           </div>
 
-          {/* Achievement Categories */}
+          { }
           {Object.entries(groupedAchievements).map(([type, typeAchievements], groupIndex) => {
             const Icon = typeIcons[type as keyof typeof typeIcons];
             return (

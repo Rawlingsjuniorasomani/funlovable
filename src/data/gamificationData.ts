@@ -28,11 +28,11 @@ export interface Certificate {
   dateEarned: string;
 }
 
-// MOCK DATA REMOVED - All gamification data should be fetched from backend API
-// GET /api/leaderboard
-// GET /api/achievements/badges
-// GET /api/achievements/certificates
-// GET /api/user/stats
+
+
+
+
+
 
 export const LEADERBOARD_DATA: LeaderboardEntry[] = [];
 
@@ -41,7 +41,7 @@ export const BADGES: Badge[] = [];
 export const CERTIFICATES: Certificate[] = [];
 
 export const getCurrentStudentStats = () => {
-  // TODO: Fetch from backend API /api/user/stats
+  
   return {
     xp: 0,
     streak: 0,

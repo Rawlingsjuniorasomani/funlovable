@@ -50,7 +50,7 @@ export function CoursePlayer() {
     const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
     const [loading, setLoading] = useState(true);
     const [expandedModules, setExpandedModules] = useState<Record<string, boolean>>({});
-    const [sidebarOpen, setSidebarOpen] = useState(false); // Mobile sidebar state
+    const [sidebarOpen, setSidebarOpen] = useState(false); 
 
     useEffect(() => {
         if (subjectId) {
@@ -61,26 +61,26 @@ export function CoursePlayer() {
     const fetchCourseData = async () => {
         try {
             setLoading(true);
-            // 1. Fetch Subject Details
-            const subjectData = await subjectsAPI.getAll(); // Using getAll then filtering because getOne might not be exposed or efficient?
-            // Wait, standard CRUD usually has getOne. Let's try to assume we can get simple subject details or filter from list.
-            // Optimally: const subjectRes = await subjectsAPI.getOne(subjectId);
-            // For now, let's filter from the list if getOne isn't reliable, or try to implement robust fetching.
-            // Based on previous files, subjectsAPI.getAll() returns all. Let's stick to SAFE fetching.
+            
+            const subjectData = await subjectsAPI.getAll(); 
+            
+            
+            
+            
             const allSubjects = await subjectsAPI.getAll();
             const foundSubject = Array.isArray(allSubjects) ? allSubjects.find((s: any) => s.id === subjectId) : null;
 
             if (foundSubject) {
                 setSubject(foundSubject);
             } else {
-                // Just in case we can't find it in the list (maybe not enrolled?), logic might need adjustment.
+                
             }
 
-            // 2. Fetch Modules
+            
             const modulesData = await modulesAPI.getAll(subjectId!);
             const modulesList = Array.isArray(modulesData) ? modulesData : [];
 
-            // 3. Fetch Lessons for each module (Parallel)
+            
             const modulesWithLessons = await Promise.all(
                 modulesList.map(async (mod: any) => {
                     const lessonsData = await lessonsAPI.getAll({ moduleId: mod.id });
@@ -93,12 +93,12 @@ export function CoursePlayer() {
 
             setModules(modulesWithLessons);
 
-            // Expand all modules by default
+            
             const initialExpanded: Record<string, boolean> = {};
             modulesWithLessons.forEach(m => initialExpanded[m.id] = true);
             setExpandedModules(initialExpanded);
 
-            // Select first lesson if none selected
+            
             if (modulesWithLessons.length > 0 && modulesWithLessons[0].lessons.length > 0) {
                 setCurrentLesson(modulesWithLessons[0].lessons[0]);
             }
@@ -120,7 +120,7 @@ export function CoursePlayer() {
 
     const handleLessonSelect = (lesson: Lesson) => {
         setCurrentLesson(lesson);
-        setSidebarOpen(false); // Close mobile sidebar on selection
+        setSidebarOpen(false); 
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
@@ -129,7 +129,7 @@ export function CoursePlayer() {
         try {
             await progressAPI.trackLessonView({ lesson_id: currentLesson.id, completed: true });
 
-            // Optimistic update
+            
             setModules(prev => prev.map(m => ({
                 ...m,
                 lessons: m.lessons.map(l => l.id === currentLesson.id ? { ...l, completed: true } : l)
@@ -137,7 +137,7 @@ export function CoursePlayer() {
 
             toast.success("Lesson completed!");
 
-            // Auto-advance logic could go here
+            
         } catch (error) {
             toast.error("Failed to update progress");
         }
@@ -228,12 +228,12 @@ export function CoursePlayer() {
 
     return (
         <div className="flex h-screen bg-background">
-            {/* Desktop Sidebar */}
+            { }
             <div className="hidden md:block w-80 h-full">
                 <SidebarContent />
             </div>
 
-            {/* Mobile Sidebar Trigger */}
+            { }
             <div className="md:hidden fixed top-4 right-4 z-50">
                 <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
                     <SheetTrigger asChild>
@@ -247,7 +247,7 @@ export function CoursePlayer() {
                 </Sheet>
             </div>
 
-            {/* Main Content */}
+            { }
             <div className="flex-1 flex flex-col h-full overflow-hidden">
                 <div className="border-b p-4 flex items-center gap-4 bg-white shadow-sm z-10">
                     <Button variant="ghost" size="sm" onClick={() => navigate('/student/dashboard')}>
@@ -262,7 +262,7 @@ export function CoursePlayer() {
                     <div className="max-w-4xl mx-auto p-6 md:p-10">
                         {currentLesson ? (
                             <div className="space-y-8 animate-fade-in">
-                                {/* Content Viewer */}
+                                { }
                                 {currentLesson.type === 'video' || (currentLesson.attachment_url && currentLesson.attachment_url.endsWith('.mp4')) ? (
                                     <div className="aspect-video bg-black rounded-xl overflow-hidden shadow-lg relative group">
                                         <div className="absolute inset-0 flex items-center justify-center">
@@ -279,12 +279,12 @@ export function CoursePlayer() {
                                 ) : (
                                     <div className="prose prose-lg max-w-none">
                                         <h2 className="text-3xl font-display font-bold text-slate-900 mb-6">{currentLesson.title}</h2>
-                                        {/* Render Text Content */}
+                                        { }
                                         <div dangerouslySetInnerHTML={{ __html: currentLesson.content || "<p>No content available for this lesson.</p>" }} />
                                     </div>
                                 )}
 
-                                {/* Attachments */}
+                                { }
                                 {currentLesson.attachment_url && !currentLesson.attachment_url.endsWith('.mp4') && (
                                     <div className="bg-slate-50 border rounded-xl p-4 flex items-center justify-between mt-8">
                                         <div className="flex items-center gap-3">
@@ -304,9 +304,9 @@ export function CoursePlayer() {
 
                                 <Separator />
 
-                                {/* Action Buttons */}
+                                { }
                                 <div className="flex justify-between items-center pt-8">
-                                    <Button variant="ghost" disabled={false /* Add logic for prev lesson */}>
+                                    <Button variant="ghost" disabled={false  }>
                                         <ArrowLeft className="w-4 h-4 mr-2" />
                                         Previous
                                     </Button>

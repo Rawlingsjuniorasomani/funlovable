@@ -35,7 +35,7 @@ export function ParentMessages() {
   const [teachers, setTeachers] = useState<Teacher[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
 
-  // Load inbox and derive teacher list + conversations
+  
   useEffect(() => {
     const loadInbox = async () => {
       if (!user) return;
@@ -43,8 +43,8 @@ export function ParentMessages() {
       try {
         const inbox: any[] = await messagingAPI.getInbox();
 
-        // Expecting messages shaped roughly like SharedMessage
-        // { id, from, fromName, fromRole, to, toName, subject, content, read, sentAt, type }
+        
+        
         const teacherMap = new Map<string, Teacher>();
         const convMap: Record<string, Message[]> = {};
 
@@ -52,7 +52,7 @@ export function ParentMessages() {
           const fromRole = m.fromRole || m.from_role;
           const toRole = m.toRole || m.to_role;
 
-          // Only consider threads where one side is a teacher and the other is this parent
+          
           const involvesParent = m.from === user.id || m.to === user.id;
           const involvesTeacher = fromRole === "teacher" || toRole === "teacher";
           if (!involvesParent || !involvesTeacher) return;
@@ -82,7 +82,7 @@ export function ParentMessages() {
             : "";
 
           if (existing) {
-            // Update last message/time with the latest one in loop (backend should return sorted by time)
+            
             teacherMap.set(teacherId, {
               ...existing,
               lastMessage: msg.content || existing.lastMessage,
@@ -103,7 +103,7 @@ export function ParentMessages() {
         });
 
         setTeachers(Array.from(teacherMap.values()));
-        // Sort messages by time per conversation (optional safeguard)
+        
         Object.keys(convMap).forEach((tid) => {
           convMap[tid].sort((a, b) => a.timestamp.localeCompare(b.timestamp));
         });
@@ -136,7 +136,7 @@ export function ParentMessages() {
       read: true,
     };
 
-    // Optimistic UI update
+    
     setConversations(prev => ({
       ...prev,
       [selectedTeacher]: [...(prev[selectedTeacher] || []), tempMessage],
@@ -164,7 +164,7 @@ export function ParentMessages() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6 h-[600px]">
-        {/* Teachers List */}
+        { }
         <div className="bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           <div className="p-4 border-b border-border">
             <div className="relative">
@@ -212,11 +212,11 @@ export function ParentMessages() {
           </div>
         </div>
 
-        {/* Chat Area */}
+        { }
         <div className="lg:col-span-2 bg-card rounded-xl border border-border overflow-hidden flex flex-col">
           {selectedTeacher && currentTeacher ? (
             <>
-              {/* Chat Header */}
+              { }
               <div className="p-4 border-b border-border bg-muted/30 flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-tertiary flex items-center justify-center text-primary-foreground font-bold">
                   {currentTeacher.avatar}
@@ -227,7 +227,7 @@ export function ParentMessages() {
                 </div>
               </div>
 
-              {/* Messages */}
+              { }
               <div className="flex-1 overflow-auto p-4 space-y-4">
                 {currentMessages.map((message) => (
                   <div
@@ -258,7 +258,7 @@ export function ParentMessages() {
                 ))}
               </div>
 
-              {/* Input Area */}
+              { }
               <div className="p-4 border-t border-border">
                 <div className="flex gap-2">
                   <Input

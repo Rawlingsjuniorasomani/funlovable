@@ -31,10 +31,10 @@ export function AdminSettings() {
 
   const loadSettings = async () => {
     try {
-      // Assuming a generic apiRequest helper exists or we use fetch with auth
-      // Auth via HTTP-only cookies/session (no localStorage token)
-      // For consistency with codebase, we should use a configured API helper if available,
-      // but `adminAPI` or similar might not have `getSettings`.
+      
+      
+      
+      
 
       const res = await fetch(`${API_URL}/settings`, {
         credentials: 'include'
@@ -47,7 +47,7 @@ export function AdminSettings() {
       }
     } catch (error) {
       console.error("Failed to load settings:", error);
-      // Silent error or toast?
+      
     } finally {
       setLoading(false);
     }
@@ -55,7 +55,7 @@ export function AdminSettings() {
 
   const handleSave = async () => {
     try {
-      // Auth via HTTP-only cookies/session (no localStorage token)
+      
       const res = await fetch(`${API_URL}/settings`, {
         method: 'POST',
         headers: {

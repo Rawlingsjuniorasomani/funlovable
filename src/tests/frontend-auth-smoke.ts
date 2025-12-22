@@ -1,10 +1,6 @@
-/**
- * Frontend Auth Flow Smoke Test
- * This file validates that the auth hooks properly handle parent-child linking
- * and that UI components can react to auth state changes.
- */
+ 
 
-// Simulated responses matching backend format
+
 const mockResponses = {
   loginResponse: {
     user: {
@@ -86,21 +82,21 @@ const mockResponses = {
   }
 };
 
-// Test: Validate addChild hook refreshes user with children
+
 export function testAddChildRefresh() {
   console.log('TEST: addChild should refresh user from /auth/me');
 
-  // Simulate the addChild hook flow:
-  // 1. Call POST /parents/children
-  // 2. Get response with child data
-  // 3. Call GET /auth/me to refresh
-  // 4. Verify auth state now includes children
+  
+  
+  
+  
+  
 
   const response = mockResponses.addChildResponse;
   const newChild = response.child || response;
   console.log('✓ Extracted child from response:', newChild.id);
 
-  // Simulate the refresh from GET /auth/me
+  
   const refreshedUser = mockResponses.getMeAfterAddChild.user;
   console.log('✓ Refreshed user from /auth/me has children:', refreshedUser.children?.length || 0);
 
@@ -113,7 +109,7 @@ export function testAddChildRefresh() {
   return true;
 }
 
-// Test: Validate completeOnboarding refreshes is_onboarded flag
+
 export function testOnboardingRefresh() {
   console.log('\nTEST: completeOnboarding should refresh user flag');
 
@@ -128,7 +124,7 @@ export function testOnboardingRefresh() {
     return false;
   }
 
-  // Verify children are still present
+  
   if (!afterUser.children || afterUser.children.length === 0) {
     console.error('✗ FAIL: Children should persist after onboarding');
     return false;
@@ -138,7 +134,7 @@ export function testOnboardingRefresh() {
   return true;
 }
 
-// Test: Validate ParentOverview can detect children changes
+
 export function testParentOverviewRefetch() {
   console.log('\nTEST: ParentOverview should refetch when user.children.length changes');
 
@@ -148,8 +144,8 @@ export function testParentOverviewRefetch() {
   console.log('User 1 children count:', user1.children.length);
   console.log('User 2 children count:', user2.children.length);
 
-  // The useEffect dependency [user?.id, user?.children?.length] should trigger
-  // when user2 has a different children.length
+  
+  
   const shouldRefetch = user1.children.length !== user2.children.length;
 
   if (!shouldRefetch) {
@@ -161,7 +157,7 @@ export function testParentOverviewRefetch() {
   return true;
 }
 
-// Run all tests
+
 export function runAllTests() {
   console.log('=== Frontend Auth Flow Smoke Tests ===\n');
 
@@ -178,7 +174,7 @@ export function runAllTests() {
   return passed === total;
 }
 
-// Only run if this file is executed directly (not imported)
+
 if (import.meta.url === `file://${process.argv[1]}`) {
   runAllTests();
 }

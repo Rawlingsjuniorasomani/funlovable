@@ -9,10 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 
 interface Payment {
   id: string;
-  description: string; // Typically plan name or 'Paystack Payment'
+  description: string; 
   amount: number;
   created_at: string;
-  status: "success" | "pending" | "failed"; // Backend returns 'success' not 'paid'
+  status: "success" | "pending" | "failed"; 
   payment_method: string;
   reference: string;
 }
@@ -53,12 +53,12 @@ export function ParentPayments() {
     .filter((p) => p.status === "success")
     .reduce((acc, p) => acc + Number(p.amount), 0);
 
-  // Derive current plan from user subscription or latest successful payment
-  // user.subscription is populated by AuthService login logic now
+  
+  
   const currentPlan = user?.subscription ? {
     name: user.subscription.plan === 'family' ? 'Family Plan' : 'Single Child',
     price: user.subscription.plan === 'family' ? 1300 : 300,
-    period: 'year', // Assuming annual for now as per flow
+    period: 'year', 
     children: user.children?.length || 0,
     nextBilling: user.subscription.expiresAt || new Date().toISOString(),
     features: ["Unlimited quizzes", "All subjects", "Progress reports"],
@@ -72,7 +72,7 @@ export function ParentPayments() {
         <p className="text-muted-foreground">Manage your subscription and view payment history</p>
       </div>
 
-      {/* Current Plan */}
+      { }
       {currentPlan && currentPlan.isActive ? (
         <div className="bg-gradient-to-r from-primary to-tertiary rounded-xl p-6 text-primary-foreground animate-fade-in">
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -110,7 +110,7 @@ export function ParentPayments() {
         </div>
       )}
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4 animate-fade-in" style={{ animationDelay: "0.1s" }}>
           <CreditCard className="w-5 h-5 text-primary mb-2" />
@@ -129,7 +129,7 @@ export function ParentPayments() {
         </div>
       </div>
 
-      {/* Payment History */}
+      { }
       <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in" style={{ animationDelay: "0.3s" }}>
         <div className="p-4 bg-muted/30 border-b border-border flex items-center justify-between">
           <h3 className="font-semibold text-foreground">Payment History</h3>

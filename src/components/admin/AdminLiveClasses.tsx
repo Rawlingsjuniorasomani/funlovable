@@ -16,7 +16,7 @@ interface LiveClass {
   id: string;
   title: string;
   subjectId: string;
-  teacherId?: string; // Optional if not assigned
+  teacherId?: string; 
   scheduledAt: string;
   duration: number;
   status: "scheduled" | "live" | "completed" | "cancelled";

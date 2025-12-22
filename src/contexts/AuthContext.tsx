@@ -29,7 +29,7 @@ interface AuthContextType {
   removeChild: (childId: string) => Promise<void>;
   completeOnboarding: () => Promise<void>;
   updateSubscription: (plan: 'single' | 'family', status: 'active' | 'pending' | 'expired') => void;
-  // Admin functions
+  
   getAllUsers: () => Promise<User[]>;
   approveUser: (userId: string) => Promise<void>;
   rejectUser: (userId: string) => Promise<void>;
@@ -40,7 +40,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  /* eslint-disable @typescript-eslint/no-unused-vars */
+   
   const {
     user,
     isAuthenticated,
@@ -52,7 +52,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser,
     addChild,
     updateChild,
-    removeChild, // Added removeChild
+    removeChild, 
     completeOnboarding,
     updateSubscription,
     getAllUsers,
@@ -74,10 +74,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       updateUser,
       addChild,
       updateChild,
-      removeChild, // Added removeChild
+      removeChild, 
       completeOnboarding,
       updateSubscription,
-      getAllUsers, // Exposed admin functions
+      getAllUsers, 
       approveUser,
       rejectUser,
       deleteUser,

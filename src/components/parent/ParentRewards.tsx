@@ -11,7 +11,7 @@ export function ParentRewards() {
         <p className="text-muted-foreground">Track badges, stars, and rewards earned</p>
       </div>
 
-      {/* Rewards Summary */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <span className="text-3xl">⭐</span>
@@ -35,7 +35,7 @@ export function ParentRewards() {
         </div>
       </div>
 
-      {/* Level Progress */}
+      { }
       <div className="bg-gradient-to-r from-primary/10 via-tertiary/10 to-secondary/10 rounded-xl border border-primary/20 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -50,7 +50,7 @@ export function ParentRewards() {
         <Progress value={0} className="h-4" />
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <Award className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Achievements Yet</h3>

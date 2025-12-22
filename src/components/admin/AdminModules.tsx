@@ -35,7 +35,7 @@ export function AdminModules() {
         modulesAPI.getAll()
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
-      // Map modules to ensure camelCase properties if backend returns snake_case
+      
       const mappedModules = (Array.isArray(modulesData) ? modulesData : []).map((m: any) => ({
         ...m,
         subjectId: m.subject_id || m.subjectId,

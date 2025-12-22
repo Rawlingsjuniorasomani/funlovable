@@ -112,7 +112,7 @@ export function TeacherQuizzes() {
         title: q.title,
         subject: loadedSubjects.find((s: any) => s.id === (q.subject_id || q.subjectId))?.name || "Unknown",
         subjectId: q.subject_id || q.subjectId,
-        module: "General", // Placeholder as API might not return module name directly yet
+        module: "General", 
         questions: q.total_questions || q.questions || 10,
         duration: q.duration_minutes || q.duration || 15,
         type: q.type || "multiple-choice",
@@ -143,7 +143,7 @@ export function TeacherQuizzes() {
         duration_minutes: parseInt(formData.duration) || 15,
         total_questions: parseInt(formData.questions) || 10,
         description: formData.description,
-        is_active: false // Draft by default
+        is_active: false 
       } as any);
 
       await loadData();
@@ -180,7 +180,7 @@ export function TeacherQuizzes() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Quizzes</h2>
@@ -287,7 +287,7 @@ export function TeacherQuizzes() {
         </Dialog>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card rounded-xl border border-border p-4">
           <p className="text-sm text-muted-foreground">Total Quizzes</p>
@@ -310,7 +310,7 @@ export function TeacherQuizzes() {
         </div>
       </div>
 
-      {/* Filters */}
+      { }
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -345,7 +345,7 @@ export function TeacherQuizzes() {
         </Select>
       </div>
 
-      {/* Quiz List */}
+      { }
       <div className="grid gap-4">
         {filteredQuizzes.length === 0 ? (
           <div className="text-center py-10 bg-card/50 rounded-xl border border-dashed">
@@ -509,7 +509,7 @@ function QuizQuestionsSheet({ quiz, open, onOpenChange }: { quiz: Quiz; open: bo
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Add Question Form */}
+          { }
           <div className="space-y-4 border p-4 rounded-lg bg-muted/20">
             <h3 className="font-semibold text-sm">Add New Question</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -570,7 +570,7 @@ function QuizQuestionsSheet({ quiz, open, onOpenChange }: { quiz: Quiz; open: bo
             <Button onClick={handleAddQuestion} className="w-full">Add Question</Button>
           </div>
 
-          {/* Question List */}
+          { }
           <div className="space-y-2">
             <h3 className="font-semibold text-sm">Questions ({questions.length})</h3>
             {questions.length === 0 ? (

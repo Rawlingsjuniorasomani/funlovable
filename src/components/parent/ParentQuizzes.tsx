@@ -10,7 +10,7 @@ export function ParentQuizzes() {
         <p className="text-muted-foreground">Track quiz attempts and performance</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <Brain className="w-6 h-6 mx-auto text-primary mb-2" />
@@ -31,7 +31,7 @@ export function ParentQuizzes() {
         </div>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <Brain className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Quizzes</h3>

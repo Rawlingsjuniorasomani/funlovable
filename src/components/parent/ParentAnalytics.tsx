@@ -45,7 +45,7 @@ export function ParentAnalytics() {
 
   const { overview = {}, children = [], weeklyActivity = [], monthlyPayments = [], subjectBreakdown = [], recentActivity = [] } = data || {};
 
-  // Generate dynamic chart colors and config
+  
   const chartConfig: any = {
     amount: { label: "Payment", color: "hsl(var(--tertiary))" },
   };
@@ -156,9 +156,9 @@ export function ParentAnalytics() {
         ))}
       </div>
 
-      {/* Charts */}
+      { }
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Weekly Study Time */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -189,7 +189,7 @@ export function ParentAnalytics() {
           </CardContent>
         </Card>
 
-        {/* Payment History */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -209,7 +209,7 @@ export function ParentAnalytics() {
         </Card>
       </div>
 
-      {/* Subject Comparison */}
+      { }
       {subjectBreakdown.length > 0 && (
         <Card>
           <CardHeader>
@@ -240,7 +240,7 @@ export function ParentAnalytics() {
         </Card>
       )}
 
-      {/* Recent Activity */}
+      { }
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">

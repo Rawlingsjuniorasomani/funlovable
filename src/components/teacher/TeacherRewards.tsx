@@ -127,7 +127,7 @@ export function TeacherRewards() {
 
   const rewardTypeConfig = rewardTypes.find(r => r.type === formData.type);
 
-  // Stats
+  
   const stats = rewardTypes.map(rt => ({
     ...rt,
     count: rewards.filter(r => r.type === rt.type).length,
@@ -226,7 +226,7 @@ export function TeacherRewards() {
         </Dialog>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {stats.map((stat, i) => {
           const Icon = stat.icon;
@@ -246,7 +246,7 @@ export function TeacherRewards() {
         })}
       </div>
 
-      {/* Search */}
+      { }
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
@@ -257,7 +257,7 @@ export function TeacherRewards() {
         />
       </div>
 
-      {/* Rewards History */}
+      { }
       <div className="bg-card rounded-xl border border-border overflow-hidden">
         <div className="p-4 bg-muted/30 border-b border-border">
           <h3 className="font-semibold text-foreground">Recent Rewards</h3>

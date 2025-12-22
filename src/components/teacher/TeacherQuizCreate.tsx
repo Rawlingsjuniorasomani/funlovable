@@ -30,7 +30,7 @@ export function TeacherQuizCreate() {
         duration_minutes: 30,
         total_marks: 100,
         start_date: new Date(),
-        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 1 week from now
+        end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), 
         instructions: "",
         class_name: "",
         randomize_questions: false,
@@ -94,7 +94,7 @@ export function TeacherQuizCreate() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-                {/* Basic Information */}
+                { }
                 <Card>
                     <CardHeader>
                         <CardTitle>Basic Information</CardTitle>
@@ -175,7 +175,7 @@ export function TeacherQuizCreate() {
                     </CardContent>
                 </Card>
 
-                {/* Quiz Settings */}
+                { }
                 <Card>
                     <CardHeader>
                         <CardTitle>Quiz Settings</CardTitle>

@@ -8,19 +8,19 @@ import { z } from "zod";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { Label } from "@/components/ui/label";
-import authHeroOriginal from "@/assets/auth-hero.jpg"; // Original image
+import authHeroOriginal from "@/assets/auth-hero.jpg";
 
-// For now, since we just copied it, we can import it. 
-// If TypeScript complains about jpg, we might need declaration, but usually fine in Vite.
-// Let's rely on string path if import fails, but import is safer for bundler.
-// Actually, let's use the explicit import.
+
+
+
+
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
-// Demo admin credentials
+
 const ADMIN_EMAIL = "admin@edulearn.com";
 const ADMIN_PASSWORD = "admin123";
 
@@ -59,7 +59,7 @@ const AdminLogin = () => {
           title: "Admin Login Successful!",
           description: "Welcome back, Admin.",
         });
-        navigate(result.user.is_super_admin ? "/super-admin" : "/admin");
+        navigate(result.user.is_super_admin ? "/super-admin" : "/sys-admin");
       } else {
         setErrors({ email: result.error || "Invalid credentials" });
       }
@@ -83,13 +83,12 @@ const AdminLogin = () => {
       title="Welcome Back"
       subtitle="Sign in to your admin account"
       image={authHeroOriginal}
+      formClassName="bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200"
     >
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* Demo Credentials Notice - Kept for dev helper */}
-        <div className="bg-muted/50 border border-border rounded-lg p-3 mb-4">
-          <p className="text-xs text-muted-foreground">Demo: {ADMIN_EMAIL} / {ADMIN_PASSWORD}</p>
-        </div>
+        { }
+
 
         <div className="space-y-4">
           <div className="space-y-2">
@@ -103,7 +102,7 @@ const AdminLogin = () => {
                 placeholder="Email"
                 value={formData.email}
                 onChange={handleChange}
-                className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`}
+                className={`pl-10 h-12 bg-gradient-to-r from-gray-50 to-gray-100 ${errors.email ? "border-destructive" : ""}`}
               />
             </div>
             {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
@@ -120,7 +119,7 @@ const AdminLogin = () => {
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange}
-                className={`pl-10 h-12 pr-10 ${errors.password ? "border-destructive" : ""}`}
+                className={`pl-10 h-12 pr-10 bg-gradient-to-r from-gray-50 to-gray-100 ${errors.password ? "border-destructive" : ""}`}
               />
               <button
                 type="button"

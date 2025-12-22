@@ -12,22 +12,22 @@ import { useAdminNotifications } from "@/hooks/useAdminNotifications";
 import { useAuthContext } from "@/contexts/AuthContext";
 
 const navItems = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "Admins", href: "/admin/admins", icon: Shield },
-  { label: "Parents", href: "/admin/parents", icon: Users },
-  { label: "Students", href: "/admin/students", icon: GraduationCap },
-  { label: "Teachers", href: "/admin/teachers", icon: UserCheck },
-  { label: "Subjects", href: "/admin/subjects", icon: BookOpen },
-  { label: "Modules", href: "/admin/modules", icon: Layers },
-  { label: "Lessons", href: "/admin/lessons", icon: FileText },
-  { label: "Assignments", href: "/admin/assignments", icon: FileText },
-  { label: "Quizzes", href: "/admin/quizzes", icon: Target },
-  { label: "Live Classes", href: "/admin/live-classes", icon: Video },
-  { label: "Rewards", href: "/admin/rewards", icon: Trophy },
-  { label: "Payments", href: "/admin/payments", icon: CreditCard },
-  { label: "Analytics", href: "/admin/analytics", icon: BarChart3 },
-  { label: "Notifications", href: "/admin/notifications", icon: Bell },
-  { label: "Settings", href: "/admin/settings", icon: Settings },
+  { label: "Dashboard", href: "/sys-admin", icon: LayoutDashboard },
+  { label: "Admins", href: "/sys-admin/admins", icon: Shield },
+  { label: "Parents", href: "/sys-admin/parents", icon: Users },
+  { label: "Students", href: "/sys-admin/students", icon: GraduationCap },
+  { label: "Teachers", href: "/sys-admin/teachers", icon: UserCheck },
+  { label: "Subjects", href: "/sys-admin/subjects", icon: BookOpen },
+  { label: "Modules", href: "/sys-admin/modules", icon: Layers },
+  { label: "Lessons", href: "/sys-admin/lessons", icon: FileText },
+  { label: "Assignments", href: "/sys-admin/assignments", icon: FileText },
+  { label: "Quizzes", href: "/sys-admin/quizzes", icon: Target },
+  { label: "Live Classes", href: "/sys-admin/live-classes", icon: Video },
+  { label: "Rewards", href: "/sys-admin/rewards", icon: Trophy },
+  { label: "Payments", href: "/sys-admin/payments", icon: CreditCard },
+  { label: "Analytics", href: "/sys-admin/analytics", icon: BarChart3 },
+  { label: "Notifications", href: "/sys-admin/notifications", icon: Bell },
+  { label: "Settings", href: "/sys-admin/settings", icon: Settings },
 ];
 
 export function AdminSidebar() {
@@ -41,33 +41,33 @@ export function AdminSidebar() {
     setMounted(true);
     if (user?.role !== 'admin') return;
     loadNotifications();
-    // Set up polling every minute
+
     const interval = setInterval(loadNotifications, 60000);
     return () => clearInterval(interval);
   }, [loadNotifications]);
 
   const getNotificationBadge = (href: string) => {
-    // ... existing implementation
-    if (href === "/admin/parents") return getUnreadByType("new_parent") + getUnreadByType("new_subscription");
-    if (href === "/admin/teachers") return getUnreadByType("teacher_approval");
-    if (href === "/admin/students") return getUnreadByType("new_student");
-    if (href === "/admin/payments") return getUnreadByType("new_payment");
-    if (href === "/admin/notifications") return notifications.filter(n => !n.read).length;
+
+    if (href === "/sys-admin/parents") return getUnreadByType("new_parent") + getUnreadByType("new_subscription");
+    if (href === "/sys-admin/teachers") return getUnreadByType("teacher_approval");
+    if (href === "/sys-admin/students") return getUnreadByType("new_student");
+    if (href === "/sys-admin/payments") return getUnreadByType("new_payment");
+    if (href === "/sys-admin/notifications") return notifications.filter(n => !n.read).length;
     return 0;
   };
 
   const visibleNavItems = navItems.filter(item => {
-    // Super Admin Features Only
+
     const isSuperOnly = ["Settings"].includes(item.label);
     if (isSuperOnly) return user?.is_super_admin;
 
-    // Regular Admin Features (Hidden for Super Admins)
+
     if (item.label === "Admins") return !user?.is_super_admin;
 
-    // Payments visible to all admins (regular + super)
+
     if (item.label === "Payments") return true;
 
-    // Common Features (Parents, Students, Teachers, Content etc.)
+
     return true;
   });
 
@@ -93,7 +93,7 @@ export function AdminSidebar() {
       <nav className="flex-1 overflow-y-auto p-2 space-y-1">
         {visibleNavItems.map((item) => {
           const isActive = location.pathname === item.href ||
-            (item.href !== "/admin" && location.pathname.startsWith(item.href));
+            (item.href !== "/sys-admin" && location.pathname.startsWith(item.href));
           const badgeCount = getNotificationBadge(item.href);
 
           return (

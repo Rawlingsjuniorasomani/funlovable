@@ -35,7 +35,7 @@ export function RecordingControls({ isHost = true, stream }: RecordingControlsPr
       let recordStream = stream;
       
       if (!recordStream) {
-        // Capture screen + audio if no stream provided
+        
         recordStream = await navigator.mediaDevices.getDisplayMedia({
           video: true,
           audio: true
@@ -141,7 +141,7 @@ export function RecordingControls({ isHost = true, stream }: RecordingControlsPr
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-2">
           <Video className="w-5 h-5 text-primary" />
@@ -155,7 +155,7 @@ export function RecordingControls({ isHost = true, stream }: RecordingControlsPr
         )}
       </div>
 
-      {/* Controls */}
+      { }
       <div className="p-4 border-b border-border">
         <div className="flex items-center justify-center gap-3">
           {!isRecording ? (
@@ -204,7 +204,7 @@ export function RecordingControls({ isHost = true, stream }: RecordingControlsPr
         )}
       </div>
 
-      {/* Recordings List */}
+      { }
       <div className="flex-1 overflow-auto p-4">
         <h4 className="text-sm font-medium mb-3">Saved Recordings</h4>
         

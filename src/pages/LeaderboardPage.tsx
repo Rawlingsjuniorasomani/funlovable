@@ -12,9 +12,9 @@ type SortBy = "xp" | "streak" | "quizzes" | "avgScore";
 type FilterGrade = "all" | "Primary 5" | "Primary 6" | "JHS 1";
 
 const rankColors = [
-  "bg-gradient-to-br from-yellow-400 to-amber-500", // 1st - Gold
-  "bg-gradient-to-br from-gray-300 to-gray-400", // 2nd - Silver  
-  "bg-gradient-to-br from-amber-600 to-orange-700", // 3rd - Bronze
+  "bg-gradient-to-br from-yellow-400 to-amber-500", 
+  "bg-gradient-to-br from-gray-300 to-gray-400", 
+  "bg-gradient-to-br from-amber-600 to-orange-700", 
 ];
 
 const rankIcons = [Crown, Medal, Medal];
@@ -23,17 +23,17 @@ export default function LeaderboardPage() {
   const [sortBy, setSortBy] = useState<SortBy>("xp");
   const [filterGrade, setFilterGrade] = useState<FilterGrade>("all");
 
-  // Fetch leaderboard from local data source
-  // In a real app, this would be an API call with filters
+  
+  
   const sortedStudents: LeaderboardEntry[] = [...LEADERBOARD_DATA]
-    .sort((a, b) => { // Simple client side sort for demo
+    .sort((a, b) => { 
       if (sortBy === 'xp') return b.xp - a.xp;
       if (sortBy === 'streak') return b.streak - a.streak;
       if (sortBy === 'quizzes') return b.quizzesCompleted - a.quizzesCompleted;
       if (sortBy === 'avgScore') return b.avgScore - a.avgScore;
       return 0;
     })
-    .map((s, idx) => ({ ...s, rank: idx + 1 })); // Re-calculate rank dynamically for view
+    .map((s, idx) => ({ ...s, rank: idx + 1 })); 
 
   const topThree = sortedStudents.slice(0, 3);
   const rest = sortedStudents.slice(3);
@@ -43,7 +43,7 @@ export default function LeaderboardPage() {
       <Header />
       <main className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-5xl">
-          {/* Header */}
+          { }
           <div className="text-center mb-8 animate-fade-in">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-amber-500 mb-4">
               <Trophy className="w-8 h-8 text-white" />
@@ -52,12 +52,12 @@ export default function LeaderboardPage() {
             <p className="text-muted-foreground">See how you rank against other students!</p>
           </div>
 
-          {/* Your Stats */}
+          { }
           <div className="mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <XPDisplay />
           </div>
 
-          {/* Filters & Sort */}
+          { }
           <div className="flex flex-wrap gap-4 mb-8 animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <div className="flex gap-2">
               <span className="text-sm text-muted-foreground self-center">Sort by:</span>
@@ -95,9 +95,9 @@ export default function LeaderboardPage() {
             </div>
           </div>
 
-          {/* Top 3 Podium */}
+          { }
           <div className="flex justify-center items-end gap-4 mb-12 animate-fade-in" style={{ animationDelay: "0.3s" }}>
-            {/* 2nd Place */}
+            { }
             {topThree[1] && (
               <div className="text-center">
                 <div className={cn("w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-2xl shadow-lg", rankColors[1])}>
@@ -115,7 +115,7 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            {/* 1st Place */}
+            { }
             {topThree[0] && (
               <div className="text-center -mt-8">
                 <div className="relative">
@@ -136,7 +136,7 @@ export default function LeaderboardPage() {
               </div>
             )}
 
-            {/* 3rd Place */}
+            { }
             {topThree[2] && (
               <div className="text-center">
                 <div className={cn("w-20 h-20 rounded-full mx-auto mb-3 flex items-center justify-center text-white font-bold text-2xl shadow-lg", rankColors[2])}>
@@ -155,7 +155,7 @@ export default function LeaderboardPage() {
             )}
           </div>
 
-          {/* Rest of Rankings */}
+          { }
           <div className="bg-card rounded-xl border border-border overflow-hidden animate-fade-in" style={{ animationDelay: "0.4s" }}>
             <div className="p-4 bg-muted/30 border-b border-border">
               <h2 className="font-semibold text-foreground">Full Rankings</h2>

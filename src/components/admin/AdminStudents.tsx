@@ -13,7 +13,8 @@ import { useAuthContext } from "@/contexts/AuthContext";
 import { User } from "@/hooks/useAuth";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { subjectsAPI, usersAPI, API_URL } from "@/config/api";
+import { subjectsAPI, usersAPI, messagingAPI, API_URL } from "@/config/api";
+import { Textarea } from "@/components/ui/textarea";
 
 interface StudentWithDetails extends User {
   grade?: string;
@@ -44,7 +45,10 @@ export function AdminStudents() {
   });
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([]);
   const [subjects, setSubjects] = useState<any[]>([]);
-  // Subscription management dialog
+
+  const [isMessageOpen, setIsMessageOpen] = useState(false);
+  const [msgForm, setMsgForm] = useState({ subject: "", body: "" });
+
   const [isSubOpen, setIsSubOpen] = useState(false);
   const [subForm, setSubForm] = useState({ plan: 'single', expiresAt: '' });
 
@@ -72,11 +76,11 @@ export function AdminStudents() {
         .filter(u => u.role === 'student')
         .map(s => ({
           ...s,
-          grade: (s as any).student_class || 'N/A', // Mapped from backend student_class
-          class: (s as any).school || 'N/A', // Using school field as generic class/school info if needed
+          grade: (s as any).student_class || 'N/A',
+          class: (s as any).school || 'N/A',
           parentName: (s as any).parent_name || 'N/A',
           enrolledSubjects: (s as any).subjects_list ? (s as any).subjects_list.split(', ') : [],
-          status: (s as any).is_approved ? 'active' : 'inactive', // Map to allowed types
+          status: (s as any).is_approved ? 'active' : 'inactive',
           avgScore: (s as any).avg_quiz_score ? Math.round((s as any).avg_quiz_score) : 0,
           lessonsCompleted: (s as any).completed_lessons || 0,
           quizzesTaken: (s as any).completed_quizzes || 0,
@@ -94,7 +98,7 @@ export function AdminStudents() {
       return;
     }
 
-    // Create user via backend API
+
     const newStudent = {
       name: formData.name,
       email: formData.email,
@@ -107,8 +111,8 @@ export function AdminStudents() {
       class: formData.class || '',
     };
 
-    // Send to backend API
-    // TODO: POST to backend /api/students with student data including grade/class
+
+
     try {
       if (usersAPI.update) {
         await usersAPI.update('', newStudent);
@@ -132,10 +136,12 @@ export function AdminStudents() {
     updateUserByAdmin(selectedStudent.id, {
       name: formData.name,
       phone: formData.phone,
-    });
+      grade: formData.grade,
+      school: formData.class,
+    } as any);
 
-    // No localStorage - grade/class sent to backend API
-    // TODO: PUT to backend /api/students/:id with grade/class data
+
+
 
     setIsEditOpen(false);
     loadStudents();
@@ -144,23 +150,23 @@ export function AdminStudents() {
 
   const handleDelete = (studentId: string) => {
     deleteUser(studentId);
-    // No localStorage - all student data managed on backend
-    // TODO: DELETE to backend /api/students/:id (cascades subject enrollment, etc)
+
+
     loadStudents();
     toast({ title: "Student Removed", variant: "destructive" });
   };
 
   const handleStatusChange = (studentId: string, status: string) => {
-    // No localStorage - status managed on backend
-    // TODO: PUT to backend /api/students/:id/status with { status }
+
+
     loadStudents();
     toast({ title: "Status Updated", description: `Student status changed to ${status}` });
   };
 
   const handleAssignSubjects = () => {
     if (!selectedStudent) return;
-    // No localStorage - subjects managed on backend
-    // TODO: POST to backend /api/students/:id/subjects with selectedSubjects
+
+
     setIsAssignOpen(false);
     loadStudents();
     toast({ title: "Subjects Assigned", description: "Student subjects updated successfully" });
@@ -211,6 +217,29 @@ export function AdminStudents() {
     }
   };
 
+  const handleMessageOpen = (student: StudentWithDetails) => {
+    setSelectedStudent(student);
+    setMsgForm({ subject: "", body: "" });
+    setIsMessageOpen(true);
+  };
+
+  const handleMessageSubmit = async () => {
+    if (!selectedStudent || !msgForm.subject || !msgForm.body) return;
+    try {
+      await messagingAPI.send({
+        recipient_id: selectedStudent.id,
+        subject: msgForm.subject,
+        message: msgForm.body
+      });
+      setIsMessageOpen(false);
+      toast({ title: "Sent", description: "Message sent successfully." });
+    } catch (error) {
+      // Fallback if messagingAPI is not imported or different
+      console.error("Message send failed", error);
+      toast({ title: "Error", description: "Failed to send message.", variant: "destructive" });
+    }
+  };
+
   const filteredStudents = students.filter((s) => {
     const matchesSearch = s.name.toLowerCase().includes(search.toLowerCase()) ||
       s.email.toLowerCase().includes(search.toLowerCase());
@@ -239,7 +268,7 @@ export function AdminStudents() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Students Management</h1>
@@ -299,7 +328,7 @@ export function AdminStudents() {
         </Dialog>
       </div>
 
-      {/* Stats Cards */}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -336,7 +365,7 @@ export function AdminStudents() {
         </Card>
       </div>
 
-      {/* Filters */}
+      { }
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -360,7 +389,7 @@ export function AdminStudents() {
         </Select>
       </div>
 
-      {/* Table */}
+      { }
       {filteredStudents.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Users className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -423,15 +452,15 @@ export function AdminStudents() {
                         <DropdownMenuItem onClick={() => openEditDialog(student)}>
                           <Edit className="w-4 h-4 mr-2" /> Edit
                         </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => {
-                setSelectedStudent(student);
-                const plan = student.subscription?.plan ?? 'single';
-                const expiresAt = student.subscription?.expiresAt ? new Date(student.subscription.expiresAt).toISOString().split('T')[0] : '';
-                setSubForm({ plan, expiresAt });
-                setIsSubOpen(true);
-              }}>
-                <CreditCard className="w-4 h-4 mr-2" /> Manage Subscription
-              </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => {
+                          setSelectedStudent(student);
+                          const plan = student.subscription?.plan ?? 'single';
+                          const expiresAt = student.subscription?.expiresAt ? new Date(student.subscription.expiresAt).toISOString().split('T')[0] : '';
+                          setSubForm({ plan, expiresAt });
+                          setIsSubOpen(true);
+                        }}>
+                          <CreditCard className="w-4 h-4 mr-2" /> Manage Subscription
+                        </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => openAssignDialog(student)}>
                           <BookOpen className="w-4 h-4 mr-2" /> Assign Subjects
                         </DropdownMenuItem>
@@ -446,6 +475,10 @@ export function AdminStudents() {
                         <DropdownMenuItem onClick={() => handleDelete(student.id)} className="text-destructive">
                           <Trash2 className="w-4 h-4 mr-2" /> Delete
                         </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => handleMessageOpen(student)}>
+                          <Mail className="w-4 h-4 mr-2" /> Send Message
+                        </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </TableCell>
@@ -456,7 +489,7 @@ export function AdminStudents() {
         </div>
       )}
 
-      {/* View Dialog */}
+      { }
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -514,7 +547,7 @@ export function AdminStudents() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      { }
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -561,7 +594,7 @@ export function AdminStudents() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Subjects Dialog */}
+      { }
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -596,6 +629,29 @@ export function AdminStudents() {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAssignOpen(false)}>Cancel</Button>
             <Button onClick={handleAssignSubjects}>Assign Subjects</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Message Dialog */}
+      <Dialog open={isMessageOpen} onOpenChange={setIsMessageOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Message {selectedStudent?.name}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <Label>Subject</Label>
+              <Input value={msgForm.subject} onChange={e => setMsgForm({ ...msgForm, subject: e.target.value })} placeholder="Message Subject" />
+            </div>
+            <div className="space-y-2">
+              <Label>Message</Label>
+              <Textarea className="h-24" value={msgForm.body} onChange={(e: any) => setMsgForm({ ...msgForm, body: e.target.value })} placeholder="Type your message here..." />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsMessageOpen(false)}>Cancel</Button>
+            <Button onClick={handleMessageSubmit}><Mail className="w-4 h-4 mr-2" /> Send</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

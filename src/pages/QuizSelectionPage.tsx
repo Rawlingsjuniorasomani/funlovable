@@ -39,18 +39,18 @@ export default function QuizSelectionPage() {
       <Header />
       <main className="flex-1 py-8 px-4">
         <div className="container mx-auto max-w-6xl">
-          {/* Header Section */}
+          { }
           <div className="mb-8 animate-fade-in">
             <h1 className="text-4xl font-display font-bold text-foreground mb-2">Quiz Center</h1>
             <p className="text-muted-foreground">Test your knowledge and earn XP!</p>
           </div>
 
-          {/* XP Display */}
+          { }
           <div className="mb-8 animate-fade-in" style={{ animationDelay: "0.1s" }}>
             <XPDisplay />
           </div>
 
-          {/* Achievements Preview */}
+          { }
           <div className="mb-8 p-6 bg-card rounded-xl border border-border animate-fade-in" style={{ animationDelay: "0.2s" }}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
@@ -64,7 +64,7 @@ export default function QuizSelectionPage() {
             <AchievementBadges maxDisplay={8} />
           </div>
 
-          {/* Subject Filter */}
+          { }
           <div className="mb-6 flex flex-wrap gap-2 animate-fade-in" style={{ animationDelay: "0.3s" }}>
             <Button
               variant={selectedSubject === null ? "default" : "outline"}
@@ -89,7 +89,7 @@ export default function QuizSelectionPage() {
             ))}
           </div>
 
-          {/* Quiz Grid */}
+          { }
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredQuizzes.map((quiz, index) => (
               <QuizCard 

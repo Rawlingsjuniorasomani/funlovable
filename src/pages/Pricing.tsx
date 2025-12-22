@@ -102,7 +102,7 @@ const Pricing = () => {
     <div className="min-h-screen">
       <Header />
       <main className="pt-20">
-        {/* Hero */}
+        { }
         <section className="py-16 bg-gradient-to-br from-primary/5 via-tertiary/5 to-secondary/5">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
@@ -116,7 +116,7 @@ const Pricing = () => {
           </div>
         </section>
 
-        {/* Pricing Cards */}
+        { }
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
@@ -166,8 +166,8 @@ const Pricing = () => {
                   <Link to="/parent/register-flow" state={{
                     selectedPlan: {
                       name: plan.name,
-                      id: plan.name === "Single Plan" ? "single" : "family",
-                      priceVal: plan.name === "Single Plan" ? 300 : 1300
+                      id: plan.name === "Single Child" ? "2ffbc85c-bc5c-4f09-9ee9-09b741e644ab" : "a596bef1-0062-403f-be11-75d6365a97f9",
+                      priceVal: plan.name === "Single Child" ? 300 : 1300
                     }
                   }}>
                     <Button
@@ -183,7 +183,7 @@ const Pricing = () => {
               ))}
             </div>
 
-            {/* Upgrade Note */}
+            { }
             <div className="mt-8 text-center">
               <p className="text-muted-foreground">
                 Need to add more children? Start with Single Child and upgrade anytime!
@@ -192,7 +192,7 @@ const Pricing = () => {
           </div>
         </section>
 
-        {/* Testimonials */}
+        { }
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">
@@ -228,7 +228,7 @@ const Pricing = () => {
           </div>
         </section>
 
-        {/* FAQs */}
+        { }
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">

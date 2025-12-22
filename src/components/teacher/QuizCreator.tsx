@@ -121,7 +121,7 @@ export function QuizCreator() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Quiz Details */}
+        { }
         <div className="space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Quiz Details</h3>
@@ -178,7 +178,7 @@ export function QuizCreator() {
           </div>
         </div>
 
-        {/* Questions Editor */}
+        { }
         <div className="lg:col-span-2 space-y-4">
           {quiz.questions?.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-12 text-center">
@@ -271,7 +271,7 @@ export function QuizCreator() {
         </div>
       </div>
 
-      {/* Preview Dialog */}
+      { }
       <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>

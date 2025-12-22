@@ -60,7 +60,7 @@ export default function Checkout() {
 
     setIsProcessing(true);
 
-    // Simulate Paystack integration
+    
     await new Promise((resolve) => setTimeout(resolve, 2000));
 
     toast({
@@ -73,7 +73,7 @@ export default function Checkout() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
+      { }
       <header className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-2 text-foreground hover:text-primary transition-colors">
@@ -99,7 +99,7 @@ export default function Checkout() {
           </div>
 
           <div className="grid lg:grid-cols-5 gap-8">
-            {/* Plan Selection */}
+            { }
             <div className="lg:col-span-3 space-y-6">
               <div className="bg-card rounded-2xl border border-border p-6 animate-fade-in">
                 <h2 className="text-xl font-display font-semibold text-foreground mb-6">
@@ -150,7 +150,7 @@ export default function Checkout() {
                 </RadioGroup>
               </div>
 
-              {/* Customer Information */}
+              { }
               <div className="bg-card rounded-2xl border border-border p-6 animate-fade-in" style={{ animationDelay: "100ms" }}>
                 <h2 className="text-xl font-display font-semibold text-foreground mb-6">
                   2. Your Information
@@ -202,7 +202,7 @@ export default function Checkout() {
               </div>
             </div>
 
-            {/* Order Summary */}
+            { }
             <div className="lg:col-span-2">
               <div className="bg-card rounded-2xl border border-border p-6 sticky top-24 animate-fade-in" style={{ animationDelay: "200ms" }}>
                 <h2 className="text-xl font-display font-semibold text-foreground mb-6">
@@ -227,7 +227,7 @@ export default function Checkout() {
                   </div>
                 )}
 
-                {/* Paystack Button */}
+                { }
                 <Button
                   onClick={handlePaystack}
                   disabled={isProcessing}
@@ -246,7 +246,7 @@ export default function Checkout() {
                   )}
                 </Button>
 
-                {/* Paystack Badge */}
+                { }
                 <div className="mt-4 text-center">
                   <div className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                     <Shield className="w-4 h-4" />
@@ -255,7 +255,7 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Features */}
+                { }
                 <div className="mt-6 pt-6 border-t border-border space-y-3">
                   <div className="flex items-center gap-3 text-sm text-muted-foreground">
                     <Check className="w-5 h-5 text-secondary" />
@@ -271,7 +271,7 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Payment Methods */}
+                { }
                 <div className="mt-6 pt-6 border-t border-border">
                   <p className="text-xs text-muted-foreground mb-3">Accepted payment methods:</p>
                   <div className="flex flex-wrap gap-2">

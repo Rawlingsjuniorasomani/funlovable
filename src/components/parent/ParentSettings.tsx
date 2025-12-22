@@ -41,7 +41,7 @@ export function ParentSettings() {
         <p className="text-muted-foreground">Manage your account and preferences</p>
       </div>
 
-      {/* Profile Section */}
+      { }
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-display font-semibold mb-4 flex items-center gap-2">
           <User className="w-5 h-5 text-primary" />
@@ -95,7 +95,7 @@ export function ParentSettings() {
         </Button>
       </div>
 
-      {/* Notification Preferences */}
+      { }
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-display font-semibold mb-4 flex items-center gap-2">
           <Bell className="w-5 h-5 text-tertiary" />
@@ -135,7 +135,7 @@ export function ParentSettings() {
         </div>
       </div>
 
-      {/* Security */}
+      { }
       <div className="bg-card rounded-xl border border-border p-6">
         <h3 className="font-display font-semibold mb-4 flex items-center gap-2">
           <Shield className="w-5 h-5 text-secondary" />
@@ -155,7 +155,7 @@ export function ParentSettings() {
         </div>
       </div>
 
-      {/* Subscription Info */}
+      { }
       <div className="bg-gradient-to-r from-primary/10 via-tertiary/10 to-secondary/10 rounded-xl border border-primary/20 p-6">
         <div className="flex items-center justify-between">
           <div>

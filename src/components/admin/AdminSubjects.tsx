@@ -69,8 +69,8 @@ export function AdminSubjects() {
   };
 
   const handleSave = async (subjectData?: Partial<Subject>) => {
-    // If subjectData is passed (e.g. for status update), use it.
-    // Otherwise use formData.
+    
+    
     const dataToSave = subjectData || formData;
     const isNameValid = subjectData ? true : !!formData.name;
 
@@ -182,7 +182,7 @@ export function AdminSubjects() {
                   <IconRenderer iconName={subject.icon} />
                 </div>
                 <div className="flex gap-2">
-                  {/* Status badge since API might not return it yet, defaulting to Published for existing ones if undefined */}
+                  { }
                   <Badge variant={subject.status === 'Draft' || subject.status === 'Pending Approval' ? "secondary" : "default"}>
                     {subject.status || "Published"}
                   </Badge>

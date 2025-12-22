@@ -42,16 +42,16 @@ export function TeacherStudents() {
   const loadStudents = async () => {
     try {
       setLoading(true);
-      const data = await teachersAPI.getMyStudents(); // Use specific API
+      const data = await teachersAPI.getMyStudents(); 
       const studentData = (Array.isArray(data) ? data : []).map((s: any) => ({
         ...s,
         class: s.student_class || 'Unassigned',
         grade: s.student_class || 'Unassigned',
         avatar: s.avatar || s.name?.charAt(0) || 'S',
-        xp: 0, // Backend might not resolve XP yet or returns different shape
+        xp: 0, 
         level: 1,
         streak: 0,
-        quizzesCompleted: parseInt(s.completed_lessons) || 0, // Adjust based on actual backend query
+        quizzesCompleted: parseInt(s.completed_lessons) || 0, 
         lessonsCompleted: s.completed_lessons || 0,
         avgScore: Math.round(s.avg_score || 0),
         joinedAt: s.created_at || new Date().toISOString(),
@@ -93,7 +93,7 @@ export function TeacherStudents() {
         </Button>
       </div>
 
-      {/* Filters */}
+      { }
       <div className="flex flex-wrap gap-4 p-4 bg-card rounded-xl border border-border">
         <div className="flex-1 min-w-[200px]">
           <div className="relative">
@@ -129,7 +129,7 @@ export function TeacherStudents() {
         </Select>
       </div>
 
-      {/* Student Cards */}
+      { }
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredStudents.map((student, index) => (
           <StudentCard key={student.id} student={student} index={index} />

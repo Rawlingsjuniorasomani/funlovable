@@ -37,7 +37,7 @@ export function StudentAnalytics() {
         <p className="text-muted-foreground">Track your learning progress and achievements</p>
       </div>
 
-      {/* Stats Overview */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -85,9 +85,9 @@ export function StudentAnalytics() {
         </Card>
       </div>
 
-      {/* Charts */}
+      { }
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Weekly Activity */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -107,7 +107,7 @@ export function StudentAnalytics() {
           </CardContent>
         </Card>
 
-        {/* XP Progress */}
+        { }
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -133,7 +133,7 @@ export function StudentAnalytics() {
         </Card>
       </div>
 
-      {/* Subject Performance */}
+      { }
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -158,7 +158,7 @@ export function StudentAnalytics() {
         </CardContent>
       </Card>
 
-      {/* Overall Progress */}
+      { }
       <div className="grid md:grid-cols-2 gap-6">
         <Card>
           <CardHeader>

@@ -68,12 +68,12 @@ export default function OnboardingPage() {
   const [selectedPlan, setSelectedPlan] = useState<typeof plans[0]>(plans[0]);
   const [showPaystack, setShowPaystack] = useState(false);
 
-  // Filter steps for students
+  
   const activeSteps = user?.role === 'student'
     ? steps.filter(s => s.id !== 1)
     : steps;
 
-  // Initial step adjustment
+  
   useEffect(() => {
     if (user?.role === 'student' && currentStep === 1) {
       setCurrentStep(2);
@@ -111,7 +111,7 @@ export default function OnboardingPage() {
     });
 
     if (newChild && user) {
-      // Link child in parent data store for admin visibility
+      
       linkChild({
         parentId: user.id,
         childId: newChild.id,
@@ -122,7 +122,7 @@ export default function OnboardingPage() {
         class: 'A',
       });
 
-      // Notify admin
+      
       addNotification({
         type: 'new_student',
         title: 'New Student Added',
@@ -130,7 +130,7 @@ export default function OnboardingPage() {
         relatedId: newChild.id,
       });
 
-      // Send SMS
+      
       if (user.phone) {
         await sendChildAddedSMS(user.phone, user.name, newChild.name);
       }
@@ -138,7 +138,7 @@ export default function OnboardingPage() {
 
     if (newChild) {
       toast({ title: "Child added!", description: `${childData.name} has been added to your account.` });
-      // Move to Plan Selection
+      
       setCurrentStep(2);
     } else {
       toast({ title: "Error", description: "Could not add child. Please try again.", variant: "destructive" });
@@ -151,7 +151,7 @@ export default function OnboardingPage() {
     const now = new Date();
     const expiresAt = new Date(now.getTime() + 365 * 24 * 60 * 60 * 1000);
 
-    // Create subscription
+    
     createSubscription({
       parentId: user.id,
       parentName: user.name,
@@ -166,7 +166,7 @@ export default function OnboardingPage() {
       autoRenew: true,
     });
 
-    // Add payment record
+    
     addPayment({
       parentId: user.id,
       parentName: user.name,
@@ -178,38 +178,38 @@ export default function OnboardingPage() {
       paymentMethod: 'Paystack',
     });
 
-    // Update user subscription
+    
     updateSubscription(selectedPlan.id as 'single' | 'family', 'active');
 
-    // Add admin notifications
+    
     addNotification({
       type: 'new_subscription',
       title: 'New Subscription',
       description: `${user.name} subscribed to ${selectedPlan.name}`,
     });
 
-    // For student/parent, we've already created the subscription record in the store above.
-    // Now just updating local auth context and sending SMS.
+    
+    
 
     if (user?.role === 'parent') {
-      // Link pending child if exists (from step 1) - actually step 1 uses `addChild`.
-      // If we are here, child is already added to parent account in Step 1.
-      // We just need to update local context.
+      
+      
+      
       updateSubscription(selectedPlan.id as 'single' | 'family', 'active');
 
-      // SMS notifications
+      
       await sendPaymentConfirmationSMS(user.phone || '', user.name, selectedPlan.price, reference);
-      // We don't have child name here easily if multiple, but generic msg works.
+      
     } else if (user?.role === 'student') {
-      // Update student subscription context
-      // We might need a generic updateSubscription or similar in AuthContext for student
-      // Using completeOnboarding to trigger 'is_onboarded' and refreshing user
+      
+      
+      
     }
 
-    // Complete onboarding
+    
     await completeOnboarding();
 
-    // Navigate
+    
     setCurrentStep(4);
     setTimeout(() => {
       const target = user?.role === 'parent' ? '/parent' : '/student';
@@ -228,7 +228,7 @@ export default function OnboardingPage() {
       <Header />
       <main className="pt-20 min-h-screen">
         <div className="container mx-auto px-4 py-8">
-          {/* Progress Steps */}
+          { }
           <div className="max-w-3xl mx-auto mb-8">
             <div className="flex items-center justify-between">
               {activeSteps.map((step, index) => {
@@ -260,9 +260,9 @@ export default function OnboardingPage() {
             </div>
           </div>
 
-          {/* Step Content */}
+          { }
           <div className="max-w-2xl mx-auto">
-            {/* Step 1: Add Child (Parents Only) */}
+            { }
             {currentStep === 1 && user?.role === 'parent' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-right-4 duration-500">
                 <div className="text-center mb-8">
@@ -272,7 +272,7 @@ export default function OnboardingPage() {
                 <div className="bg-card rounded-3xl p-8 border border-border shadow-lg animate-fade-in">
                   <h2 className="font-display text-2xl font-bold mb-2 text-center">Add Your Child</h2>
                   <p className="text-muted-foreground text-center mb-8">Enter your child's details to get started</p>
-                  {/* ... child form fields ... */}
+                  { }
                   <div className="space-y-6">
                     <div className="grid md:grid-cols-2 gap-4">
                       <div className="space-y-2">

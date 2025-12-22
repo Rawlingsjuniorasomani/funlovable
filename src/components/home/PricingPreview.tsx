@@ -47,7 +47,7 @@ export function PricingPreview() {
       viewport={{ once: true, amount: 0.2 }}
       transition={{ duration: 0.6, ease: "easeOut" }}
     >
-      {/* Background Image */}
+      { }
       <div className="absolute inset-0 z-0">
         <img
           src="/WhatsApp Image 2025-12-07 at 09.39.11_281f930c.jpg"

@@ -11,7 +11,7 @@ export function StudentAchievements() {
 
   const handleDownloadCertificate = (certName: string) => {
     toast.success(`Downloading ${certName} Certificate...`);
-    // Simulate download delay
+    
     setTimeout(() => {
       toast.success("Download Complete!");
     }, 1500);
@@ -24,7 +24,7 @@ export function StudentAchievements() {
         <p className="text-muted-foreground">Earn badges and rewards for your accomplishments</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <p className="text-3xl">🏆</p>
@@ -48,7 +48,7 @@ export function StudentAchievements() {
         </div>
       </div>
 
-      {/* Badges Section */}
+      { }
       <section>
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Award className="w-5 h-5 text-primary" />
@@ -90,7 +90,7 @@ export function StudentAchievements() {
         </div>
       </section>
 
-      {/* Certificates Section */}
+      { }
       <section>
         <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
           <Award className="w-5 h-5 text-yellow-600" />
@@ -105,7 +105,7 @@ export function StudentAchievements() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {CERTIFICATES.map((cert) => (
               <div key={cert.id} className="bg-card rounded-xl border border-border p-0 overflow-hidden flex flex-col md:flex-row shadow-sm hover:shadow-md transition-shadow">
-                {/* Certificate preview box */}
+                { }
                 <div className="w-full md:w-1/3 bg-gradient-to-br from-yellow-50 to-yellow-100 flex items-center justify-center p-6 border-b md:border-b-0 md:border-r border-yellow-200">
                   <div className="border-4 border-double border-yellow-600 p-4 w-full h-full min-h-[120px] flex items-center justify-center text-center">
                     <div className="space-y-1">

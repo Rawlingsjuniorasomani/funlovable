@@ -40,7 +40,7 @@ export function ParentQuizResults() {
     const loadGrades = async () => {
         try {
             const data = await gradesAPI.getStudentGrades(selectedChild);
-            // Filter for quiz/test grades
+            
             const quizGrades = Array.isArray(data)
                 ? data.filter(g => g.assessment_type === "quiz" || g.assessment_type === "test")
                 : [];

@@ -241,7 +241,7 @@ export function Whiteboard({ isHost = true, onClose }: WhiteboardProps) {
 
   return (
     <div className="flex flex-col h-full bg-card rounded-xl border border-border overflow-hidden">
-      {/* Toolbar */}
+      { }
       {isHost && (
         <div className="flex items-center gap-2 p-3 border-b border-border bg-muted/50 flex-wrap">
           <div className="flex items-center gap-1 border-r border-border pr-2">
@@ -326,7 +326,7 @@ export function Whiteboard({ isHost = true, onClose }: WhiteboardProps) {
         </div>
       )}
 
-      {/* Canvas */}
+      { }
       <div className="flex-1 relative bg-white">
         <canvas
           ref={canvasRef}

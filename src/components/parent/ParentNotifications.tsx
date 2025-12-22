@@ -22,7 +22,7 @@ const typeConfig = {
   class: { icon: AlertTriangle, color: 'text-destructive bg-destructive/10' },
   achievement: { icon: CheckCircle, color: 'text-secondary bg-secondary/10' },
   reminder: { icon: Bell, color: 'text-primary bg-primary/10' },
-  // Fallbacks for compatibility if needed
+  
   alert: { icon: Clock, color: 'text-primary bg-primary/10' },
   success: { icon: CheckCircle, color: 'text-secondary bg-secondary/10' },
   warning: { icon: AlertTriangle, color: 'text-destructive bg-destructive/10' },
@@ -136,7 +136,7 @@ export function ParentNotifications() {
           )}
         </>
       ) : (
-        /* Settings Tab */
+         
         <div className="bg-card rounded-xl border border-border p-6">
           <h3 className="font-display font-semibold mb-4">Notification Preferences</h3>
           <div className="space-y-4">

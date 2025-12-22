@@ -19,7 +19,7 @@ interface QuizPlayerProps {
   title: string;
   subject: string;
   questions: QuizQuestion[];
-  timeLimit?: number; // in seconds
+  timeLimit?: number; 
   onComplete?: (score: number, total: number) => void;
   onClose?: () => void;
 }
@@ -38,7 +38,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
   const currentQuestion = questions[currentIndex];
   const isCorrect = selectedAnswer === currentQuestion?.correctAnswer;
 
-  // Initialize quiz
+  
   useEffect(() => {
     if (!progress && !quizStarted) {
       startQuiz(questions.length);
@@ -52,7 +52,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
     }
   }, [progress, questions.length, startQuiz, timeLimit, quizStarted]);
 
-  // Timer
+  
   useEffect(() => {
     if (!quizStarted || quizEnded || showResult) return;
 
@@ -124,7 +124,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  // Quiz Results Screen
+  
   if (quizEnded && progress) {
     const percentage = Math.round((progress.score / progress.totalQuestions) * 100);
     const grade = percentage >= 90 ? "A+" : percentage >= 80 ? "A" : percentage >= 70 ? "B" : percentage >= 60 ? "C" : percentage >= 50 ? "D" : "F";
@@ -173,10 +173,10 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
     );
   }
 
-  // Quiz Player Screen
+  
   return (
     <div className="bg-card rounded-2xl border border-border overflow-hidden max-w-3xl mx-auto">
-      {/* Header */}
+      { }
       <div className="bg-gradient-to-r from-primary to-tertiary p-6 text-primary-foreground">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -192,7 +192,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
           </div>
         </div>
         
-        {/* Progress */}
+        { }
         <div className="flex items-center gap-4">
           <Progress value={((currentIndex + (showResult ? 1 : 0)) / questions.length) * 100} className="h-2 flex-1 [&>div]:bg-white/80" />
           <span className="text-sm font-medium">
@@ -201,7 +201,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
         </div>
       </div>
 
-      {/* Question */}
+      { }
       <div className="p-8">
         <div className="mb-8 animate-fade-in" key={currentIndex}>
           <div className="flex items-center gap-2 mb-4">
@@ -211,7 +211,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
           <h3 className="text-xl font-semibold text-foreground">{currentQuestion?.question}</h3>
         </div>
 
-        {/* Options */}
+        { }
         <div className="space-y-3 mb-8">
           {currentQuestion?.options.map((option, index) => {
             const isSelected = selectedAnswer === index;
@@ -256,7 +256,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
           })}
         </div>
 
-        {/* Explanation */}
+        { }
         {showResult && currentQuestion?.explanation && (
           <div className="p-4 rounded-xl bg-muted/50 border border-border mb-6 animate-fade-in">
             <p className="text-sm font-medium text-foreground mb-1">Explanation:</p>
@@ -264,7 +264,7 @@ export function QuizPlayer({ quizId, title, subject, questions, timeLimit = 600,
           </div>
         )}
 
-        {/* Actions */}
+        { }
         <div className="flex justify-end gap-4">
           {!showResult ? (
             <Button onClick={handleSubmitAnswer} disabled={selectedAnswer === null} className="btn-bounce">

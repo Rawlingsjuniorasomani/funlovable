@@ -11,7 +11,7 @@ export function StudentProgress() {
         <p className="text-muted-foreground">Track your learning journey and achievements</p>
       </div>
 
-      {/* Level Progress */}
+      { }
       <div className="bg-gradient-to-r from-primary/10 via-tertiary/10 to-secondary/10 rounded-xl border border-primary/20 p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
@@ -27,7 +27,7 @@ export function StudentProgress() {
         <p className="text-sm text-muted-foreground mt-2">100 XP to Level 2</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <p className="text-2xl font-bold text-foreground">0</p>
@@ -47,7 +47,7 @@ export function StudentProgress() {
         </div>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <TrendingUp className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">No Progress Yet</h3>

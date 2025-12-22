@@ -10,7 +10,7 @@ export function StudentLeaderboard() {
         <p className="text-muted-foreground">See how you rank among other students</p>
       </div>
 
-      {/* Your Rank */}
+      { }
       <div className="bg-gradient-to-r from-star/10 via-star/5 to-transparent rounded-xl border border-star/20 p-6">
         <div className="flex items-center justify-between">
           <div>
@@ -24,7 +24,7 @@ export function StudentLeaderboard() {
         </div>
       </div>
 
-      {/* Empty State */}
+      { }
       <div className="bg-card rounded-xl border border-border p-12 text-center">
         <Trophy className="w-16 h-16 mx-auto text-muted-foreground mb-4" />
         <h3 className="font-display text-xl font-semibold mb-2">Leaderboard Empty</h3>

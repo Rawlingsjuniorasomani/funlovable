@@ -52,7 +52,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[calc(100vw-2rem)] sm:w-96 p-0" align="end">
-        {/* Header */}
+        { }
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="font-display font-semibold text-foreground">Notifications</h3>
           <div className="flex items-center gap-2">
@@ -65,7 +65,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
           </div>
         </div>
 
-        {/* Notifications List */}
+        { }
         <div className="max-h-96 overflow-auto">
           {notifications.length === 0 ? (
             <div className="p-8 text-center text-muted-foreground">
@@ -94,7 +94,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
                       <NotificationContent notification={notification} Icon={Icon} />
                     )}
 
-                    {/* Actions */}
+                    { }
                     <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex gap-1">
                       {!notification.read && (
                         <Button
@@ -128,7 +128,7 @@ export function NotificationCenter({ className }: NotificationCenterProps) {
           )}
         </div>
 
-        {/* Footer */}
+        { }
         {notifications.length > 0 && (
           <div className="p-3 border-t border-border">
             <Button variant="ghost" size="sm" onClick={clearAll} className="w-full text-muted-foreground">

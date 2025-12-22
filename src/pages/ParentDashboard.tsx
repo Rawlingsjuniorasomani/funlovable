@@ -25,12 +25,12 @@ export default function ParentDashboard() {
   return (
     <SidebarProvider>
       <div
-        className="min-h-screen flex w-full bg-background"
+        className="h-screen flex w-full bg-background overflow-hidden"
         style={
           {
-            ['--sidebar-background' as any]: '25 95% 53%', // Orange
+            ['--sidebar-background' as any]: '25 95% 53%',
             ['--sidebar-foreground' as any]: '0 0% 100%',
-            ['--sidebar-accent' as any]: '25 90% 48%', // Darker Orange
+            ['--sidebar-accent' as any]: '25 90% 48%',
             ['--sidebar-accent-foreground' as any]: '0 0% 100%',
             ['--sidebar-border' as any]: '25 85% 45%',
             ['--sidebar-primary' as any]: '0 0% 100%',
@@ -40,10 +40,10 @@ export default function ParentDashboard() {
       >
         <ParentSidebar />
 
-        <main className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col h-full overflow-hidden">
           <DashboardTopbar title="Parent Dashboard" dashboardType="parent" />
 
-          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-auto">
+          <div className="flex-1 p-4 md:p-6 lg:p-8 overflow-y-auto">
             <Routes>
               <Route index element={<ParentOverview />} />
               <Route path="dashboard" element={<ParentOverview />} />

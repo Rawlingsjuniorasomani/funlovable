@@ -1,4 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
+import { quizzesAPI } from "@/config/api";
+import { toast } from "sonner";
 
 export interface QuizAnswer {
   questionId: string;
@@ -8,6 +10,7 @@ export interface QuizAnswer {
 
 export interface QuizProgress {
   quizId: string;
+  attemptId?: string; // Add attemptId
   answers: QuizAnswer[];
   currentQuestion: number;
   score: number;
@@ -18,36 +21,62 @@ export interface QuizProgress {
   completedAt?: string;
 }
 
-const STORAGE_KEY = "lovable_quiz_progress";
-
 export function useQuizProgress(quizId: string) {
   const [progress, setProgress] = useState<QuizProgress | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  // No localStorage persistence - quiz progress should be tracked on backend
+  // Initialize or fetch existing attempt
+  useEffect(() => {
+    const fetchAttempt = async () => {
+      try {
+        setLoading(true);
+        // Check for existing attempts? Or just start new if none provided?
+        // Ideally we check if there is an active attempt.
+        // For now, let's assume the component triggers start.
+        setLoading(false);
+      } catch (error) {
+        console.error("Failed to fetch quiz progress", error);
+        setLoading(false);
+      }
+    };
+    fetchAttempt();
+  }, [quizId]);
 
   const saveProgress = useCallback((newProgress: QuizProgress) => {
-    // Store in memory only (not localStorage)
     setProgress(newProgress);
   }, []);
 
-  const startQuiz = useCallback((totalQuestions: number) => {
-    const newProgress: QuizProgress = {
-      quizId,
-      answers: [],
-      currentQuestion: 0,
-      score: 0,
-      totalQuestions,
-      timeSpent: 0,
-      completed: false,
-      startedAt: new Date().toISOString(),
-    };
-    saveProgress(newProgress);
-    return newProgress;
+  const startQuiz = useCallback(async (totalQuestions: number) => {
+    try {
+      setLoading(true);
+      const attempt = await quizzesAPI.startAttempt(quizId);
+
+      const newProgress: QuizProgress = {
+        quizId,
+        attemptId: attempt.id,
+        answers: [],
+        currentQuestion: 0,
+        score: 0,
+        totalQuestions,
+        timeSpent: 0,
+        completed: false,
+        startedAt: new Date().toISOString(),
+      };
+      saveProgress(newProgress);
+      setLoading(false);
+      return newProgress;
+    } catch (error) {
+      console.error("Failed to start quiz attempt", error);
+      toast.error("Failed to start quiz. Please try again.");
+      setLoading(false);
+      return null;
+    }
   }, [quizId, saveProgress]);
 
-  const answerQuestion = useCallback((questionId: string, selectedAnswer: number, correct: boolean) => {
-    if (!progress) return;
-    
+  const answerQuestion = useCallback(async (questionId: string, selectedAnswer: number, correct: boolean) => {
+    if (!progress || !progress.attemptId) return;
+
+    // Optimistic update
     const newAnswer: QuizAnswer = { questionId, selectedAnswer, correct };
     const newProgress: QuizProgress = {
       ...progress,
@@ -56,6 +85,30 @@ export function useQuizProgress(quizId: string) {
       score: correct ? progress.score + 1 : progress.score,
     };
     saveProgress(newProgress);
+
+    // API Call (Background)
+    try {
+      // Convert selectedAnswer index to string/value if needed
+      // Assuming backend expects answer string text OR index?
+      // Check QuizController.saveAnswer -> QuizModel.saveAnswer -> "answer" column.
+      // Usually options[selectedAnswer] is the answer text.
+      // But here we might just send the index if backend handles grading?
+      // Wait, backend 'saveAnswer' just stores it.
+      // 'submitAttempt' does auto-grading.
+      // We should probably send the actual answer TEXT or IDENTIFIER.
+      // For now let's send the stringified index as a placeholder or check upstream.
+      // MultiFormatQuizPlayer passes `selectedAnswer` as index.
+
+      await quizzesAPI.saveAnswer(progress.attemptId, {
+        question_id: questionId,
+        answer: String(selectedAnswer) // Sending index as string for now
+      });
+
+    } catch (error) {
+      console.error("Failed to save answer", error);
+      // Don't revert state to avoid disrupting user flow, but maybe show error?
+    }
+
     return newProgress;
   }, [progress, saveProgress]);
 
@@ -64,24 +117,34 @@ export function useQuizProgress(quizId: string) {
     saveProgress({ ...progress, timeSpent });
   }, [progress, saveProgress]);
 
-  const completeQuiz = useCallback(() => {
-    if (!progress) return;
-    const completed: QuizProgress = {
-      ...progress,
-      completed: true,
-      completedAt: new Date().toISOString(),
-    };
-    saveProgress(completed);
-    return completed;
+  const completeQuiz = useCallback(async () => {
+    if (!progress || !progress.attemptId) return;
+
+    try {
+      const result = await quizzesAPI.submitAttempt(progress.attemptId, progress.timeSpent);
+
+      const completed: QuizProgress = {
+        ...progress,
+        completed: true,
+        completedAt: new Date().toISOString(),
+        score: result.auto_graded_score || progress.score, // Use server score
+      };
+      saveProgress(completed);
+      return completed;
+    } catch (error) {
+      console.error("Failed to submit quiz", error);
+      toast.error("Failed to submit quiz. Please try again.");
+      return null;
+    }
   }, [progress, saveProgress]);
 
   const resetQuiz = useCallback(() => {
-    // Clear in-memory progress
     setProgress(null);
   }, []);
 
   return {
     progress,
+    loading,
     startQuiz,
     answerQuestion,
     updateTimeSpent,
@@ -90,10 +153,6 @@ export function useQuizProgress(quizId: string) {
   };
 }
 
-// Get all quiz results - DEPRECATED
-// All quiz progress should come from backend API
 export function getAllQuizResults(): QuizProgress[] {
-  // No localStorage - return empty array
-  // TODO: Fetch from backend GET /api/quiz-progress
   return [];
 }

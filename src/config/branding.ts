@@ -1,4 +1,4 @@
-// Branding Configuration - Update these values to customize your school
+
 export const BRANDING = {
   schoolName: "Funlovable",
   schoolShortName: "Funlovable",

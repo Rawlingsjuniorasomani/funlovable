@@ -3,7 +3,7 @@ import { Brain, Clock, Trophy, Play, CheckCircle, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Quiz } from "@/data/quizData"; // Keep Type
+import { Quiz } from "@/data/quizData"; 
 import { useQuizResults } from "@/hooks/useQuizResults";
 import { MultiFormatQuizPlayer } from "@/components/quiz/MultiFormatQuizPlayer";
 import { cn } from "@/lib/utils";
@@ -26,19 +26,19 @@ export function StudentQuizzes() {
     try {
       setLoading(true);
       const data = await quizzesAPI.getAvailable();
-      // Map backend data to Quiz interface
-      // Note: Backend might not return full questions in list view, but we need to match structure or use partial
-      // For now, we assume basic fields map, and we might need to fetch questions separately or map defaults
+      
+      
+      
       const mappedQuizzes = (Array.isArray(data) ? data : []).map((q: any) => ({
         id: q.id,
         title: q.title,
-        subject: q.subject_id || "General", // Placeholder if subject name not populated
+        subject: q.subject_id || "General", 
         description: q.description || "",
         difficulty: q.difficulty || "medium",
         duration: q.time_limit_minutes || q.duration || 10,
-        questions: [], // Questions loaded on start or if provided
+        questions: [], 
         xpReward: q.xp_reward || 100,
-        // Helper to determine if it has questions if backend differs
+        
       }));
       setQuizzesList(mappedQuizzes);
     } catch (error) {
@@ -49,21 +49,21 @@ export function StudentQuizzes() {
   };
 
   const handleStartQuiz = async (quiz: Quiz) => {
-    // IF questions are missing, we might need to fetch details
+    
     if (!quiz.questions || quiz.questions.length === 0) {
       try {
         const fullQuiz = await quizzesAPI.getById(quiz.id);
-        // Map full details including questions
-        // This part heavily depends on backend response structure for questions
-        // We'll perform a basic mapping assuming backend has a 'questions' array
+        
+        
+        
         const mappedQuestions = (fullQuiz.questions || []).map((q: any) => ({
           id: q.id,
           type: q.type || 'multiple-choice',
           question: q.text || q.question,
           options: q.options || [],
-          correctAnswer: q.correct_answer || 0, // number or index?
+          correctAnswer: q.correct_answer || 0, 
           explanation: q.explanation
-          // Handle other types if necessary
+          
         }));
 
         const readyQuiz = {
@@ -76,7 +76,7 @@ export function StudentQuizzes() {
       } catch (e) {
         console.error("Failed to fetch quiz details", e);
         toast({ title: "Failed to load quiz content", variant: "destructive" });
-        // If failed, maybe try to open what we have or do nothing
+        
         return;
       }
     } else {
@@ -127,7 +127,7 @@ export function StudentQuizzes() {
         <p className="text-muted-foreground">Test your knowledge with interactive quizzes</p>
       </div>
 
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <div className="bg-card p-4 rounded-xl border border-border text-center">
           <p className="text-2xl font-bold text-foreground">{quizzesList.length}</p>
@@ -147,7 +147,7 @@ export function StudentQuizzes() {
         </div>
       </div>
 
-      {/* Quiz List */}
+      { }
       <div className="grid gap-4">
         {quizzesList.length === 0 ? (
           <div className="text-center p-8 text-muted-foreground">No quizzes available at the moment.</div>

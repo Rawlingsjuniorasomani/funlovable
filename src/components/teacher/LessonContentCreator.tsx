@@ -147,7 +147,7 @@ export function LessonContentCreator() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Simulate upload progress
+    
     setUploadProgress(0);
     const interval = setInterval(() => {
       setUploadProgress(prev => {
@@ -159,7 +159,7 @@ export function LessonContentCreator() {
       });
     }, 200);
 
-    // Simulate file upload and create content
+    
     setTimeout(() => {
       const newContent: LessonContent = {
         id: Date.now().toString(),
@@ -217,7 +217,7 @@ export function LessonContentCreator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Create Lesson</h2>
@@ -284,7 +284,7 @@ export function LessonContentCreator() {
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
-        {/* Lesson Details */}
+        { }
         <div className="lg:col-span-1 space-y-6">
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Lesson Details</h3>
@@ -334,7 +334,7 @@ export function LessonContentCreator() {
             </div>
           </div>
 
-          {/* Learning Objectives */}
+          { }
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-semibold text-foreground">Learning Objectives</h3>
@@ -363,7 +363,7 @@ export function LessonContentCreator() {
             </div>
           </div>
 
-          {/* Add Content */}
+          { }
           <div className="bg-card rounded-xl border border-border p-6">
             <h3 className="font-semibold text-foreground mb-4">Add Content</h3>
             <div className="grid grid-cols-2 gap-3">
@@ -423,7 +423,7 @@ export function LessonContentCreator() {
           </div>
         </div>
 
-        {/* Content Editor */}
+        { }
         <div className="lg:col-span-2">
           <div className="bg-card rounded-xl border border-border overflow-hidden">
             <div className="p-4 border-b border-border bg-muted/30">
@@ -458,7 +458,7 @@ export function LessonContentCreator() {
 
                     {content.type === "text" && (
                       <div>
-                        {/* Rich Text Toolbar */}
+                        { }
                         <div className="flex items-center gap-1 p-2 border border-border rounded-t-lg bg-muted/30 flex-wrap">
                           {toolbarButtons.map((btn, i) =>
                             btn.divider ? (

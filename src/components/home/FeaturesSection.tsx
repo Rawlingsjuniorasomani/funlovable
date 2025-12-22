@@ -28,7 +28,7 @@ const features = [
 export function FeaturesSection() {
     return (
         <section className="relative py-24 overflow-hidden">
-            {/* Background Image */}
+            { }
             <div className="absolute inset-0 z-0">
                 <img
                     src="/WhatsApp Image 2025-12-07 at 09.32.46_55220def.jpg"

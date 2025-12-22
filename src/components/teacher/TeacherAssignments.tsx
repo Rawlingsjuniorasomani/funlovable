@@ -43,11 +43,11 @@ export function TeacherAssignments() {
   const [modules, setModules] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Filters
+  
   const [selectedSubject, setSelectedSubject] = useState<string>("all");
   const [selectedModule, setSelectedModule] = useState<string>("all");
 
-  // Create/Edit Dialog State
+  
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [step, setStep] = useState(1);
@@ -56,15 +56,15 @@ export function TeacherAssignments() {
     title: "",
     description: "",
     subjectId: "",
-    moduleId: "", // Optional linkage to module
+    moduleId: "", 
     dueDate: "",
     totalPoints: 100,
-    submissionType: "text", // text, file, both, questions, mixed
+    submissionType: "text", 
     resources: "",
     questions: [] as any[],
   });
 
-  // Question Builder State
+  
   const [currentQuestion, setCurrentQuestion] = useState<any>({
     type: 'mcq',
     text: '',
@@ -73,7 +73,7 @@ export function TeacherAssignments() {
     marks: 5
   });
 
-  // Grading Sheet State
+  
   const [selectedAssignment, setSelectedAssignment] = useState<any>(null);
   const [submissions, setSubmissions] = useState<any[]>([]);
   const [gradingSubmission, setGradingSubmission] = useState<any>(null);
@@ -94,7 +94,7 @@ export function TeacherAssignments() {
   }, [selectedSubject]);
 
   useEffect(() => {
-    // When editing subject changes, load modules for form
+    
     if (formData.subjectId) {
       loadModules(formData.subjectId);
     }
@@ -105,7 +105,7 @@ export function TeacherAssignments() {
       setLoading(true);
       const [subjectsData, assignmentsData] = await Promise.all([
         subjectsAPI.getTeacher(),
-        // Limit to assignments for the current teacher if available
+        
         assignmentsAPI.getAll(user?.id ? { teacherId: user.id } : undefined)
       ]);
       setSubjects(Array.isArray(subjectsData) ? subjectsData : []);
@@ -116,7 +116,7 @@ export function TeacherAssignments() {
         dueDate: a.due_date || a.dueDate,
         status: a.status || (a.is_active ? 'active' : 'draft'),
         submissions: Number(a.submission_count || 0),
-        totalStudents: 35, // Placeholder until real counts
+        totalStudents: 35, 
       })));
     } catch (error) {
       console.error('Failed to load data:', error);
@@ -139,7 +139,7 @@ export function TeacherAssignments() {
     setEditingId(assignment.id);
     setLoading(true);
     try {
-      // Fetch full details including questions
+      
       const [details, questions] = await Promise.all([
         assignmentsAPI.getById(assignment.id),
         assignmentsAPI.getQuestions(assignment.id)
@@ -149,7 +149,7 @@ export function TeacherAssignments() {
         title: details.title,
         description: details.description || "",
         subjectId: details.subject_id || details.subjectId,
-        moduleId: "", // If backend supported module_id on assignments
+        moduleId: "", 
         dueDate: details.due_date ? new Date(details.due_date).toISOString().split('T')[0] : "",
         totalPoints: details.max_score || details.total_points || 100,
         submissionType: details.submission_type || "text",
@@ -194,7 +194,7 @@ export function TeacherAssignments() {
       let assignmentId = editingId;
 
       if (editingId) {
-        // Update Assignment
+        
         await assignmentsAPI.update(editingId, {
           title: formData.title,
           description: formData.description,
@@ -205,19 +205,19 @@ export function TeacherAssignments() {
           status: 'active'
         });
 
-        // Sync Questions (Differential update is complex, so we might just add new ones or rely on backend to handle replacement if we implemented bulk update. 
-        // For now, let's just ADD new questions or update existing if they have IDs. 
-        // Handling FULL question sync is tricky without bulk-replace endpoint. 
-        // Strategy: We will only ADD new questions for now, or update if we implement logic. 
-        // User requested "Edit assignment details, Add/remove questions".
-        // To keep it simple: We iterate formData.questions. If ID exists, update. If no ID, create. 
-        // Deleted questions: We need to track them or just allow deletion from the "Edit" UI directly via API calls?
-        // Let's assume the Question Builder in Edit Mode handles "Add to state", and "Delete from state". 
-        // Real-time API calls for delete? Or Batch at save? Batch is cleaner but harder. 
-        // Let's do Real-time delete in the UI for already saved questions, and state-delete for new ones.
-        // Actually, let's keep it simple: Batch Save for now, but since we lack bulk update, we loop.
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
       } else {
-        // Create Assignment
+        
         const newAssignment = await assignmentsAPI.create({
           title: formData.title,
           description: formData.description,
@@ -232,9 +232,9 @@ export function TeacherAssignments() {
       }
 
       if (assignmentId) {
-        // Process questions
-        // For new assignment, all are new.
-        // For edit, mixture.
+        
+        
+        
         await Promise.all(formData.questions.map((q, index) => {
           const qData = {
             question_text: q.text,
@@ -266,7 +266,7 @@ export function TeacherAssignments() {
   const deleteQuestionFromList = async (index: number) => {
     const q = formData.questions[index];
     if (q.id) {
-      // If it exists in backend, delete it there
+      
       try {
         await assignmentsAPI.deleteQuestion(q.id);
       } catch (e) {
@@ -334,7 +334,7 @@ export function TeacherAssignments() {
         feedback: gradingData.feedback
       });
 
-      // Update local state
+      
       setSubmissions(prev => prev.map(s =>
         s.id === gradingSubmission.id
           ? { ...s, score: gradingData.score, feedback: gradingData.feedback, status: 'graded' }
@@ -353,15 +353,15 @@ export function TeacherAssignments() {
     setGradingData({ score: sub.score || 0, feedback: sub.feedback || "" });
     setSubmissionAnswers([]);
 
-    // If questions type, fetch specific answers
+    
     if (selectedAssignment.submission_type === 'questions' || selectedAssignment.submission_type === 'mixed') {
       try {
         setLoadingAnswers(true);
         const answers = await assignmentsAPI.getAnswers(sub.id);
         setSubmissionAnswers(answers || []);
 
-        // Auto-calculate score if not graded?
-        // Actually StudentAssignmentDetails does auto-calc, but here we might want to sum up marks awarded.
+        
+        
         if (sub.status !== 'graded' && answers) {
           const autoScore = answers.reduce((acc: number, ans: any) => acc + (ans.marks_awarded || 0), 0);
           setGradingData(prev => ({ ...prev, score: autoScore }));
@@ -382,11 +382,11 @@ export function TeacherAssignments() {
     }
 
     if (activeTab === 'completed') {
-      // Treat closed assignments as completed
+      
       return a.status === 'closed';
     }
 
-    // "all" tab
+    
     return true;
   });
 
@@ -423,7 +423,7 @@ export function TeacherAssignments() {
               </DialogHeader>
 
               <div className="py-4">
-                {/* Step 1: Basics */}
+                { }
                 {step === 1 && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-right-4">
                     <div className="space-y-4">
@@ -471,7 +471,7 @@ export function TeacherAssignments() {
                   </div>
                 )}
 
-                {/* Step 2: Settings */}
+                { }
                 {step === 2 && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                     <div className="grid grid-cols-2 gap-4">
@@ -511,12 +511,12 @@ export function TeacherAssignments() {
                   </div>
                 )}
 
-                {/* Step 3: Questions */}
+                { }
                 {step === 3 && (
                   <div className="space-y-6 animate-in fade-in slide-in-from-right-4">
                     {['questions', 'mixed'].includes(formData.submissionType) ? (
                       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[400px]">
-                        {/* Builder */}
+                        { }
                         <div className="lg:col-span-1 space-y-4 border-r pr-4 overflow-y-auto">
                           <h3 className="font-semibold text-sm">Add Question</h3>
                           <div className="space-y-3">
@@ -581,7 +581,7 @@ export function TeacherAssignments() {
                           </div>
                         </div>
 
-                        {/* Preview */}
+                        { }
                         <div className="lg:col-span-2 space-y-4 overflow-y-auto pl-2">
                           <h3 className="font-semibold text-sm">Questions ({formData.questions.length})</h3>
                           {formData.questions.length === 0 && <p className="text-muted-foreground text-sm italic">No questions added yet.</p>}
@@ -620,7 +620,7 @@ export function TeacherAssignments() {
                   </div>
                 )}
 
-                {/* Step 4: Review */}
+                { }
                 {step === 4 && (
                   <div className="space-y-4 animate-in fade-in slide-in-from-right-4">
                     <Card>
@@ -653,7 +653,7 @@ export function TeacherAssignments() {
                 )}
               </div>
 
-              {/* Footer */}
+              { }
               <div className="flex justify-between items-center pt-4 border-t mt-4">
                 <Button variant="outline" onClick={() => setStep(s => Math.max(1, s - 1))} disabled={step === 1}>
                   Previous
@@ -692,10 +692,10 @@ export function TeacherAssignments() {
             />
           ))}
         </TabsContent>
-        {/* Other tabs can use same list with filtered data, but for brevity using same map for now or we filter above */}
+        { }
       </Tabs>
 
-      {/* Submissions Sheet */}
+      { }
       <Sheet open={!!selectedAssignment} onOpenChange={(open) => !open && setSelectedAssignment(null)}>
         <SheetContent className="sm:max-w-3xl overflow-y-auto w-full">
           <SheetHeader className="mb-6">
@@ -706,7 +706,7 @@ export function TeacherAssignments() {
           </SheetHeader>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {/* Student List */}
+            { }
             <div className="md:col-span-1 border-r pr-4 space-y-4">
               <h3 className="font-semibold text-sm text-muted-foreground">Students ({submissions.length})</h3>
               <div className="space-y-2 max-h-[60vh] overflow-y-auto">
@@ -733,7 +733,7 @@ export function TeacherAssignments() {
               </div>
             </div>
 
-            {/* Grading Area */}
+            { }
             <div className="md:col-span-2 space-y-6">
               {gradingSubmission ? (
                 <div className="animate-in fade-in slide-in-from-right-4">

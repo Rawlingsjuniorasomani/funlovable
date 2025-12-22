@@ -58,16 +58,16 @@ export function EnhancedParentChildProgress() {
     try {
       setLoading(true);
       const result = await parentsAPI.getChildProgress(childId!);
-      // Transform backend data to match interface if needed
-      // Currently backend returns: { overview, subjects, recent_activity }
+      
+      
 
-      // Map icons to subjects (simple mapping for now)
+      
       const subjectsWithIcons = result.subjects.map((sub: any) => ({
         ...sub,
         icon: getSubjectIcon(sub.subject),
-        trend: "stable", // Default for now
-        lessonsCompleted: 0, // Not yet in backend
-        totalLessons: 0 // Not yet in backend
+        trend: "stable", 
+        lessonsCompleted: 0, 
+        totalLessons: 0 
       }));
 
       setData({
@@ -114,7 +114,7 @@ export function EnhancedParentChildProgress() {
 
   return (
     <div className="space-y-6 animate-fade-in pb-10">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/parent/children")}>
@@ -146,7 +146,7 @@ export function EnhancedParentChildProgress() {
         </div>
       </div>
 
-      {/* Quick Stats */}
+      { }
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -191,7 +191,7 @@ export function EnhancedParentChildProgress() {
         </Card>
       </div>
 
-      {/* Tabs */}
+      { }
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -201,7 +201,7 @@ export function EnhancedParentChildProgress() {
 
         <TabsContent value="overview" className="mt-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Subject Grades */}
+            { }
             <div className="lg:col-span-2 space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <BookOpen className="w-5 h-5 text-primary" />
@@ -242,7 +242,7 @@ export function EnhancedParentChildProgress() {
               )}
             </div>
 
-            {/* Recent Activity Sidebar */}
+            { }
             <div className="space-y-4">
               <h3 className="text-lg font-semibold flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-tertiary" />
@@ -307,7 +307,7 @@ export function EnhancedParentChildProgress() {
                       <p className="text-2xl font-bold">{subject.quizzesTaken}</p>
                       <p className="text-sm text-muted-foreground">Quizzes</p>
                     </div>
-                    {/* Add more real stats as available */}
+                    { }
                   </div>
                 </CardContent>
               </Card>

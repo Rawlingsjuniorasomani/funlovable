@@ -41,7 +41,7 @@ export function ContactSection() {
     try {
       contactSchema.parse(formData);
 
-      // Simulate API call
+      
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
       toast({
@@ -78,7 +78,7 @@ export function ContactSection() {
         </div>
 
         <div className="grid lg:grid-cols-2 gap-12 max-w-5xl mx-auto">
-          {/* Contact Form */}
+          { }
           <div className="bg-card rounded-2xl p-8 border border-border">
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid sm:grid-cols-2 gap-4">
@@ -144,7 +144,7 @@ export function ContactSection() {
             </form>
           </div>
 
-          {/* Contact Info */}
+          { }
           <div className="space-y-8">
             <div>
               <h3 className="font-display font-semibold text-xl mb-4 text-slate-900">Contact Information</h3>

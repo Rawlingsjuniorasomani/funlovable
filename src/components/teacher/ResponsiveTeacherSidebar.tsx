@@ -53,7 +53,7 @@ function SidebarContent({ userName, onItemClick }: ResponsiveTeacherSidebarProps
 
   return (
     <div className="flex flex-col h-full">
-      {/* Profile Section */}
+      { }
       <div className="p-6 bg-gradient-to-r from-tertiary to-quaternary text-primary-foreground">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 rounded-full bg-background/20 flex items-center justify-center text-xl font-bold">
@@ -70,7 +70,7 @@ function SidebarContent({ userName, onItemClick }: ResponsiveTeacherSidebarProps
         </div>
       </div>
 
-      {/* Navigation */}
+      { }
       <nav className="flex-1 p-4 space-y-1 overflow-auto">
         {teacherNav.map((item) => {
           const isActive = isActiveRoute(item.href);
@@ -104,7 +104,7 @@ function SidebarContent({ userName, onItemClick }: ResponsiveTeacherSidebarProps
         })}
       </nav>
 
-      {/* Settings & Logout */}
+      { }
       <div className="p-4 border-t border-border space-y-1">
         <Link
           to="/teacher/settings"
@@ -136,12 +136,12 @@ export function ResponsiveTeacherSidebar({ userName }: ResponsiveTeacherSidebarP
 
   return (
     <>
-      {/* Desktop Sidebar */}
+      { }
       <aside className="hidden md:flex w-64 bg-card border-r border-border h-screen sticky top-0 flex-col shrink-0">
         <SidebarContent userName={userName} />
       </aside>
 
-      {/* Mobile Sheet */}
+      { }
       <Sheet open={isOpen} onOpenChange={setIsOpen}>
         <SheetTrigger asChild>
           <Button

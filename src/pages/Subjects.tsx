@@ -54,7 +54,7 @@ const Subjects = () => {
         }
       }
     } else {
-      // Teachers/Admins/Parents just view generic details for now
+      
       toast.info("Enrollment is for students only");
     }
   };
@@ -69,7 +69,7 @@ const Subjects = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 pt-20">
-        {/* Hero */}
+        { }
         <section className="py-16 bg-gradient-to-br from-primary/5 via-tertiary/5 to-secondary/5">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
@@ -80,7 +80,7 @@ const Subjects = () => {
                 Discover our comprehensive curriculum designed to make learning engaging and effective.
               </p>
 
-              {/* Search */}
+              { }
               <div className="flex flex-col sm:flex-row gap-4 max-w-xl mx-auto">
                 <div className="relative flex-1">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
@@ -96,7 +96,7 @@ const Subjects = () => {
           </div>
         </section>
 
-        {/* Subjects Grid */}
+        { }
         <section className="py-16">
           <div className="container mx-auto px-4">
             {loading ? (

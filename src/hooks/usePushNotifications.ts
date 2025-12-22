@@ -29,8 +29,8 @@ export function usePushNotifications() {
   const [prefs, setPrefs] = useState<NotificationPrefs>(defaultPrefs);
   const [permission, setPermission] = useState<NotificationPermission>("default");
 
-  // No localStorage persistence for notification prefs
-  // Browser notification permissions managed separately by browser
+  
+  
 
   useEffect(() => {
     if ("Notification" in window) {
@@ -39,7 +39,7 @@ export function usePushNotifications() {
   }, []);
 
   const savePrefs = useCallback((newPrefs: NotificationPrefs) => {
-    // Store in memory only (not localStorage)
+    
     setPrefs(newPrefs);
   }, []);
 
@@ -69,12 +69,12 @@ export function usePushNotifications() {
           badge: "/favicon.ico",
           ...options,
         });
-        
+
         notification.onclick = () => {
           window.focus();
           notification.close();
         };
-        
+
         return notification;
       } catch (error) {
         console.error("Failed to send notification:", error);

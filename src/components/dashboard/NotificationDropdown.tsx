@@ -16,7 +16,7 @@ import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { useNavigate } from "react-router-dom";
 
-// Reusing interface
+
 interface NotificationItem {
     id: string;
     type: string;
@@ -77,10 +77,10 @@ export function NotificationDropdown() {
         }
     };
 
-    // Poll for notifications or fetch on open
+    
     useEffect(() => {
         fetchNotifications();
-        // Optional: Poll every 60s
+        
         const interval = setInterval(fetchNotifications, 60000);
         return () => clearInterval(interval);
     }, []);
@@ -98,11 +98,11 @@ export function NotificationDropdown() {
     const markAllRead = async () => {
         try {
             setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-            // Using existing API helper which calls PUT /read-all
+            
             await notificationsAPI.markAllAsRead();
             toast({ title: "All marked as read" });
         } catch (error) {
-            // ignore or toast
+            
         }
     };
 
@@ -132,8 +132,8 @@ export function NotificationDropdown() {
             markAsRead(notification.id);
         }
 
-        // Navigate based on type/data if needed
-        // For now, just close dropdown
+        
+        
         setIsOpen(false);
 
         if (notification.type === 'message') {

@@ -34,7 +34,7 @@ interface Conversation {
   name?: string;
 }
 
-const STORAGE_KEY = "lovable_chat_messages";
+
 
 interface RealtimeChatProps {
   currentUserId?: string;
@@ -78,7 +78,7 @@ export function RealtimeChat({
     setMessages(prev => [...prev, message]);
     setNewMessage("");
 
-    // Update last message in conversation
+    
     setConversations(prev =>
       prev.map(c =>
         c.id === selectedConversation.id
@@ -123,7 +123,7 @@ export function RealtimeChat({
 
   return (
     <div className="flex h-[calc(100vh-12rem)] bg-card rounded-xl border border-border overflow-hidden">
-      {/* Conversations List */}
+      { }
       <div className="w-80 border-r border-border flex flex-col">
         <div className="p-4 border-b border-border">
           <h2 className="font-semibold text-foreground mb-3 flex items-center gap-2">
@@ -204,10 +204,10 @@ export function RealtimeChat({
         </ScrollArea>
       </div>
 
-      {/* Chat Area */}
+      { }
       {selectedConversation ? (
         <div className="flex-1 flex flex-col">
-          {/* Chat Header */}
+          { }
           <div className="p-4 border-b border-border flex items-center justify-between">
             <div className="flex items-center gap-3">
               {selectedConversation.type === "group" ? (
@@ -247,7 +247,7 @@ export function RealtimeChat({
             </div>
           </div>
 
-          {/* Messages */}
+          { }
           <ScrollArea className="flex-1 p-4">
             <div className="space-y-4">
               {messages.map((message, index) => {
@@ -299,7 +299,7 @@ export function RealtimeChat({
             </div>
           </ScrollArea>
 
-          {/* Message Input */}
+          { }
           <div className="p-4 border-t border-border">
             <div className="flex items-center gap-2">
               <Button variant="ghost" size="icon">

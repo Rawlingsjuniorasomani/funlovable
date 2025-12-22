@@ -6,8 +6,8 @@ import { analyticsAPI, quizzesAPI, liveClassesAPI } from "@/config/api";
 import { Sparkline } from "@/components/charts/Sparkline";
 import { PieChart } from "@/components/charts/PieChart";
 
-// Small inline sparkline component (no external deps)
-// Charts moved to their own modules under src/components/charts
+
+
 
 export function AdminOverview() {
   const [statsData, setStatsData] = useState<any>({
@@ -24,7 +24,7 @@ export function AdminOverview() {
     const fetchStats = async () => {
       try {
         const data = await analyticsAPI.getAdmin();
-        // Also fetch counts for quizzes and live classes
+        
         const [quizzesRes, liveRes] = await Promise.all([quizzesAPI.getAll(), liveClassesAPI.getAll()]);
         const counts = Array.isArray(data.userCounts) ? data.userCounts : [];
         const getCount = (role: string) => {
@@ -34,7 +34,7 @@ export function AdminOverview() {
         const quizzesCount = Array.isArray(quizzesRes) ? quizzesRes.length : (quizzesRes?.quizzes ? quizzesRes.quizzes.length : 0);
         const liveClassesCount = Array.isArray(liveRes) ? liveRes.length : (liveRes?.classes ? liveRes.classes.length : 0);
 
-        // Calculate growth percent from dailyRevenue (compare last 7 days vs previous 7 days)
+        
         let growth = '0%';
         try {
           const daily = Array.isArray(data.dailyRevenue) ? data.dailyRevenue.map((d: any) => ({ date: d.date, revenue: parseFloat(d.revenue) || 0 })) : [];
@@ -60,7 +60,7 @@ export function AdminOverview() {
           totalRevenue: data.paymentStats?.total_revenue?.toString?.() || "0.00",
           recentActivity: data.recentActivity || [],
           systemAlerts: data.systemAlerts || [],
-          // Provide chart data so Sparkline and PieChart can render
+          
           dailyRevenue: Array.isArray(data.dailyRevenue) ? data.dailyRevenue : [],
           subscriptions: Array.isArray(data.subscriptions) ? data.subscriptions : [],
           activeQuizzes: quizzesCount,

@@ -29,7 +29,7 @@ export function ProgressExport({ childId, childName, childGrade }: ProgressExpor
         generatedDate: new Date().toLocaleDateString(),
       };
       
-      // Small delay for UX
+      
       await new Promise(resolve => setTimeout(resolve, 500));
       
       generateProgressReport(reportData);

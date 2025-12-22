@@ -6,9 +6,8 @@ import { componentTagger } from "lovable-tagger";
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // Define API_URL based on mode - avoid importing from api.ts to prevent build issues
-  const API_URL = mode === 'development'
-    ? 'http://localhost:5000'
-    : 'https://funlovable-backends.onrender.com';
+  const envApiUrl = process.env.VITE_API_URL;
+  const API_URL = (envApiUrl ? envApiUrl.replace(/\/$/, '').replace(/\/api$/, '') : 'http://localhost:5000');
 
   return {
     server: {

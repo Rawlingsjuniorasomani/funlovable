@@ -14,34 +14,34 @@ import autoTable from "jspdf-autotable";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function AdminPayments() {
-  // Payments state
+  
   const [payments, setPayments] = useState<any[]>([]);
   const [paymentsLoading, setPaymentsLoading] = useState(true);
   const [paymentSearchTerm, setPaymentSearchTerm] = useState("");
   const [paymentStatusFilter, setPaymentStatusFilter] = useState("all");
 
-  // Subscriptions state
+  
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [subsLoading, setSubsLoading] = useState(true);
   const [subSearchTerm, setSubSearchTerm] = useState("");
   const [subStatusFilter, setSubStatusFilter] = useState("all");
   const [subPlanFilter, setSubPlanFilter] = useState("all");
 
-  // Edit state
+  
   const [editingSubscription, setEditingSubscription] = useState<any>(null);
   const [editForm, setEditForm] = useState({ plan: 'single', status: 'active', expiresAt: '' });
 
-  // Get auth context (token handled via HTTP-only cookies/headers)
+  
   const authContext = useAuth();
 
-  // Fetch payments
+  
   const fetchPayments = async () => {
     try {
       setPaymentsLoading(true);
       const query = new URLSearchParams();
       if (paymentStatusFilter !== 'all') query.append('status', paymentStatusFilter);
 
-      // Auth via HTTP-only cookies or session (not localStorage token)
+      
       const response = await fetch(`${API_URL}/admin/payments?${query}`, {
         credentials: 'include',
       });
@@ -56,7 +56,7 @@ export function AdminPayments() {
     }
   };
 
-  // Fetch subscriptions
+  
   const fetchSubscriptions = async () => {
     try {
       setSubsLoading(true);
@@ -64,7 +64,7 @@ export function AdminPayments() {
       if (subStatusFilter !== 'all') query.append('status', subStatusFilter);
       if (subPlanFilter !== 'all') query.append('plan', subPlanFilter);
 
-      // Auth via HTTP-only cookies or session (not localStorage token)
+      
       const response = await fetch(`${API_URL}/admin/subscriptions?${query}`, {
         credentials: 'include',
       });
@@ -87,7 +87,7 @@ export function AdminPayments() {
     fetchSubscriptions();
   }, [subStatusFilter, subPlanFilter]);
 
-  // Filter payments
+  
   const filteredPayments = payments.filter(payment => {
     const matchesSearch =
       payment.user_name?.toLowerCase().includes(paymentSearchTerm.toLowerCase()) ||
@@ -96,7 +96,7 @@ export function AdminPayments() {
     return matchesSearch;
   });
 
-  // Filter subscriptions
+  
   const filteredSubscriptions = subscriptions.filter(sub => {
     const matchesSearch =
       sub.user_name?.toLowerCase().includes(subSearchTerm.toLowerCase()) ||
@@ -224,7 +224,7 @@ export function AdminPayments() {
 
   return (
     <div className="space-y-6">
-      {/* Stats */}
+      { }
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -272,14 +272,14 @@ export function AdminPayments() {
         </Card>
       </div>
 
-      {/* Tabs for Payments and Subscriptions */}
+      { }
       <Tabs defaultValue="payments" className="space-y-4">
         <TabsList>
           <TabsTrigger value="payments">Payments</TabsTrigger>
           <TabsTrigger value="subscriptions">Subscriptions</TabsTrigger>
         </TabsList>
 
-        {/* Payments Tab */}
+        { }
         <TabsContent value="payments" className="space-y-4">
           <Card>
             <CardHeader>
@@ -381,7 +381,7 @@ export function AdminPayments() {
           </Card>
         </TabsContent>
 
-        {/* Subscriptions Tab */}
+        { }
         <TabsContent value="subscriptions" className="space-y-4">
           <Card>
             <CardHeader>
@@ -483,7 +483,7 @@ export function AdminPayments() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Dialog */}
+      { }
       {editingSubscription && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <Card className="w-full max-w-md mx-4 animate-in fade-in zoom-in-95 duration-200">

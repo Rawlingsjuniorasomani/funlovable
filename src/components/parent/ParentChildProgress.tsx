@@ -35,7 +35,7 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
       const data = await usersAPI.getChildren(user!.id);
       setChildren(Array.isArray(data) ? data : []);
 
-      // If no child selected and we have children, select the first one
+      
       if (!selectedChild && data.length > 0) {
         onSelectChild(data[0].id);
       }
@@ -50,13 +50,13 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
     id: "", name: "", level: 1, xp: 0, streak: 0, avgScore: 0, avatar: "😊"
   };
 
-  // Placeholder for future API integration
+  
   const subjectProgress: any[] = [];
   const recentQuizzes: any[] = [];
 
   return (
     <div className="space-y-6">
-      {/* Child Selector */}
+      { }
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Progress Tracking</h2>
@@ -201,7 +201,7 @@ export function ParentChildProgress({ selectedChild, onSelectChild }: ChildProgr
         <div className="grid grid-cols-7 gap-2">
           {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((day, i) => {
             const hours = Math.random() * 3 + 0.5;
-            const isToday = i === 2; // Wednesday
+            const isToday = i === 2; 
             return (
               <div key={day} className="text-center">
                 <div

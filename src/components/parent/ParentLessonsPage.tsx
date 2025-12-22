@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { lessonsAPI, subjectsAPI, modulesAPI, usersAPI } from "@/config/api"; // usersAPI for getting children?
+import { lessonsAPI, subjectsAPI, modulesAPI, usersAPI } from "@/config/api"; 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
@@ -17,14 +17,14 @@ export function ParentLessonsPage() {
     const [selectedSubject, setSelectedSubject] = useState("");
     const [selectedModule, setSelectedModule] = useState("");
 
-    // Need to fetch logged in parent's children first?
-    // Assume generic "Parent" view for now, or fetch children if context available.
-    // For MVP, parents might see all or select a child.
-    // Let's assume we fetch children list first.
+    
+    
+    
+    
 
     useEffect(() => {
-        // TODO: Fetch children. For now, we might skipping child selection if API not ready
-        // or just fetch subjects available to the parent (backend should handle logic)
+        
+        
         loadSubjects();
     }, []);
 
@@ -42,9 +42,9 @@ export function ParentLessonsPage() {
 
     const loadSubjects = async () => {
         try {
-            // Parents might see all subjects or filter by child.
-            // using subjectsAPI.getAll() might return all subjects in school or grade.
-            // Ideally: subjectsAPI.getForParent()
+            
+            
+            
             const data = await subjectsAPI.getAll();
             setSubjects(Array.isArray(data) ? data : []);
         } catch (error) {
@@ -77,7 +77,7 @@ export function ParentLessonsPage() {
                 <p className="text-muted-foreground">View lessons and materials assigned to your children.</p>
             </div>
 
-            {/* Filters */}
+            { }
             <div className="flex flex-col sm:flex-row gap-4">
                 <Select value={selectedSubject} onValueChange={setSelectedSubject}>
                     <SelectTrigger className="w-[250px]">
@@ -102,7 +102,7 @@ export function ParentLessonsPage() {
                 </Select>
             </div>
 
-            {/* Lessons List */}
+            { }
             <div className="space-y-4">
                 {lessons.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground">

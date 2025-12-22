@@ -40,22 +40,22 @@ export function StudentOverview() {
 
   return (
     <>
-      {/* Welcome Banner */}
-      <div className="bg-gradient-to-r from-primary via-tertiary to-secondary rounded-2xl p-6 md:p-8 text-primary-foreground mb-6 md:mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-        <div className="absolute bottom-0 left-0 w-32 h-32 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
+      { }
+      <div className="bg-primary rounded-2xl p-6 md:p-8 text-primary-foreground mb-6 md:mb-8 relative overflow-hidden shadow-lg shadow-primary/20">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2 blur-2xl" />
+        <div className="absolute bottom-0 left-0 w-32 h-32 bg-black/10 rounded-full translate-y-1/2 -translate-x-1/2 blur-xl" />
         <div className="relative z-10">
           <h1 className="text-2xl md:text-3xl font-display font-bold mb-2">
             Welcome back, {user?.name?.split(' ')[0] || 'Student'}! 👋
           </h1>
-          <p className="text-primary-foreground/80 mb-4">
+          <p className="text-primary-foreground/90 mb-6 max-w-xl text-lg">
             {data?.lastPlayedLesson
               ? `Pick up where you left off: ${data.lastPlayedLesson.title}`
-              : "Ready to continue your learning journey?"}
+              : "Ready to continue your learning journey? Let's achieve your goals today."}
           </p>
           <Link to={data?.lastPlayedLesson ? `/student/learning/${data.lastPlayedLesson.subject_id}` : "/student/subjects"}>
-            <Button variant="secondary" className="btn-bounce bg-background text-foreground hover:bg-background/90">
-              <PlayCircle className="w-4 h-4 mr-2" />
+            <Button size="lg" variant="secondary" className="font-semibold shadow-md hover:shadow-lg transition-all">
+              <PlayCircle className="w-5 h-5 mr-2" />
               {data?.lastPlayedLesson ? "Resume Learning" : "Start Learning"}
             </Button>
           </Link>
@@ -90,7 +90,7 @@ export function StudentOverview() {
         />
       </div>
 
-      {/* Main Content */}
+      { }
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
         <div className="lg:col-span-2">
           {recentActivity.length > 0 ? (

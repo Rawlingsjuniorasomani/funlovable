@@ -8,10 +8,10 @@ import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
 export function PaymentVerify() {
     const [searchParams] = useSearchParams();
     const [status, setStatus] = useState<"loading" | "success" | "failed">("loading");
-    const [redirectTo, setRedirectTo] = useState<string>("/parent/dashboard");
+    const [redirectTo, setRedirectTo] = useState<string>("/parent");
     const [errorDetails, setErrorDetails] = useState<string | null>(null);
 
-    const reference = searchParams.get("reference"); // Paystack returns reference in query param
+    const reference = searchParams.get("reference");
 
     useEffect(() => {
         if (reference) {
@@ -22,18 +22,29 @@ export function PaymentVerify() {
     }, [reference]);
 
     const verifyPayment = async (ref: string) => {
-        // Assume Paystack returned user to this page after successful payment
+
         setErrorDetails(null);
         setStatus("loading");
+
+
+
+        try {
+            if (typeof sessionStorage !== 'undefined') {
+                sessionStorage.removeItem('viewAsChildId');
+            }
+        } catch {
+
+        }
+
         const roleParam = searchParams.get('role');
         const role = (roleParam || 'parent').toLowerCase();
-        let target = '/parent/dashboard';
-        if (role === 'student') target = '/student/dashboard';
-        else if (role === 'teacher') target = '/teacher/dashboard';
+        let target = '/parent';
+        if (role === 'student') target = '/student';
+        else if (role === 'teacher') target = '/teacher';
         else if (role === 'parent' || role === 'guardian') target = '/parent/dashboard';
         setRedirectTo(target);
 
-        // Call server verify so backend can finalize registration and set HTTP-only session cookie.
+
         try {
             console.log('Calling server verify endpoint for reference:', ref);
             const verifyResult = await paymentsAPI.verify(ref).catch((err: any) => {
@@ -41,15 +52,17 @@ export function PaymentVerify() {
                 return null;
             });
 
-            // If server returned a user object, prefer its role for routing
+
             if (verifyResult) {
                 const serverRole = verifyResult.user && verifyResult.user.role ? String(verifyResult.user.role).toLowerCase() : null;
                 const token = verifyResult.token;
 
                 console.log(`[PaymentVerify] Verify result user role: ${serverRole}, hasToken: ${!!token}`);
 
-                // Token storage removed per user request (relying on server-side cookies)
 
+
+
+                console.log(`[PaymentVerify] Server returned role: ${serverRole}`);
 
                 // Fix 5: Hard stop admin redirect - Safety Net
                 console.log(`[PaymentVerify] Server returned role: ${serverRole}`);

@@ -35,7 +35,7 @@ export function PaystackCheckout({ amount, email, planName, onSuccess, onClose }
 
   const handleSuccess = async (reference: any) => {
     try {
-      // Verify with backend
+      
       await paymentsAPI.verify(reference.reference);
 
       setIsSuccess(true);

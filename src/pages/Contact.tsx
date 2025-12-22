@@ -98,7 +98,7 @@ const Contact = () => {
     <div className="min-h-screen">
       <Header />
       <main className="pt-20">
-        {/* Hero */}
+        { }
         <section className="py-16 bg-gradient-to-br from-primary/5 via-tertiary/5 to-secondary/5">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center">
@@ -112,11 +112,11 @@ const Contact = () => {
           </div>
         </section>
 
-        {/* Contact Section */}
+        { }
         <section className="py-16">
           <div className="container mx-auto px-4">
             <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
-              {/* Contact Form */}
+              { }
               <div className="bg-card rounded-3xl p-8 border border-border">
                 <h2 className="font-display text-2xl font-bold mb-6">Send us a Message</h2>
                 <form onSubmit={handleSubmit} className="space-y-6">
@@ -183,7 +183,7 @@ const Contact = () => {
                 </form>
               </div>
 
-              {/* Contact Info */}
+              { }
               <div className="space-y-8">
                 <div>
                   <h2 className="font-display text-2xl font-bold mb-4">Contact Information</h2>
@@ -241,7 +241,7 @@ const Contact = () => {
           </div>
         </section>
 
-        {/* FAQs */}
+        { }
         <section className="py-16 bg-muted/30">
           <div className="container mx-auto px-4">
             <div className="text-center mb-12">

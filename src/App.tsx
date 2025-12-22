@@ -1,6 +1,9 @@
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
+import { ParentSubjectDetail } from "./components/parent/ParentSubjectDetail";
 import { TooltipProvider } from "@/components/ui/tooltip";
+
+
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
@@ -90,6 +93,11 @@ const App = () => (
                 <LearningPage />
               </ProtectedRoute>
             } />
+            <Route path="/parent/child/:childId/subject/:subjectId" element={
+              <ProtectedRoute allowedRoles={['parent']}>
+                <ParentSubjectDetail />
+              </ProtectedRoute>
+            } />
             <Route path="/parent/*" element={
               <ProtectedRoute allowedRoles={['parent']}>
                 <ParentDashboard />
@@ -100,14 +108,14 @@ const App = () => (
                 <TeacherDashboard />
               </ProtectedRoute>
             } />
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/*" element={
+            <Route path="/sys-admin/login" element={<AdminLogin />} />
+            <Route path="/sys-admin/*" element={
               <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false}>
                 <AdminDashboard />
               </ProtectedRoute>
             } />
             <Route path="/super-admin/*" element={
-              <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false}>
+              <ProtectedRoute allowedRoles={['admin']} requireOnboarding={false} requireSuperAdmin={true}>
                 <SuperAdminDashboard />
               </ProtectedRoute>
             } />
@@ -122,7 +130,7 @@ const App = () => (
                 <LiveClassSession />
               </ProtectedRoute>
             } />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            { }
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

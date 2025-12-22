@@ -105,7 +105,7 @@ export function TeacherLessonsPage() {
       await lessonsAPI.createWithFile(data);
       toast.success("Lesson created successfully!");
 
-      // Reset form and close dialog
+      
       setFormData({
         title: "",
         subject_id: "",
@@ -118,7 +118,7 @@ export function TeacherLessonsPage() {
         file: null
       });
       setIsCreateOpen(false);
-      loadData(); // Reload lessons
+      loadData(); 
     } catch (error: any) {
       console.error(error);
       toast.error(error.message || "Failed to create lesson");

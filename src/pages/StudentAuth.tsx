@@ -13,7 +13,7 @@ import { AuthLayout } from "@/components/auth/AuthLayout";
 import authHeroOriginal from "@/assets/auth-hero.jpg";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email"),
+  identifier: z.string().min(3, "Email or Phone is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -31,7 +31,7 @@ const registerStep1Schema = z.object({
 });
 
 type AuthMode = 'login' | 'register';
-type RegisterStep = 1 | 2 | 3; // 1: Details, 2: OTP, 3: Payment
+type RegisterStep = 1 | 2 | 3;
 
 export default function StudentAuth() {
   const { toast } = useToast();
@@ -44,6 +44,7 @@ export default function StudentAuth() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+
   const [otp, setOtp] = useState("");
 
   const [availablePlans, setAvailablePlans] = useState<any[]>([]);
@@ -51,13 +52,13 @@ export default function StudentAuth() {
 
   const [formData, setFormData] = useState({
     name: "",
-    email: "",
     phone: "",
     school: "",
     age: "",
     studentClass: "",
     password: "",
     confirmPassword: "",
+    identifier: "",
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -85,7 +86,7 @@ export default function StudentAuth() {
     if (mode === 'register') {
       loadPlans();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+
   }, [mode]);
 
   const handleSelectChange = (name: string, value: string) => {
@@ -98,7 +99,7 @@ export default function StudentAuth() {
     setErrors({});
     try {
       registerStep1Schema.parse(formData);
-      // Move to OTP step
+
       setRegisterStep(2);
       toast({ title: "OTP Sent", description: `A verification code has been sent to ${formData.phone}` });
     } catch (error) {
@@ -141,7 +142,7 @@ export default function StudentAuth() {
         return;
       }
 
-      const generatedEmail = `${formData.phone}@edulearn.com`;
+      const generatedEmail = `${formData.phone}@funlovable.com`;
 
       const payload = {
         name: formData.name,
@@ -178,8 +179,8 @@ export default function StudentAuth() {
     setIsSubmitting(true);
     setErrors({});
     try {
-      loginSchema.parse({ email: formData.email, password: formData.password });
-      const result = await login(formData.email, formData.password);
+      loginSchema.parse({ identifier: formData.identifier, password: formData.password });
+      const result = await login(formData.identifier, formData.password);
       if (result.success) {
         toast({ title: "Welcome back!", description: "Ready to learn!" });
         if (result.user?.role === 'student' && !result.user?.is_onboarded) {
@@ -188,7 +189,7 @@ export default function StudentAuth() {
           navigate('/student');
         }
       } else {
-        setErrors({ email: result.error || 'Login failed' });
+        setErrors({ identifier: result.error || 'Login failed' });
       }
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -227,8 +228,9 @@ export default function StudentAuth() {
       title={mode === 'login' ? "Welcome Back" : "Student Registration"}
       subtitle={mode === 'login' ? "Sign in to your dashboard" : "Join our learning community"}
       image={authHeroOriginal}
+      formClassName="bg-gradient-to-br from-white via-blue-50 to-cyan-50"
     >
-      {/* Mode Toggle */}
+      { }
       {registerStep !== 3 && (
         <div className="text-center mb-6">
           <p className="text-muted-foreground text-sm">
@@ -247,24 +249,24 @@ export default function StudentAuth() {
         </div>
       )}
 
-      {/* Login Form */}
+      { }
       {mode === 'login' && (
         <form onSubmit={handleLogin} className="space-y-6">
           <div className="space-y-2">
-            <Label htmlFor="email" className="sr-only">Email</Label>
+            <Label htmlFor="identifier" className="sr-only">Email or Phone</Label>
             <div className="relative">
-              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="Email"
-                value={formData.email}
+                id="identifier"
+                name="identifier"
+                type="text"
+                placeholder="Email or Phone Number"
+                value={formData.identifier}
                 onChange={handleChange}
-                className={`pl-10 h-12 ${errors.email ? "border-destructive" : ""}`}
+                className={`pl-10 h-12 ${errors.identifier ? "border-destructive" : ""}`}
               />
             </div>
-            {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
+            {errors.identifier && <p className="text-sm text-destructive">{errors.identifier}</p>}
           </div>
           <div className="space-y-2">
             <Label htmlFor="password" className="sr-only">Password</Label>
@@ -302,7 +304,7 @@ export default function StudentAuth() {
         </form>
       )}
 
-      {/* Register Flow */}
+      { }
       {mode === 'register' && (
         <div className="space-y-6">
           {renderStepper()}

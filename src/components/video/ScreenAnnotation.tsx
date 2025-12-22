@@ -268,7 +268,7 @@ export function ScreenAnnotation({ isActive, onClose }: ScreenAnnotationProps) {
 
   return (
     <div className="fixed inset-0 z-50 pointer-events-none">
-      {/* Toolbar */}
+      { }
       <div className="fixed top-4 left-1/2 -translate-x-1/2 pointer-events-auto">
         <div className="flex items-center gap-2 p-2 bg-card/95 backdrop-blur-sm rounded-xl border border-border shadow-lg">
           <div className="flex items-center gap-1 border-r border-border pr-2">
@@ -332,7 +332,7 @@ export function ScreenAnnotation({ isActive, onClose }: ScreenAnnotationProps) {
         </div>
       </div>
 
-      {/* Canvas */}
+      { }
       <canvas
         ref={canvasRef}
         className={cn(

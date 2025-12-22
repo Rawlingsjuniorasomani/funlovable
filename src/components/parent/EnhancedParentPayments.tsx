@@ -115,7 +115,7 @@ export function EnhancedParentPayments() {
         parentId: user.id,
         parentName: user.name,
         parentEmail: user.email,
-        subscriptionId: 'sub_new', // Simplified
+        subscriptionId: 'sub_new', 
         plan: selectedPlanForPayment.name,
         amount: selectedPlanForPayment.price,
         status: 'completed',
@@ -129,7 +129,7 @@ export function EnhancedParentPayments() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-display font-bold text-foreground">Payments & Subscription</h2>
@@ -137,7 +137,7 @@ export function EnhancedParentPayments() {
         </div>
       </div>
 
-      {/* Current Subscription */}
+      { }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="md:col-span-2 bg-gradient-to-br from-primary/10 via-background to-secondary/10 border-primary/20">
           <CardContent className="p-6">
@@ -233,7 +233,7 @@ export function EnhancedParentPayments() {
           </CardContent>
         </Card>
 
-        {/* Payment Method */}
+        { }
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -264,7 +264,7 @@ export function EnhancedParentPayments() {
         </Card>
       </div>
 
-      {/* Payment History */}
+      { }
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -318,7 +318,7 @@ export function EnhancedParentPayments() {
         </CardContent>
       </Card>
 
-      {/* Billing Summary */}
+      { }
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
@@ -363,7 +363,7 @@ export function EnhancedParentPayments() {
         </Card>
       </div>
 
-      {/* Payment Dialog */}
+      { }
       <Dialog open={showPayment} onOpenChange={setShowPayment}>
         <DialogContent className="sm:max-w-md p-0 bg-transparent border-none shadow-none">
           {selectedPlanForPayment && (

@@ -6,9 +6,10 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   allowedRoles?: UserRole[];
   requireOnboarding?: boolean;
+  requireSuperAdmin?: boolean;
 }
 
-export function ProtectedRoute({ children, allowedRoles, requireOnboarding = true }: ProtectedRouteProps) {
+export function ProtectedRoute({ children, allowedRoles, requireOnboarding = true, requireSuperAdmin = false }: ProtectedRouteProps) {
   const { user, isAuthenticated, isLoading } = useAuthContext();
   const location = useLocation();
 
@@ -21,25 +22,30 @@ export function ProtectedRoute({ children, allowedRoles, requireOnboarding = tru
   }
 
   if (!isAuthenticated || !user) {
-    // Redirect admins to admin login
+
     if (allowedRoles?.includes('admin')) {
-      return <Navigate to="/admin/login" state={{ from: location }} replace />;
+      return <Navigate to="/sys-admin/login" state={{ from: location }} replace />;
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    // Redirect to appropriate dashboard based on role
+
     const dashboardRoutes: Record<string, string> = {
       student: '/student',
       teacher: '/teacher',
       parent: '/parent',
-      admin: user.is_super_admin ? '/super-admin' : '/admin',
+      admin: user.is_super_admin ? '/super-admin' : '/sys-admin',
     };
     return <Navigate to={dashboardRoutes[user.role] || '/'} replace />;
   }
 
-  // Check if teacher needs approval before accessing dashboard
+
+  if (requireSuperAdmin && user.role === 'admin' && !user.is_super_admin) {
+    return <Navigate to="/sys-admin" replace />;
+  }
+
+
   if (allowedRoles?.includes('teacher') && user.role === 'teacher') {
     if (!user.is_approved) {
       return (

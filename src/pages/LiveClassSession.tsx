@@ -1,5 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { VideoConference } from "@/components/video/VideoConference";
+import { LiveClassChat } from "@/components/live-class/LiveClassChat";
 import { useAuthContext } from "@/contexts/AuthContext";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
@@ -10,7 +11,7 @@ export default function LiveClassSession() {
     const navigate = useNavigate();
 
     const handleLeave = () => {
-        // Navigate back based on role
+
         if (user?.role === 'teacher') {
             navigate('/teacher/live-classes');
         } else if (user?.role === 'student') {
@@ -32,13 +33,22 @@ export default function LiveClassSession() {
                     Back to Dashboard
                 </Button>
             </div>
-            <div className="flex-1 overflow-hidden rounded-xl border border-border shadow-2xl">
-                <VideoConference
-                    classId={classId}
-                    className={`Live Session: ${classId}`} // Ideally fetch real class name
-                    isHost={user?.role === 'teacher'}
-                    userName={user?.name || "Guest"}
-                    onLeave={handleLeave}
+            <div className="flex-1 overflow-hidden rounded-xl border border-border shadow-2xl flex">
+                <div className="flex-1 h-full">
+                    <VideoConference
+                        classId={classId}
+                        className={`Live Session: ${classId}`}
+                        isHost={user?.role === 'teacher'}
+                        userName={user?.name || "Guest"}
+                        onLeave={handleLeave}
+                    />
+                </div>
+                {/* Chat Sidebar */}
+                <LiveClassChat
+                    liveClassId={classId}
+                    userId={user?.id || ""}
+                    userRole={user?.role || "student"}
+                    userName={user?.name || "Anonymous"}
                 />
             </div>
         </div>

@@ -46,7 +46,7 @@ export function TeacherQuizGrading() {
             setSelectedAttempt(data.attempt);
             setAnswers(data.answers || []);
 
-            // Initialize grading state
+            
             const initialGrading: Record<string, { marks: number; feedback: string }> = {};
             data.answers.forEach((answer: any) => {
                 initialGrading[answer.id] = {
@@ -66,7 +66,7 @@ export function TeacherQuizGrading() {
             await quizzesAPI.gradeAnswer(answerId, marks, feedback);
             toast.success("Answer graded!");
 
-            // Reload attempt details
+            
             if (selectedAttempt) {
                 await loadAttemptDetails(selectedAttempt.id);
             }
@@ -109,7 +109,7 @@ export function TeacherQuizGrading() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Attempts List */}
+                { }
                 <Card className="md:col-span-1">
                     <CardHeader>
                         <CardTitle className="text-sm">Student Attempts ({attempts.length})</CardTitle>
@@ -143,7 +143,7 @@ export function TeacherQuizGrading() {
                     </CardContent>
                 </Card>
 
-                {/* Grading Interface */}
+                { }
                 <Card className="md:col-span-2">
                     <CardHeader>
                         <CardTitle className="text-sm">
@@ -157,7 +157,7 @@ export function TeacherQuizGrading() {
                             </div>
                         ) : (
                             <div className="space-y-6">
-                                {/* Summary */}
+                                { }
                                 <div className="grid grid-cols-3 gap-4 p-4 bg-muted rounded-lg">
                                     <div>
                                         <p className="text-sm text-muted-foreground">Auto-Graded</p>
@@ -175,7 +175,7 @@ export function TeacherQuizGrading() {
                                     </div>
                                 </div>
 
-                                {/* Answers */}
+                                { }
                                 <div className="space-y-4">
                                     {answers.map((answer, index) => (
                                         <div key={answer.id} className="border rounded-lg p-4">
@@ -283,7 +283,7 @@ export function TeacherQuizGrading() {
                                     ))}
                                 </div>
 
-                                {/* Release Results */}
+                                { }
                                 {!selectedAttempt.is_released && (
                                     <Button onClick={handleReleaseResults} className="w-full" size="lg">
                                         <Send className="w-4 h-4 mr-2" />

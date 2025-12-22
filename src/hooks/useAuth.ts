@@ -34,10 +34,14 @@ export interface User {
   };
   onboardingComplete?: boolean;
   approvalStatus?: ApprovalStatus;
-  is_approved?: boolean; // Backend field
-  is_onboarded?: boolean; // Backend field
+  is_approved?: boolean;
+  is_onboarded?: boolean;
   is_super_admin?: boolean;
   createdAt: string;
+  bio?: string;
+  department?: string;
+  subjects_taught?: string;
+  employee_id?: string;
 }
 
 interface AuthState {
@@ -53,7 +57,7 @@ export function useAuth() {
     isLoading: true,
   });
 
-  // Check auth on mount - state-only, no localStorage persistence
+
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -69,8 +73,7 @@ export function useAuth() {
 
   const login = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
-      const { user, token } = await authAPI.login(email, password);
-      // Token stored in memory only (no localStorage)
+      const { user } = await authAPI.login(email, password);
       setAuthState({ user, isAuthenticated: true, isLoading: false });
       return { success: true, user };
     } catch (error: any) {
@@ -83,8 +86,7 @@ export function useAuth() {
 
   const adminLogin = useCallback(async (email: string, password: string): Promise<{ success: boolean; error?: string; user?: User }> => {
     try {
-      const { user, token } = await authAPI.adminLogin(email, password);
-      // Token stored in memory only (no localStorage)
+      const { user } = await authAPI.adminLogin(email, password);
       setAuthState({ user, isAuthenticated: true, isLoading: false });
       return { success: true, user };
     } catch (error: any) {
@@ -102,14 +104,14 @@ export function useAuth() {
       password: string;
       role: UserRole;
       phone?: string;
-      // Teacher specific fields
+
       school?: string;
       yearsOfExperience?: number;
       address?: string;
       subjectId?: string;
       bio?: string;
       qualifications?: string;
-      // Student specific fields
+
       age?: number;
       studentClass?: string;
     }
@@ -117,9 +119,8 @@ export function useAuth() {
     try {
       const { user, token } = await authAPI.register(data);
 
-      // If no token returned (e.g. pending approval), don't set auth state
+
       if (token) {
-        // Token stored in memory only (no localStorage)
         setAuthState({ user, isAuthenticated: true, isLoading: false });
       }
 
@@ -132,10 +133,12 @@ export function useAuth() {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    // Clear token from localStorage
-    authAPI.logout();
-    // Clear auth state
+  const logout = useCallback(async () => {
+    try {
+      await authAPI.logout();
+    } catch (e) {
+      console.error(e);
+    }
     setAuthState({ user: null, isAuthenticated: false, isLoading: false });
   }, []);
 
@@ -143,14 +146,14 @@ export function useAuth() {
     if (!authState.user) return;
 
     try {
-      // Optimistic update
+
       const updatedUser = { ...authState.user, ...updates };
       setAuthState(prev => ({ ...prev, user: updatedUser }));
 
-      // Call API to persist
+
       await usersAPI.update(authState.user.id, updates as any);
 
-      // Force refresh from server to be sure
+
       const { user } = await authAPI.getCurrentUser();
       setAuthState(prev => ({ ...prev, user }));
 
@@ -159,7 +162,7 @@ export function useAuth() {
     }
   }, [authState.user]);
 
-  // Admin functions
+
   const getAllUsers = useCallback(async (): Promise<User[]> => {
     try {
       const users = await usersAPI.getAll();
@@ -207,9 +210,9 @@ export function useAuth() {
 
     try {
       const response = await usersAPI.addChild(child);
-      const newChild = response.child || response; // Handle both formats
+      const newChild = response.child || response;
 
-      // Refresh user from server to get the authoritative children list
+
       try {
         const { user: refreshedUser } = await authAPI.getCurrentUser();
         setAuthState(prev => ({
@@ -219,7 +222,7 @@ export function useAuth() {
         return newChild;
       } catch (refreshErr) {
         console.warn('Could not refresh user after addChild, using local update:', refreshErr);
-        // Fallback: update local state
+
         const updatedChildren = [...(authState.user.children || []), newChild];
         setAuthState(prev => ({
           ...prev,
@@ -229,15 +232,16 @@ export function useAuth() {
       }
     } catch (error) {
       console.error('Failed to add child:', error);
+      throw error;
     }
   }, [authState.user]);
 
-  // These are placeholders until API supports them or we combine them into updates
+
   const updateChild = useCallback(async (childId: string, updates: Partial<Child>) => {
     if (!authState.user || !authState.user.children) return;
-    // For now, no specific API endpoint for updateChild in usersAPI, 
-    // but in a real app we'd have /users/:userId/children/:childId or similar.
-    // We'll skip implementation or assume it's part of generic update for now to avoid errors.
+
+
+
     console.warn('updateChild API not implemented yet');
   }, [authState.user]);
 
@@ -247,10 +251,10 @@ export function useAuth() {
 
   const completeOnboarding = useCallback(async () => {
     try {
-      // Mark onboarding complete on the backend
+
       await authAPI.completeOnboarding();
 
-      // Refresh current user from backend so is_onboarded and other flags are accurate
+
       const { user } = await authAPI.getCurrentUser();
 
       setAuthState({
@@ -285,7 +289,7 @@ export function useAuth() {
     removeChild,
     completeOnboarding,
     updateSubscription,
-    // Admin functions
+
     getAllUsers: getAllUsers as any,
     approveUser,
     rejectUser,
@@ -294,6 +298,5 @@ export function useAuth() {
   };
 }
 
-// Export useAuthContext for components that need it
-export const useAuthContext = useAuth;
+
 

@@ -55,7 +55,7 @@ export function StudentQuizResults() {
                 Back to Quizzes
             </Button>
 
-            {/* Results Summary */}
+            { }
             <Card className="border-2">
                 <CardHeader>
                     <CardTitle className="text-2xl">Quiz Results</CardTitle>
@@ -122,7 +122,7 @@ export function StudentQuizResults() {
                 </CardContent>
             </Card>
 
-            {/* Answer Review (if allowed and released) */}
+            { }
             {attempt.is_released && attempt.allow_review && answers.length > 0 && (
                 <Card>
                     <CardHeader>

@@ -1,13 +1,13 @@
-// DEPRECATED: Shared data should be fetched from backend API
-// Backend endpoints:
-// GET /api/modules
-// GET /api/lessons
-// GET /api/assignments
-// GET /api/quizzes
-// This file is kept for reference but is no longer used
 
-// Shared Data Store - Central data management for teacher-student sync
-// Everything created by teachers automatically syncs to enrolled students
+
+
+
+
+
+
+
+
+
 
 import { create } from 'zustand';
 
@@ -144,7 +144,7 @@ export interface StudentEnrollment {
 }
 
 interface SharedDataState {
-  // Data collections
+  
   modules: SharedModule[];
   lessons: SharedLesson[];
   assignments: SharedAssignment[];
@@ -157,49 +157,49 @@ interface SharedDataState {
   submissions: AssignmentSubmission[];
   quizAttempts: QuizAttempt[];
 
-  // Actions - Modules
+  
   addModule: (module: Omit<SharedModule, 'id' | 'createdAt' | 'isNew'>) => void;
   updateModule: (id: string, data: Partial<SharedModule>) => void;
   deleteModule: (id: string) => void;
 
-  // Actions - Lessons
+  
   addLesson: (lesson: Omit<SharedLesson, 'id' | 'createdAt' | 'isNew'>) => void;
   updateLesson: (id: string, data: Partial<SharedLesson>) => void;
   deleteLesson: (id: string) => void;
 
-  // Actions - Assignments
+  
   addAssignment: (assignment: Omit<SharedAssignment, 'id' | 'createdAt' | 'isNew'>) => void;
   updateAssignment: (id: string, data: Partial<SharedAssignment>) => void;
   deleteAssignment: (id: string) => void;
 
-  // Actions - Quizzes
+  
   addQuiz: (quiz: Omit<SharedQuiz, 'id' | 'createdAt' | 'isNew'>) => void;
   updateQuiz: (id: string, data: Partial<SharedQuiz>) => void;
   deleteQuiz: (id: string) => void;
 
-  // Actions - Live Classes
+  
   addLiveClass: (liveClass: Omit<SharedLiveClass, 'id' | 'isNew'>) => void;
   updateLiveClass: (id: string, data: Partial<SharedLiveClass>) => void;
   deleteLiveClass: (id: string) => void;
 
-  // Actions - Rewards
+  
   addReward: (reward: Omit<SharedReward, 'id'>) => void;
 
-  // Actions - Messages
+  
   sendMessage: (message: Omit<SharedMessage, 'id' | 'sentAt' | 'read'>) => void;
   markMessageRead: (id: string) => void;
 
-  // Actions - Enrollments
+  
   enrollStudent: (studentId: string, subjectId: string) => void;
   unenrollStudent: (studentId: string, subjectId: string) => void;
 
-  // Actions - Progress
+  
   completeLesson: (studentId: string, lessonId: string) => void;
   submitAssignment: (submission: Omit<AssignmentSubmission, 'id' | 'submittedAt'>) => void;
   gradeAssignment: (submissionId: string, grade: number, feedback?: string) => void;
   submitQuiz: (attempt: Omit<QuizAttempt, 'id' | 'completedAt'>) => void;
 
-  // Getters
+  
   getStudentSubjects: (studentId: string) => string[];
   getSubjectModules: (subjectId: string) => SharedModule[];
   getModuleLessons: (moduleId: string) => SharedLesson[];
@@ -229,7 +229,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
   submissions: [],
   quizAttempts: [],
 
-  // Module actions
+  
   addModule: (module) => set((state) => ({
     modules: [...state.modules, { 
       ...module, 
@@ -246,7 +246,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     lessons: state.lessons.filter(l => l.moduleId !== id)
   })),
 
-  // Lesson actions
+  
   addLesson: (lesson) => set((state) => ({
     lessons: [...state.lessons, { 
       ...lesson, 
@@ -262,7 +262,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     lessons: state.lessons.filter(l => l.id !== id)
   })),
 
-  // Assignment actions
+  
   addAssignment: (assignment) => set((state) => ({
     assignments: [...state.assignments, { 
       ...assignment, 
@@ -278,7 +278,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     assignments: state.assignments.filter(a => a.id !== id)
   })),
 
-  // Quiz actions
+  
   addQuiz: (quiz) => set((state) => ({
     quizzes: [...state.quizzes, { 
       ...quiz, 
@@ -294,7 +294,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     quizzes: state.quizzes.filter(q => q.id !== id)
   })),
 
-  // Live class actions
+  
   addLiveClass: (liveClass) => set((state) => ({
     liveClasses: [...state.liveClasses, { 
       ...liveClass, 
@@ -309,12 +309,12 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     liveClasses: state.liveClasses.filter(c => c.id !== id)
   })),
 
-  // Reward actions
+  
   addReward: (reward) => set((state) => ({
     rewards: [...state.rewards, { ...reward, id: generateId() }]
   })),
 
-  // Message actions
+  
   sendMessage: (message) => set((state) => ({
     messages: [...state.messages, { 
       ...message, 
@@ -327,7 +327,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     messages: state.messages.map(m => m.id === id ? { ...m, read: true } : m)
   })),
 
-  // Enrollment actions
+  
   enrollStudent: (studentId, subjectId) => set((state) => ({
     enrollments: [...state.enrollments, { studentId, subjectId, enrolledAt: new Date().toISOString() }]
   })),
@@ -335,7 +335,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     enrollments: state.enrollments.filter(e => !(e.studentId === studentId && e.subjectId === subjectId))
   })),
 
-  // Progress actions
+  
   completeLesson: (studentId, lessonId) => set((state) => ({
     lessonProgress: [...state.lessonProgress, { 
       lessonId, 
@@ -364,7 +364,7 @@ export const useSharedData = create<SharedDataState>((set, get) => ({
     }]
   })),
 
-  // Getters
+  
   getStudentSubjects: (studentId) => {
     return get().enrollments.filter(e => e.studentId === studentId).map(e => e.subjectId);
   },

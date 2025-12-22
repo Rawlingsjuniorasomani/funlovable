@@ -3,7 +3,7 @@ import { LessonViewer, LessonData } from "@/components/lesson/LessonViewer";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 
-// Sample lesson data
+
 const sampleLesson: LessonData = {
   id: "algebra-intro",
   title: "Introduction to Algebra",

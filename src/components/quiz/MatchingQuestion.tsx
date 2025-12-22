@@ -23,7 +23,7 @@ export function MatchingQuestion({ question, onSubmit, showResult }: MatchingQue
   const [shuffledRight, setShuffledRight] = useState<string[]>([]);
 
   useEffect(() => {
-    // Shuffle the right column on mount
+    
     const rightItems = question.pairs.map((p) => p.right);
     setShuffledRight(rightItems.sort(() => Math.random() - 0.5));
   }, [question.pairs]);
@@ -37,7 +37,7 @@ export function MatchingQuestion({ question, onSubmit, showResult }: MatchingQue
     if (showResult || selectedLeft === null) return;
     
     const newMatches = new Map(matches);
-    // Remove any existing match for this left item
+    
     newMatches.forEach((rightIdx, leftIdx) => {
       if (rightIdx === index) newMatches.delete(leftIdx);
     });
@@ -83,7 +83,7 @@ export function MatchingQuestion({ question, onSubmit, showResult }: MatchingQue
       <p className="text-sm text-muted-foreground">Click an item on the left, then click its match on the right.</p>
 
       <div className="grid grid-cols-2 gap-8">
-        {/* Left Column */}
+        { }
         <div className="space-y-3">
           {question.pairs.map((pair, index) => {
             const isMatched = matches.has(index);
@@ -122,7 +122,7 @@ export function MatchingQuestion({ question, onSubmit, showResult }: MatchingQue
           })}
         </div>
 
-        {/* Right Column */}
+        { }
         <div className="space-y-3">
           {shuffledRight.map((item, index) => {
             const matchedByLeft = Array.from(matches.entries()).find(([_, r]) => r === index)?.[0];

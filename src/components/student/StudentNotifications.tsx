@@ -59,7 +59,7 @@ export function StudentNotifications() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      { }
       <div className="flex gap-2">
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
@@ -77,7 +77,7 @@ export function StudentNotifications() {
         </Button>
       </div>
 
-      {/* Notifications List */}
+      { }
       {filteredNotifications.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <Bell className="w-16 h-16 mx-auto text-muted-foreground mb-4" />

@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { notificationsAPI } from "@/config/api";
 import { useToast } from "@/hooks/use-toast";
 
-// Interface matching the backend response + frontend mapping
+
 interface NotificationItem {
   id: string;
   type: string;
@@ -71,7 +71,7 @@ export function TeacherNotifications() {
 
   const markAsRead = async (id: string) => {
     try {
-      // Optimistic update
+      
       setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
       await notificationsAPI.markAsRead(id);
     } catch (error) {
@@ -81,12 +81,12 @@ export function TeacherNotifications() {
 
   const markAllAsRead = async () => {
     try {
-      // Optimistic update
+      
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
-      // Note: Backend might need a specific endpoint for 'mark all', looping for now or verify API capability
-      // The current notificationsAPI helper might need an update if we want a single bulk call, 
-      // but users normally have few notifications so sequential or just optimistic is okay for MVP
-      // Actually, let's just mark visible ones locally as per user expectation, calling API individually roughly
+      
+      
+      
+      
       const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
       await Promise.all(unreadIds.map(id => notificationsAPI.markAsRead(id)));
       toast({ title: "All notifications marked as read" });
@@ -102,17 +102,17 @@ export function TeacherNotifications() {
       toast({ title: "Notification removed" });
     } catch (error) {
       console.error("Failed to delete notification:", error);
-      fetchNotifications(); // Revert on error
+      fetchNotifications(); 
     }
   };
 
   const clearAll = async () => {
     try {
-      // Optimistic clear
+      
       const current = [...notifications];
       setNotifications([]);
 
-      // Delete all one by one (ideal would be a clear-all endpoint)
+      
       await Promise.all(current.map(n => notificationsAPI.delete(n.id)));
       toast({ title: "All notifications cleared" });
     } catch (error) {
@@ -166,7 +166,7 @@ export function TeacherNotifications() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
+      { }
       <div className="flex gap-2">
         <Button
           variant={filter === 'all' ? 'default' : 'outline'}
@@ -184,7 +184,7 @@ export function TeacherNotifications() {
         </Button>
       </div>
 
-      {/* Notifications List */}
+      { }
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map(i => (

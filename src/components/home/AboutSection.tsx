@@ -18,7 +18,7 @@ const features = [{
 export function AboutSection() {
   return (
     <section id="about" className="relative py-20 overflow-hidden">
-      {/* Background Image */}
+      { }
       <div className="absolute inset-0 z-0">
         <img
           src="/about-1.jpg"
@@ -51,7 +51,7 @@ export function AboutSection() {
           </div>)}
         </div>
 
-        {/* Mission Statement */}
+        { }
         <div className="mt-16 bg-white/80 backdrop-blur-sm rounded-3xl p-8 md:p-12 border border-orange-100 shadow-lg">
           <div className="grid md:grid-cols-2 gap-8 items-center">
             <div>

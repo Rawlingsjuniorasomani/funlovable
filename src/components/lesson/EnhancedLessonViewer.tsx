@@ -69,13 +69,13 @@ export function EnhancedLessonViewer({
     const scrollPercentage = (target.scrollTop / (target.scrollHeight - target.clientHeight)) * 100;
     setReadProgress(Math.min(100, scrollPercentage));
     if (scrollPercentage >= 90 && !isCompleted) {
-      // Auto-complete when user reaches end of content
+      
     }
   };
 
   return (
     <div className="bg-card rounded-xl border border-border overflow-hidden">
-      {/* Header */}
+      { }
       <div className="p-4 border-b border-border bg-muted/30">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -100,11 +100,11 @@ export function EnhancedLessonViewer({
         </div>
       </div>
 
-      {/* Content Area */}
+      { }
       <div className="relative">
         {lesson.type === "video" && (
           <div className="aspect-video bg-black relative group">
-            {/* Video placeholder */}
+            { }
             <div className="absolute inset-0 flex items-center justify-center">
               <div className="text-center text-white/60">
                 <Play className="w-16 h-16 mx-auto mb-2 opacity-50" />
@@ -113,9 +113,9 @@ export function EnhancedLessonViewer({
               </div>
             </div>
 
-            {/* Video Controls Overlay */}
+            { }
             <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-              {/* Progress Bar */}
+              { }
               <div className="mb-3">
                 <Slider
                   value={[videoProgress]}
@@ -126,7 +126,7 @@ export function EnhancedLessonViewer({
                 />
               </div>
 
-              {/* Controls */}
+              { }
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Button
@@ -236,7 +236,7 @@ export function EnhancedLessonViewer({
               )}
             </div>
             
-            {/* Reading Progress */}
+            { }
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex items-center justify-between text-sm text-muted-foreground mb-2">
                 <span>Reading Progress</span>
@@ -256,7 +256,7 @@ export function EnhancedLessonViewer({
                 {lesson.description}
               </p>
               
-              {/* Sample Interactive Content */}
+              { }
               <div className="grid grid-cols-2 gap-4 max-w-md mx-auto mb-6">
                 <Button variant="outline" className="h-20">
                   Option A
@@ -280,7 +280,7 @@ export function EnhancedLessonViewer({
         )}
       </div>
 
-      {/* Footer */}
+      { }
       <div className="p-4 border-t border-border bg-muted/30">
         <div className="flex items-center justify-between">
           <Button

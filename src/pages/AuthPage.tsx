@@ -41,13 +41,13 @@ export default function AuthPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { login, register } = useAuthContext();
-  
+
   const [mode, setMode] = useState<AuthMode>('login');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -73,12 +73,12 @@ export default function AuthPage() {
     try {
       if (mode === 'login') {
         loginSchema.parse({ email: formData.email, password: formData.password });
-        
+
         const result = await login(formData.email, formData.password);
-        
+
         if (result.success) {
           toast({ title: "Welcome back!", description: "Login successful." });
-          // Use user from login result to determine redirect (no localStorage)
+
           if (result.user) {
             const user = result.user;
             const isOnboarded = user.is_onboarded ?? user.onboardingComplete ?? false;
@@ -90,7 +90,7 @@ export default function AuthPage() {
             } else if (user.role === 'teacher') {
               navigate('/teacher');
             } else if (user.role === 'admin') {
-              navigate(user.is_super_admin ? '/super-admin' : '/admin');
+              navigate(user.is_super_admin ? '/super-admin' : '/sys-admin');
             } else {
               navigate('/');
             }
@@ -100,7 +100,7 @@ export default function AuthPage() {
         }
       } else {
         registerSchema.parse(formData);
-        
+
         const result = await register({
           name: formData.name,
           email: formData.email,
@@ -108,12 +108,12 @@ export default function AuthPage() {
           role: formData.role,
           phone: formData.phone || undefined,
         });
-        
+
         if (result.success) {
-          // Teachers need admin approval
+
           if (formData.role === 'teacher') {
-            toast({ 
-              title: "Registration Submitted!", 
+            toast({
+              title: "Registration Submitted!",
               description: "Your account is pending admin approval. You'll be notified once approved.",
               duration: 5000,
             });
@@ -121,14 +121,14 @@ export default function AuthPage() {
             setFormData(prev => ({ ...prev, password: '', confirmPassword: '' }));
           } else {
             toast({ title: "Account created!", description: "Welcome to Lovable Learning." });
-            
-            // Redirect based on role
+
+
             if (formData.role === 'parent') {
               navigate('/onboarding');
             } else if (formData.role === 'student') {
               navigate('/student');
             } else if (formData.role === 'teacher') {
-              // Teachers go to dashboard after approval & login; keep them on auth page for now
+
               navigate('/');
             } else {
               navigate('/');
@@ -159,7 +159,7 @@ export default function AuthPage() {
       <main className="pt-20 min-h-screen flex items-center justify-center px-4 py-8">
         <div className="w-full max-w-md">
           <div className="bg-card rounded-3xl p-8 border border-border shadow-lg">
-            {/* Logo */}
+            { }
             <div className="text-center mb-6">
               <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary via-tertiary to-secondary flex items-center justify-center mx-auto mb-4">
                 <GraduationCap className="w-8 h-8 text-primary-foreground" />
@@ -172,33 +172,31 @@ export default function AuthPage() {
               </p>
             </div>
 
-            {/* Mode Toggle */}
+            { }
             <div className="flex bg-muted rounded-lg p-1 mb-6">
               <button
                 type="button"
                 onClick={() => setMode('login')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  mode === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-                }`}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${mode === 'login' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                  }`}
               >
                 Sign In
               </button>
               <button
                 type="button"
                 onClick={() => setMode('register')}
-                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${
-                  mode === 'register' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
-                }`}
+                className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${mode === 'register' ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground'
+                  }`}
               >
                 Sign Up
               </button>
             </div>
 
-            {/* Form */}
+            { }
             <form onSubmit={handleSubmit} className="space-y-4">
               {mode === 'register' && (
                 <>
-                  {/* Role Selection */}
+                  { }
                   <div className="space-y-2">
                     <Label>I am a...</Label>
                     <RadioGroup
@@ -224,7 +222,7 @@ export default function AuthPage() {
                     </RadioGroup>
                   </div>
 
-                  {/* Name */}
+                  { }
                   <div className="space-y-2">
                     <Label htmlFor="name">Full Name</Label>
                     <div className="relative">
@@ -241,7 +239,7 @@ export default function AuthPage() {
                     {errors.name && <p className="text-sm text-destructive">{errors.name}</p>}
                   </div>
 
-                  {/* Phone (optional for parents) */}
+                  { }
                   {formData.role === 'parent' && (
                     <div className="space-y-2">
                       <Label htmlFor="phone">Phone Number (optional)</Label>
@@ -262,7 +260,7 @@ export default function AuthPage() {
                 </>
               )}
 
-              {/* Email */}
+              { }
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -280,7 +278,7 @@ export default function AuthPage() {
                 {errors.email && <p className="text-sm text-destructive">{errors.email}</p>}
               </div>
 
-              {/* Password */}
+              { }
               <div className="space-y-2">
                 <Label htmlFor="password">Password</Label>
                 <div className="relative">
@@ -305,7 +303,7 @@ export default function AuthPage() {
                 {errors.password && <p className="text-sm text-destructive">{errors.password}</p>}
               </div>
 
-              {/* Confirm Password */}
+              { }
               {mode === 'register' && (
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Confirm Password</Label>
@@ -353,7 +351,7 @@ export default function AuthPage() {
               </Button>
             </form>
 
-            {/* Alternative Link */}
+            { }
             <div className="text-center mt-6">
               <p className="text-muted-foreground">
                 {mode === 'login' ? "Don't have an account? " : "Already have an account? "}

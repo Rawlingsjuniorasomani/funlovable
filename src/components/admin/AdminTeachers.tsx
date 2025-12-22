@@ -62,14 +62,14 @@ export function AdminTeachers() {
           .map((s: any) => [String(s.name).trim().toLowerCase(), String(s.id)])
       );
 
-      // Fetch teachers from backend API
+      
       const teachers = await usersAPI.getAll({ role: 'teacher' });
-      // Backend returns array directly, not wrapped in { users: [...] }
+      
       const teacherUsers = (Array.isArray(teachers) ? teachers : []).map((t: any) => ({
         ...t,
         approvalStatus: t.is_approved ? 'approved' as const : 'pending' as const,
         onboardingComplete: t.is_onboarded,
-        // Backend returns subjects_list as subject NAMES; map them to IDs using loaded subjects.
+        
         assignedSubjects: (t.subjects_list ? String(t.subjects_list).split(',') : [])
           .map((name: string) => name.trim().toLowerCase())
           .map((name: string) => subjectNameToId.get(name))
@@ -114,8 +114,8 @@ export function AdminTeachers() {
       password: formData.password,
     };
 
-    // Send to backend API
-    // TODO: POST to backend /api/teachers with teacher data
+    
+    
     try {
       if (usersAPI.update) {
         await usersAPI.update('', newTeacher);
@@ -178,8 +178,8 @@ export function AdminTeachers() {
 
   const handleDelete = (teacherId: string) => {
     deleteUser(teacherId);
-    // No localStorage - subjects managed on backend
-    // TODO: DELETE to backend /api/teachers/:id/subjects
+    
+    
     loadTeachers();
     toast({ title: "Teacher Removed", variant: "destructive" });
   };
@@ -204,7 +204,7 @@ export function AdminTeachers() {
     }
 
     if (emailData.recipients === 'all') {
-      // Send to all teachers
+      
       teachers.forEach(teacher => {
         sendMessage({
           from: 'admin',
@@ -217,7 +217,7 @@ export function AdminTeachers() {
       });
       toast({ title: "Messages Sent", description: `Message sent to all ${teachers.length} teachers` });
     } else if (selectedTeacher) {
-      // Send to single teacher
+      
       sendMessage({
         from: 'admin',
         fromName: 'Administrator',
@@ -284,7 +284,7 @@ export function AdminTeachers() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
+      { }
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-display font-bold text-foreground">Teachers Management</h1>
@@ -329,7 +329,7 @@ export function AdminTeachers() {
         </div>
       </div>
 
-      {/* Stats Cards */}
+      { }
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -366,7 +366,7 @@ export function AdminTeachers() {
         </Card>
       </div>
 
-      {/* Filters */}
+      { }
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -383,7 +383,7 @@ export function AdminTeachers() {
         </Select>
       </div>
 
-      {/* Table */}
+      { }
       {filteredTeachers.length === 0 ? (
         <div className="bg-card rounded-xl border border-border p-12 text-center">
           <UserCheck className="w-12 h-12 mx-auto text-muted-foreground mb-4" />
@@ -480,7 +480,7 @@ export function AdminTeachers() {
         </div>
       )}
 
-      {/* View Dialog */}
+      { }
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-lg">
           <DialogHeader>
@@ -538,7 +538,7 @@ export function AdminTeachers() {
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
+      { }
       <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -565,7 +565,7 @@ export function AdminTeachers() {
         </DialogContent>
       </Dialog>
 
-      {/* Assign Subjects Dialog */}
+      { }
       <Dialog open={isAssignOpen} onOpenChange={setIsAssignOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
@@ -604,7 +604,7 @@ export function AdminTeachers() {
         </DialogContent>
       </Dialog>
 
-      {/* Email Dialog */}
+      { }
       <Dialog open={isEmailOpen} onOpenChange={setIsEmailOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>

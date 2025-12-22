@@ -1,13 +1,13 @@
-// DEPRECATED: Parent data should be fetched from backend API
-// Backend endpoints:
-// GET /api/parents
-// GET /api/subscriptions
-// GET /api/payments
-// GET /api/parent-children
-// This file is kept for reference but is no longer used
 
-// Central data store for parent registrations, subscriptions, and linked accounts
-// This enables admin visibility of all parent activities
+
+
+
+
+
+
+
+
+
 
 import { create } from 'zustand';
 
@@ -68,7 +68,7 @@ export interface LinkedTeacher {
   teacherEmail: string;
   subject?: string;
   linkedAt: string;
-  linkedFor: string; // child name or "All children"
+  linkedFor: string; 
 }
 
 interface ParentDataState {
@@ -78,28 +78,28 @@ interface ParentDataState {
   linkedChildren: LinkedChild[];
   linkedTeachers: LinkedTeacher[];
 
-  // Parent actions
+  
   registerParent: (parent: Omit<ParentAccount, 'id' | 'createdAt'>) => ParentAccount;
   updateParent: (id: string, data: Partial<ParentAccount>) => void;
 
-  // Subscription actions
+  
   createSubscription: (sub: Omit<ParentSubscription, 'id'>) => ParentSubscription;
   updateSubscription: (id: string, data: Partial<ParentSubscription>) => void;
   cancelSubscription: (id: string) => void;
 
-  // Payment actions
+  
   addPayment: (payment: Omit<ParentPayment, 'id'>) => ParentPayment;
   updatePayment: (id: string, data: Partial<ParentPayment>) => void;
 
-  // Child linking
+  
   linkChild: (data: Omit<LinkedChild, 'id' | 'linkedAt'>) => LinkedChild;
   unlinkChild: (id: string) => void;
 
-  // Teacher linking
+  
   linkTeacher: (data: Omit<LinkedTeacher, 'id' | 'linkedAt'>) => LinkedTeacher;
   unlinkTeacher: (id: string) => void;
 
-  // Getters for admin
+  
   getAllSubscriptions: () => ParentSubscription[];
   getAllPayments: () => ParentPayment[];
   getParentChildren: (parentId: string) => LinkedChild[];
@@ -109,7 +109,7 @@ interface ParentDataState {
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
-// Initialize with sample data
+
 const initialParents: ParentAccount[] = [];
 
 const initialSubscriptions: ParentSubscription[] = [];
@@ -235,7 +235,7 @@ export const useParentData = create<ParentDataState>((set, get) => ({
   },
 }));
 
-// Helper to record a new payment - usage should be replaced by API calls in components
+
 export const recordPayment = (payment: ParentPayment) => {
   console.warn("recordPayment is deprecated. Use paymentsAPI instead.");
 };

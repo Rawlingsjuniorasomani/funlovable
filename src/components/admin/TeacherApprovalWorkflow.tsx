@@ -53,7 +53,7 @@ export function TeacherApprovalWorkflow() {
     approveUser(teacher.id);
     loadPendingTeachers();
 
-    // Send SMS notification
+    
     if (teacher.phone) {
       await sendTeacherApprovalSMS(teacher.phone, teacher.name, true);
     }
@@ -76,7 +76,7 @@ export function TeacherApprovalWorkflow() {
 
     rejectUser(selectedTeacher.id);
 
-    // Send SMS notification
+    
     if (selectedTeacher.phone) {
       await sendTeacherApprovalSMS(selectedTeacher.phone, selectedTeacher.name, false);
     }

@@ -61,11 +61,11 @@ export function useGamification() {
   const [state, setState] = useState<GamificationState>(defaultState);
   const [newAchievements, setNewAchievements] = useState<Achievement[]>([]);
 
-  // No localStorage persistence - state resets on page reload
-  // In production, gamification data should come from backend API
+  
+  
 
   const saveState = useCallback((newState: GamificationState) => {
-    // Store in memory only (not localStorage)
+    
     setState(newState);
   }, []);
 
@@ -73,10 +73,10 @@ export function useGamification() {
 
   const checkAchievements = useCallback((currentState: GamificationState): string[] => {
     const newUnlocked: string[] = [];
-    
+
     ALL_ACHIEVEMENTS.forEach((achievement) => {
       if (currentState.achievements.includes(achievement.id)) return;
-      
+
       let unlocked = false;
       switch (achievement.type) {
         case "quizzes":
@@ -95,27 +95,27 @@ export function useGamification() {
           unlocked = currentState.xp >= achievement.requirement;
           break;
       }
-      
+
       if (unlocked) {
         newUnlocked.push(achievement.id);
       }
     });
-    
+
     return newUnlocked;
   }, []);
 
   const updateStreak = useCallback((currentState: GamificationState): GamificationState => {
     const today = new Date().toDateString();
     const lastDate = currentState.lastActivity ? new Date(currentState.lastActivity).toDateString() : "";
-    
+
     if (lastDate === today) {
       return currentState;
     }
-    
+
     const yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
     const isConsecutive = lastDate === yesterday.toDateString();
-    
+
     return {
       ...currentState,
       streak: isConsecutive ? currentState.streak + 1 : 1,
@@ -128,20 +128,20 @@ export function useGamification() {
       let updated = updateStreak(prev);
       const streakBonus = updated.streak >= 3 ? XP_REWARDS.streakBonus : 0;
       const totalXP = updated.xp + amount + streakBonus;
-      
+
       updated = {
         ...updated,
         xp: totalXP,
         level: calculateLevel(totalXP),
       };
-      
+
       const newUnlocked = checkAchievements(updated);
       if (newUnlocked.length > 0) {
         updated.achievements = [...updated.achievements, ...newUnlocked];
         const unlockedAchievements = ALL_ACHIEVEMENTS.filter((a) => newUnlocked.includes(a.id));
         setNewAchievements(unlockedAchievements);
       }
-      
+
       saveState(updated);
       return updated;
     });
@@ -151,11 +151,11 @@ export function useGamification() {
     const isPerfect = score === total;
     const baseXP = XP_REWARDS.quizComplete + (score * XP_REWARDS.correctAnswer);
     const perfectBonus = isPerfect ? XP_REWARDS.perfectScore : 0;
-    
+
     setState((prev) => {
       let updated = updateStreak(prev);
       const totalXP = updated.xp + baseXP + perfectBonus;
-      
+
       updated = {
         ...updated,
         xp: totalXP,
@@ -163,18 +163,18 @@ export function useGamification() {
         quizzesCompleted: updated.quizzesCompleted + 1,
         perfectScores: isPerfect ? updated.perfectScores + 1 : updated.perfectScores,
       };
-      
+
       const newUnlocked = checkAchievements(updated);
       if (newUnlocked.length > 0) {
         updated.achievements = [...updated.achievements, ...newUnlocked];
         const unlockedAchievements = ALL_ACHIEVEMENTS.filter((a) => newUnlocked.includes(a.id));
         setNewAchievements(unlockedAchievements);
       }
-      
+
       saveState(updated);
       return updated;
     });
-    
+
     return baseXP + perfectBonus;
   }, [checkAchievements, saveState, updateStreak]);
 
@@ -182,25 +182,25 @@ export function useGamification() {
     setState((prev) => {
       let updated = updateStreak(prev);
       const totalXP = updated.xp + XP_REWARDS.lessonComplete;
-      
+
       updated = {
         ...updated,
         xp: totalXP,
         level: calculateLevel(totalXP),
         lessonsCompleted: updated.lessonsCompleted + 1,
       };
-      
+
       const newUnlocked = checkAchievements(updated);
       if (newUnlocked.length > 0) {
         updated.achievements = [...updated.achievements, ...newUnlocked];
         const unlockedAchievements = ALL_ACHIEVEMENTS.filter((a) => newUnlocked.includes(a.id));
         setNewAchievements(unlockedAchievements);
       }
-      
+
       saveState(updated);
       return updated;
     });
-    
+
     return XP_REWARDS.lessonComplete;
   }, [checkAchievements, saveState, updateStreak]);
 

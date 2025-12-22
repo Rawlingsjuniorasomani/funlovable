@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { subjectsAPI } from "@/config/api";
 
-// --- Schemas (Unchanged) ---
+
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(6, "Password must be at least 6 characters"),
@@ -36,7 +36,7 @@ const registerProfessionalSchema = z.object({
   subjectId: z.string().min(1, "Please select a subject"),
 });
 
-// --- Types ---
+
 type AuthView = 'login' | 'register';
 type RegisterStep = 1 | 2;
 
@@ -45,13 +45,13 @@ interface Subject {
   name: string;
 }
 
-// --- Component ---
+
 export default function TeacherAuth() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login, register } = useAuthContext();
 
-  // State
+  
   const [view, setView] = useState<AuthView>('login');
   const [step, setStep] = useState<RegisterStep>(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -61,7 +61,7 @@ export default function TeacherAuth() {
   const [showPendingMessage, setShowPendingMessage] = useState(false);
   const [subjects, setSubjects] = useState<Subject[]>([]);
 
-  // Form Data
+  
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -86,7 +86,7 @@ export default function TeacherAuth() {
     loadSubjects();
   }, []);
 
-  // --- Handlers ---
+  
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -188,7 +188,7 @@ export default function TeacherAuth() {
     }
   };
 
-  // --- Render Helpers ---
+  
   const renderStepper = () => (
     <div className="flex items-center justify-center mb-6 w-full">
       <div className="flex items-center gap-4">
@@ -237,6 +237,7 @@ export default function TeacherAuth() {
       title={view === 'login' ? "Welcome Back" : "Teacher Registration"}
       subtitle={view === 'login' ? "Sign in to your dashboard" : "Join our teaching community"}
       image={authHeroOriginal}
+      formClassName="bg-gradient-to-br from-white via-emerald-50 to-teal-50"
     >
       {view === 'login' && (
         <>

@@ -58,7 +58,7 @@ export function TeacherSubjects() {
     try {
       setLoading(true);
       const data = await subjectsAPI.getTeacher();
-      // Ensure unique subjects if duplicates returned
+      
       const uniqueSubjects = (Array.isArray(data) ? data : []).reduce((acc: Subject[], current: Subject) => {
         const x = acc.find(item => item.id === current.id);
         if (!x) {
@@ -152,7 +152,7 @@ export function TeacherSubjects() {
 
   const iconOptions = ["📐", "🔬", "📚", "🌍", "💻", "🇫🇷", "🙏", "🎨", "🎵", "⚽"];
 
-  // Group subjects by level
+  
   const groupedSubjects = LEVELS.reduce((acc, level) => {
     const levelSubjects = subjects.filter(s => (s.level || "Nursery") === level);
     if (levelSubjects.length > 0) {
@@ -161,7 +161,7 @@ export function TeacherSubjects() {
     return acc;
   }, {} as Record<string, Subject[]>);
 
-  // Catch any subjects with unknown levels
+  
   const otherSubjects = subjects.filter(s => !LEVELS.includes(s.level || ""));
   if (otherSubjects.length > 0) {
     groupedSubjects["Other"] = otherSubjects;

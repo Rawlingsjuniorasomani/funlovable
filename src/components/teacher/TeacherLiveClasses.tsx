@@ -36,8 +36,8 @@ export interface LiveClass {
   scheduled_at: string;
   duration_minutes: number;
   status: 'scheduled' | 'live' | 'completed';
-  attendees?: number; // Not in DB yet
-  totalStudents?: number; // Not in DB yet
+  attendees?: number; 
+  totalStudents?: number; 
   teacher_id?: string;
   meeting_url?: string;
 }
@@ -103,7 +103,7 @@ export function TeacherLiveClasses() {
   const handleStartClass = async (liveClass: LiveClass) => {
     try {
       const updated = await liveClassesAPI.updateStatus(liveClass.id, 'live');
-      setClasses(prev => prev.map(c => c.id === liveClass.id ? { ...c, status: "live" as const } : c)); // Optimistic or use response
+      setClasses(prev => prev.map(c => c.id === liveClass.id ? { ...c, status: "live" as const } : c)); 
       setActiveClass({ ...liveClass, status: 'live' });
       toast({ title: "Class started", description: "Your live class has begun!" });
     } catch (err) {
@@ -124,8 +124,8 @@ export function TeacherLiveClasses() {
 
   const handleLeaveClass = () => {
     if (activeClass) {
-      // Just leave local view if actively hosting? Or actually end it?
-      // Assuming just leaving the video view.
+      
+      
       setActiveClass(null);
     }
   };
@@ -145,7 +145,7 @@ export function TeacherLiveClasses() {
     return date.toLocaleDateString("en-GB", { weekday: "short", month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
   };
 
-  // If in active class, show video conference
+  
   if (activeClass) {
     const subject = subjects.find(s => s.id === activeClass.subject_id);
     return (
@@ -230,7 +230,7 @@ export function TeacherLiveClasses() {
         </Dialog>
       </div>
 
-      {/* Live Now Banner */}
+      { }
       {classes.some(c => c.status === "live") && (
         <div className="bg-gradient-to-r from-destructive to-accent rounded-xl p-4 sm:p-6 text-primary-foreground animate-scale-in">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
@@ -256,7 +256,7 @@ export function TeacherLiveClasses() {
         </div>
       )}
 
-      {/* Class Grid */}
+      { }
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {classes.map((liveClass, index) => {
           const subject = subjects.find(s => s.id === liveClass.subject_id);

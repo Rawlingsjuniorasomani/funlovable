@@ -1,42 +1,37 @@
-// During local development we commonly run the backend on port 5001
-// (if 5000 is in use). Prefer VITE_API_URL when provided, otherwise
-// use production URL for deployed environments
-const vite_env = import.meta.env.MODE;
-export const API_URL = vite_env === 'development' ? 'http://localhost:5000' : 'https://funlovable-backends.onrender.com';
 
-// Helper function for API calls
+
+
+export const API_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000/api').replace(/\/$/, '');
+
+
 export const apiRequest = async (
   endpoint: string,
   options: RequestInit = {}
 ): Promise<Response> => {
-  // Ensure we have a Headers instance (typed) so `set` is recognized by TS
-  const headers: Headers = new Headers(options.headers as HeadersInit | undefined);
 
-  // Add Authorization header if token exists
-  const token = typeof localStorage !== 'undefined' ? localStorage.getItem('auth_token') : null;
-  if (token) {
-    headers.set('Authorization', `Bearer ${token}`);
-  }
+  const headers: Headers = new Headers(options.headers as HeadersInit | undefined);
 
   if (!headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
   }
 
-  // Handle "View As Student" header
+
   const viewAsChildId = typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('viewAsChildId') : null;
   if (viewAsChildId) {
-    // ensure string typing
+
     headers.set('x-view-as-student', String(viewAsChildId));
   }
 
-  const response = await fetch(`${API_URL}/${"api"}${endpoint}`, {
+
+
+  const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers,
-    credentials: 'include', // Send cookies with request for session-based auth
+    credentials: 'include',
   });
 
   if (!response.ok) {
-    // Attempt to parse error body
+
     const errorData = await response.json().catch(() => ({}));
 
     let errorMessage = errorData.error;
@@ -46,7 +41,7 @@ export const apiRequest = async (
 
     const error = new Error(errorMessage || `API Error: ${response.status}`);
 
-    // Attach details for error handling
+
     (error as any).response = {
       status: response.status,
       data: errorData,
@@ -58,7 +53,7 @@ export const apiRequest = async (
   return response;
 };
 
-// Auth API helpers
+
 export const authAPI = {
   login: async (email: string, password: string) => {
     const res = await apiRequest('/auth/login', {
@@ -67,25 +62,15 @@ export const authAPI = {
     });
     const data = await res.json();
 
-    // Store token in localStorage
-    if (data.token && typeof localStorage !== 'undefined') {
-      localStorage.setItem('auth_token', data.token);
-    }
-
     return data;
   },
 
-  register: async (data: { name: string; email: string; password: string; role: string; phone?: string }) => {
+  register: async (data: { name: string; email: string; password: string; role: string; phone?: string;[key: string]: any }) => {
     const res = await apiRequest('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
     });
     const responseData = await res.json();
-
-    // Store token in localStorage
-    if (responseData.token && typeof localStorage !== 'undefined') {
-      localStorage.setItem('auth_token', responseData.token);
-    }
 
     return responseData;
   },
@@ -97,18 +82,11 @@ export const authAPI = {
     });
     const data = await res.json();
 
-    // Store token in localStorage
-    if (data.token && typeof localStorage !== 'undefined') {
-      localStorage.setItem('auth_token', data.token);
-    }
-
     return data;
   },
 
-  logout: () => {
-    if (typeof localStorage !== 'undefined') {
-      localStorage.removeItem('auth_token');
-    }
+  logout: async () => {
+    await apiRequest('/auth/logout', { method: 'POST' });
   },
 
   getCurrentUser: async () => {
@@ -122,7 +100,7 @@ export const authAPI = {
   },
 };
 
-// Users API helpers
+
 export const usersAPI = {
   getAll: async (params?: { role?: string; status?: string }) => {
     const query = params ? `?${new URLSearchParams(params)}` : '';
@@ -208,7 +186,7 @@ export const usersAPI = {
   },
 };
 
-// Subjects API helpers
+
 export const subjectsAPI = {
   getAll: async () => {
     const res = await apiRequest('/subjects');
@@ -257,7 +235,7 @@ export const subjectsAPI = {
   },
 };
 
-// Modules API helpers
+
 export const modulesAPI = {
   getAll: async (subjectId?: string) => {
     const query = subjectId ? `?subjectId=${subjectId}` : '';
@@ -292,7 +270,7 @@ export const modulesAPI = {
   },
 };
 
-// Lessons API helpers
+
 export const lessonsAPI = {
   getAll: async (filters?: { moduleId?: string; teacherId?: string; subjectId?: string }) => {
     const query = filters ? `?${new URLSearchParams(filters as any)}` : '';
@@ -314,7 +292,7 @@ export const lessonsAPI = {
   },
 
   createWithFile: async (formData: FormData) => {
-    // Auth via HTTP-only cookies/session (no localStorage token)
+
     const response = await fetch(`${API_URL}/lessons`, {
       method: 'POST',
       body: formData,
@@ -349,7 +327,7 @@ export const lessonsAPI = {
   },
 };
 
-// Assignments API helpers
+
 export const assignmentsAPI = {
   getAll: async (filters?: { subjectId?: string; teacherId?: string }) => {
     const query = filters ? `?${new URLSearchParams(filters as any)}` : '';
@@ -410,7 +388,7 @@ export const assignmentsAPI = {
     return res.json();
   },
 
-  // Questions
+
   addQuestion: async (assignmentId: string, data: any) => {
     const res = await apiRequest(`/assignments/${assignmentId}/questions`, {
       method: 'POST',
@@ -437,7 +415,7 @@ export const assignmentsAPI = {
     return res.json();
   },
 
-  // Answers
+
   saveAnswer: async (data: { submission_id: string; question_id: string; answer_text: string }) => {
     const res = await apiRequest('/assignments/answers', {
       method: 'POST',
@@ -447,25 +425,25 @@ export const assignmentsAPI = {
   },
 
   getAnswers: async (submissionId: string) => {
-    // Assuming backend endpoint exists as verified in AssignmentModel/routes (GET /assignments/submissions/:id/answers or similar?)
-    // Actually, looking at routes: router.get('/:id/my-submission', ...) but for teacher grading specific answers?
-    // Let me check routes.js again.
-    // routes/assignments.js has: router.post('/answers', ...), router.get('/:id/my-submission', ...), router.get('/:id/submissions', ...).
-    // It DOES NOT have specific route to get answers for a submission by ID for TEACHER.
-    // REQUIRED: Add route for fetching answers for a submission.
-    // Wait, AssignmentModel has `static async getAnswers(submissionId)`.
-    // I need to add the route in backend first if it's missing.
-    // Checking routes/assignments.js content again... lines 1-26.
-    // It does NOT have `router.get('/submissions/:submissionId/answers', ...)`
-    // I will add the route first.
+
+
+
+
+
+
+
+
+
+
+
     return [];
   }
 
 };
 
-// Quizzes API helpers
+
 export const quizzesAPI = {
-  // Quiz management
+
   getAll: async (filters?: { moduleId?: string }) => {
     const query = filters ? `?${new URLSearchParams(filters as any)}` : '';
     const res = await apiRequest(`/quizzes${query}`);
@@ -513,7 +491,7 @@ export const quizzesAPI = {
     return res.json();
   },
 
-  // Question management
+
   getQuestions: async (quizId: string, randomize?: boolean) => {
     const query = randomize ? '?randomize=true' : '';
     const res = await apiRequest(`/quizzes/${quizId}/questions${query}`);
@@ -541,7 +519,7 @@ export const quizzesAPI = {
     return res.json();
   },
 
-  // Attempt management
+
   startAttempt: async (quizId: string) => {
     const res = await apiRequest(`/quizzes/${quizId}/start`, { method: 'POST' });
     return res.json();
@@ -573,7 +551,7 @@ export const quizzesAPI = {
     return res.json();
   },
 
-  // Grading
+
   gradeAnswer: async (answerId: string, marksAwarded: number, feedback?: string) => {
     const res = await apiRequest(`/quizzes/answers/${answerId}/grade`, {
       method: 'PUT',
@@ -596,7 +574,7 @@ export const quizzesAPI = {
   },
 };
 
-// Parents API helpers
+
 export const parentsAPI = {
   getChildren: async () => {
     const res = await apiRequest('/parents/children');
@@ -620,9 +598,19 @@ export const parentsAPI = {
     const res = await apiRequest(`/parents/child/${childId}/progress`);
     return res.json();
   },
+
+  getChildModules: async (childId: string, subjectId: string) => {
+    const res = await apiRequest(`/parents/child/${childId}/subjects/${subjectId}/modules`);
+    return res.json();
+  },
+
+  getChildLessons: async (childId: string, moduleId: string) => {
+    const res = await apiRequest(`/parents/child/${childId}/modules/${moduleId}/lessons`);
+    return res.json();
+  },
 };
 
-// Rewards API helpers
+
 export const rewardsAPI = {
   create: async (data: { student_id: string; type: string; name: string; reason: string }) => {
     const res = await apiRequest('/rewards', {
@@ -679,7 +667,7 @@ export const paymentsAPI = {
   },
 };
 
-// Plans API helpers
+
 export const plansAPI = {
   getAll: async () => {
     const res = await apiRequest('/plans');
@@ -713,7 +701,7 @@ export const plansAPI = {
   },
 };
 
-// Live Classes API helpers
+
 export const liveClassesAPI = {
   getAll: async (filters?: { subject_id?: string; teacher_id?: string; status?: string }) => {
     const query = filters ? `?${new URLSearchParams(filters as any)}` : '';
@@ -743,7 +731,7 @@ export const liveClassesAPI = {
   },
 };
 
-// Notifications API helpers
+
 export const notificationsAPI = {
   getAll: async () => {
     const res = await apiRequest('/notifications');
@@ -771,7 +759,7 @@ export const notificationsAPI = {
   },
 };
 
-// Analytics API helpers
+
 export const analyticsAPI = {
   getAdmin: async () => {
     const res = await apiRequest('/analytics/admin');
@@ -794,7 +782,7 @@ export const analyticsAPI = {
   },
 };
 
-// Attendance API helpers
+
 export const attendanceAPI = {
   mark: async (data: { student_id: string; subject_id: string; date: string; status: string; notes?: string }) => {
     const res = await apiRequest('/attendance/mark', {
@@ -830,7 +818,7 @@ export const attendanceAPI = {
   },
 };
 
-// Subscriptions API helpers
+
 export const subscriptionsAPI = {
   getMySubscription: async () => {
     const res = await apiRequest('/subscriptions/me');
@@ -847,7 +835,7 @@ export const subscriptionsAPI = {
 };
 
 
-// Grades API helpers
+
 export const gradesAPI = {
   create: async (data: any) => {
     const res = await apiRequest('/grades', {
@@ -890,7 +878,7 @@ export const gradesAPI = {
   },
 };
 
-// Messaging API helpers
+
 export const messagingAPI = {
   send: async (data: { recipient_id: string; subject: string; message: string; parent_message_id?: string }) => {
     const res = await apiRequest('/messaging/send', {
@@ -930,7 +918,7 @@ export const messagingAPI = {
   },
 };
 
-// Behaviour API helpers
+
 export const behaviourAPI = {
   create: async (data: any) => {
     const res = await apiRequest('/behaviour', {
@@ -952,7 +940,7 @@ export const behaviourAPI = {
   },
 };
 
-// Progress API helpers
+
 export const progressAPI = {
   trackLessonView: async (data: { lesson_id: string; duration_seconds?: number; completed?: boolean }) => {
     const res = await apiRequest('/progress/lesson-view', {
@@ -975,7 +963,7 @@ export const progressAPI = {
   },
 };
 
-// Teachers API helpers
+
 export const teachersAPI = {
   getMyStudents: async () => {
     const res = await apiRequest('/teachers/my-students');

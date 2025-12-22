@@ -61,7 +61,7 @@ export function StudentSubscription() {
     const handleSubscribe = async (plan: Plan) => {
         try {
             setLoading(plan.id);
-            // If user has an active subscription, this is an upgrade
+            
             if (currentSubscription?.subscription?.status === 'active') {
                 const response = await subscriptionsAPI.upgrade(plan.id);
                 if (response.authorization_url) {
@@ -70,7 +70,7 @@ export function StudentSubscription() {
                     toast.error("Failed to initialize upgrade");
                 }
             } else {
-                // New subscription
+                
                 const response = await paymentsAPI.initialize({
                     amount: plan.price,
                     planId: plan.id,
@@ -116,7 +116,7 @@ export function StudentSubscription() {
 
     return (
         <div className="space-y-8 animate-fade-in p-6">
-            {/* Current Subscription Status */}
+            { }
             <div className="bg-card border border-border rounded-xl p-6 shadow-sm">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
                     <div>

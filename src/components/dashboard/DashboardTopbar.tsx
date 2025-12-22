@@ -47,9 +47,9 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
   };
 
   return (
-    <header className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b border-border h-16">
+    <header className="bg-white dark:bg-zinc-950/95 border-b border-border h-16 shadow-sm">
       <div className="flex items-center justify-between px-4 md:px-6 h-full">
-        {/* Left Side - Menu & Title */}
+        { }
         <div className="flex items-center gap-3">
           {dashboardType !== 'admin' && (
             <SidebarTrigger>
@@ -61,7 +61,7 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
           <div className="flex flex-col sm:block">
             <h1 className="font-display font-semibold text-lg">{title}</h1>
 
-            {/* Parent Acting as Student Banner */}
+            { }
             {(user as any)?.parent_id && (
               <div className="flex items-center gap-2 mt-1 sm:ml-4 sm:mt-0 sm:inline-flex bg-yellow-500/10 text-yellow-600 px-2 py-0.5 rounded text-xs border border-yellow-500/20">
                 <span className="font-semibold">Viewing as Student</span>
@@ -81,7 +81,7 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
           </div>
         </div>
 
-        {/* Search Bar - Center */}
+        { }
         {showSearch && (
           <div className="hidden lg:flex flex-1 max-w-md mx-8">
             <div className="relative w-full">
@@ -97,7 +97,7 @@ export function DashboardTopbar({ title = "Dashboard", dashboardType = "student"
           </div>
         )}
 
-        {/* Right Side - Actions */}
+        { }
         <div className="flex items-center gap-2">
           <Button
             variant="ghost"

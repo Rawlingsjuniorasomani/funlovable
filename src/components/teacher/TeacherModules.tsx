@@ -22,10 +22,10 @@ interface Lesson {
   type: "video" | "text" | "interactive" | "pdf" | "link";
   duration: string;
   completed?: boolean;
-  videoUrl?: string; // Optional property
-  file?: File; // Optional property for uploads
+  videoUrl?: string;
+  file?: File;
 }
-import { subjectsAPI, modulesAPI, lessonsAPI } from "@/config/api";
+import { subjectsAPI, modulesAPI, lessonsAPI, quizzesAPI } from "@/config/api";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import {
@@ -53,6 +53,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { CheckCircle, Lock } from "lucide-react";
 
 const lessonTypeIcons = {
   video: Video,
@@ -85,7 +86,9 @@ export function TeacherModules() {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set(["m1"]));
   const [isModuleDialogOpen, setIsModuleDialogOpen] = useState(false);
   const [isLessonDialogOpen, setIsLessonDialogOpen] = useState(false);
+  const [isQuizDialogOpen, setIsQuizDialogOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<string | null>(null);
 
   const [moduleForm, setModuleForm] = useState({ title: "", description: "" });
   const [lessonForm, setLessonForm] = useState<{
@@ -96,6 +99,13 @@ export function TeacherModules() {
     videoUrl?: string;
     file?: File | null;
   }>({ title: "", description: "", type: "video", duration: "" });
+
+  const [quizForm, setQuizForm] = useState({
+    title: "",
+    totalQuestions: "10",
+    passMark: "60",
+    duration: "15"
+  });
 
   useEffect(() => {
     loadData();
@@ -112,7 +122,7 @@ export function TeacherModules() {
       const loadedSubjects = Array.isArray(subjectsData) ? subjectsData : [];
       setSubjects(loadedSubjects);
 
-      // Select first subject if none selected AND no URL param
+
       if (!selectedSubject && !subjectIdFromUrl && loadedSubjects.length > 0) {
         setSelectedSubject(loadedSubjects[0].id);
       } else if (subjectIdFromUrl) {
@@ -132,7 +142,7 @@ export function TeacherModules() {
         moduleId: l.module_id || l.moduleId,
         videoUrl: l.video_url || l.videoUrl,
         duration: l.duration_minutes ? `${l.duration_minutes} mins` : (l.duration || "N/A"),
-        // Derive type if not present (simplified logic)
+
         type: (l.video_url || l.videoUrl) ? 'video' : 'text',
         isPublished: l.is_published !== undefined ? l.is_published : true,
       })));
@@ -186,7 +196,7 @@ export function TeacherModules() {
         module_id: selectedModule,
         title: lessonForm.title,
         content: lessonForm.type === 'text' ? lessonForm.description : undefined,
-        video_url: lessonForm.type === 'video' ? 'https://example.com' : undefined, // Placeholder URL for now
+        video_url: lessonForm.type === 'video' ? 'https://example.com' : undefined,
         duration_minutes: parseInt(lessonForm.duration) || 10,
       });
       await loadData();
@@ -196,6 +206,31 @@ export function TeacherModules() {
     } catch (error) {
       console.error('Failed to create lesson:', error);
       toast({ title: "Failed to create lesson", variant: "destructive" });
+    }
+  };
+
+  const handleCreateQuiz = async () => {
+    if (!selectedLesson || !selectedModule || !selectedSubject) return;
+    try {
+      await quizzesAPI.create({
+        title: quizForm.title,
+        subject_id: selectedSubject,
+        module_id: selectedModule,
+        lesson_id: selectedLesson,
+        duration_minutes: parseInt(quizForm.duration),
+        total_questions: parseInt(quizForm.totalQuestions),
+        pass_mark: parseInt(quizForm.passMark),
+        quiz_type: "multiple-choice", // Default
+        is_active: true, // Auto-publish for now? Or Draft?
+        description: `Quiz for lesson`
+      });
+      await loadData();
+      toast({ title: "Quiz created", description: "Quiz attached to lesson." });
+      setIsQuizDialogOpen(false);
+      setQuizForm({ title: "", totalQuestions: "10", passMark: "60", duration: "15" });
+    } catch (error) {
+      console.error("Failed to create quiz:", error);
+      toast({ title: "Failed to create quiz", variant: "destructive" });
     }
   };
 
@@ -281,7 +316,7 @@ export function TeacherModules() {
         </div>
       </div>
 
-      {/* Subject Header */}
+      { }
       <div className="bg-gradient-to-r from-primary/10 to-tertiary/10 rounded-xl p-6 border border-border">
         <div className="flex items-center gap-4">
           <div className="w-14 h-14 rounded-xl bg-card flex items-center justify-center text-3xl shadow-sm">
@@ -294,7 +329,7 @@ export function TeacherModules() {
         </div>
       </div>
 
-      {/* Modules List */}
+      { }
       <div className="space-y-4">
         {filteredModules.map((module, index) => {
           const moduleLessons = lessons.filter(l => l.moduleId === module.id);
@@ -319,12 +354,18 @@ export function TeacherModules() {
                     <p className="text-sm text-muted-foreground">{module.description}</p>
                   </div>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    {index === 0 ? (
+                      <Badge variant="outline" className="mr-2 border-primary text-primary">Introduction</Badge>
+                    ) : (
+                      <Badge variant="secondary" className="mr-2 flex gap-1"><Lock className="w-3 h-3" /> Locked Sequence</Badge>
+                    )}
                     <Badge variant={module.isPublished ? "default" : "secondary"} className="mr-2">
                       {module.isPublished ? "Published" : "Draft"}
                     </Badge>
                     <span className="flex items-center gap-1">
                       <BookOpen className="w-4 h-4" />
                       {module.lessonCount} lessons
+                      {module.lessonCount < 5 && <span className="text-amber-500 text-xs ml-1">(Rec: 5)</span>}
                     </span>
                     <span className="flex items-center gap-1">
                       <Clock className="w-4 h-4" />
@@ -390,6 +431,26 @@ export function TeacherModules() {
                               <p className="text-sm text-muted-foreground">{lesson.description}</p>
                             </div>
                             <Badge variant="outline" className="capitalize mr-2">{lesson.type}</Badge>
+                            {lesson.quiz_id ? (
+                              <Badge variant="outline" className="mr-2 border-green-500 text-green-600 bg-green-50">
+                                <CheckCircle className="w-3 h-3 mr-1" /> Quiz Attached
+                              </Badge>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="mr-2 text-xs h-7 gap-1"
+                                onClick={() => {
+                                  setSelectedSubject(module.subjectId);
+                                  setSelectedModule(module.id);
+                                  setSelectedLesson(lesson.id);
+                                  setQuizForm(prev => ({ ...prev, title: `Quiz: ${lesson.title}` }));
+                                  setIsQuizDialogOpen(true);
+                                }}
+                              >
+                                <Plus className="w-3 h-3" /> Attach Quiz
+                              </Button>
+                            )}
                             <Badge variant={lesson.isPublished ? "default" : "secondary"} className="mr-4 text-xs">
                               {lesson.isPublished ? "Published" : "Draft"}
                             </Badge>
@@ -440,7 +501,7 @@ export function TeacherModules() {
         )}
       </div>
 
-      {/* Lesson Dialog */}
+      { }
       <Dialog open={isLessonDialogOpen} onOpenChange={setIsLessonDialogOpen}>
         <DialogContent>
           <DialogHeader>
@@ -515,6 +576,54 @@ export function TeacherModules() {
             )}
 
             <Button onClick={handleCreateLesson} className="w-full">Add Lesson</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={isQuizDialogOpen} onOpenChange={setIsQuizDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Attach Quiz to Lesson</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <label className="text-sm font-medium">Quiz Title</label>
+              <Input
+                value={quizForm.title}
+                onChange={(e) => setQuizForm(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="e.g. Lesson Quiz"
+                className="mt-1"
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium">Total Questions</label>
+                <Input
+                  type="number"
+                  value={quizForm.totalQuestions}
+                  onChange={(e) => setQuizForm(prev => ({ ...prev, totalQuestions: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Pass Mark (%)</label>
+                <Input
+                  type="number"
+                  value={quizForm.passMark}
+                  onChange={(e) => setQuizForm(prev => ({ ...prev, passMark: e.target.value }))}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">Duration (min)</label>
+              <Input
+                type="number"
+                value={quizForm.duration}
+                onChange={(e) => setQuizForm(prev => ({ ...prev, duration: e.target.value }))}
+                className="mt-1"
+              />
+            </div>
+            <Button onClick={handleCreateQuiz} className="w-full">Create & Attach Quiz</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -36,7 +36,7 @@ export function TeacherQuizList() {
         try {
             setLoading(true);
             if (selectedSubject === "all") {
-                // Load all quizzes using the new endpoint
+                
                 const data = await quizzesAPI.getAll();
                 setQuizzes(Array.isArray(data) ? data : []);
             } else {
